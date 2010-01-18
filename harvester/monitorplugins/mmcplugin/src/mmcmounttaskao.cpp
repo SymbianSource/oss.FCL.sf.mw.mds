@@ -1,0 +1,555 @@
+/*
+* Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies). 
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description:  Handles mount tasks*
+*/
+
+#include <driveinfo.h>
+
+#include <placeholderdata.h>
+#include "mmcmounttaskao.h"
+#include "mmcmonitorplugin.h"
+#include "harvesterlog.h"
+#include "mdsfileserverpluginclient.h"
+#include "mdeharvestersession.h"
+#include "harvesterdata.h"
+#include "mdsutils.h"
+#include "harvestercenreputil.h"
+#include "fsutil.h"
+#include "harvesterplugininfo.h"
+#include "harvesterpluginfactory.h"
+
+const TInt KEntryBufferSize = 100;
+
+//-----------------------------------------------------------------------------
+// CMMCMountTaskAO
+//-----------------------------------------------------------------------------
+CMMCMountTaskAO* CMMCMountTaskAO::NewL()
+	{
+	WRITELOG( "CMMCMountTaskAO::NewL" );
+	
+	CMMCMountTaskAO* self = new (ELeave) CMMCMountTaskAO();
+	CleanupStack::PushL( self );
+	self->ConstructL();
+	CleanupStack::Pop( self );
+	return self;
+	}
+
+void CMMCMountTaskAO::ConstructL()
+	{
+	WRITELOG("CMMCMountTaskAO::ConstructL");
+	
+	CActiveScheduler::Add( this );
+	User::LeaveIfError( iFs.Connect() );
+	iNextRequest = ERequestIdle;
+	iMmcFileList = CMmcFileList::NewL();
+	iCacheEvents = EFalse;
+	iHEM = CHarvesterEventManager::GetInstanceL();
+	}
+
+CMMCMountTaskAO::CMMCMountTaskAO() :
+		CActive( KHarvesterPriorityMonitorPlugin )
+	{
+	WRITELOG( "CMMCMountTaskAO::CMMCMountTaskAO" );
+	}
+	
+CMMCMountTaskAO::~CMMCMountTaskAO()
+	{
+	WRITELOG( "CMMCMountTaskAO::~CMMCMountTaskAO" );
+	Cancel();
+	iFs.Close();
+	
+	iMountDataQueue.ResetAndDestroy();
+	
+	delete iMdeSession;
+  
+	Deinitialize();
+	
+	if (iHEM)
+		{
+		iHEM->ReleaseInstance();
+		}
+	
+	delete iMmcFileList;
+	}
+	
+void CMMCMountTaskAO::SetMonitorObserver( MMonitorPluginObserver& aObserver )
+	{
+	WRITELOG( "CMMCMountTaskAO::SetMonitorObserver" );
+	iObserver = &aObserver;
+	}
+
+void CMMCMountTaskAO::SetMdeSession( CMdEHarvesterSession* aMdeSession )
+	{
+	iMdeSession = aMdeSession;
+	}
+
+void CMMCMountTaskAO::SetHarvesterPluginFactory( CHarvesterPluginFactory* aPluginFactory )
+	{
+	iHarvesterPluginFactory = aPluginFactory;
+	}
+	
+void CMMCMountTaskAO::StartMount( TMountData& aMountData )
+	{
+	WRITELOG("CMMCMountTaskAO::StartMount");
+	iMountDataQueue.Append( &aMountData );
+	if ( iNextRequest == ERequestIdle )
+		{
+		SetNextRequest( ERequestStartTask );
+		}
+	}
+	
+void CMMCMountTaskAO::StartUnmount(TMountData& aMountData)
+	{
+	WRITELOG("CMMCMountTaskAO::StartUnmount");
+	
+	// make sure that drive is not currently mounting
+	if ( iMountData )
+		{
+		if ( iMountData->iDrivePath.Compare( aMountData.iDrivePath ) == 0 )
+			{
+			Cancel();
+			Deinitialize();
+			iNextRequest = ERequestIdle;
+			}
+		}
+		
+	iMountDataQueue.Append( &aMountData );
+	SetNextRequest( ERequestStartTask );
+	}
+	
+void CMMCMountTaskAO::RunL()
+	{
+	WRITELOG1( "CMMCMountTaskAO::RunL iStatus: %d", iStatus.Int() );
+	
+	User::LeaveIfError( iStatus.Int() );
+	
+	if ( iCacheEvents )
+		{
+		if ( iMountData )
+			{
+			iMountDataQueue.Insert( iMountData, 0 );
+			iMountData = NULL;
+			}
+		Deinitialize();
+		return;
+		}
+	
+	switch( iNextRequest )
+		{
+		case ERequestStartTask:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestStartTask" );
+			if ( iMountData )
+				{
+				delete iMountData;
+				iMountData = NULL;
+				}
+			
+			if( iMountDataQueue.Count() > 0 )
+				{
+				iMountData = iMountDataQueue[0];
+				iMountDataQueue.Remove(0);
+
+				WRITELOG1( "iMountData.iMountType: %d", iMountData->iMountType );
+				WRITELOG1( "iMountData.iDrivePath: %S", &iMountData->iDrivePath );
+				WRITELOG1( "iMountData.iMediaID: %d", iMountData->iMediaID );
+
+				if ( iMountData->iMountType == TMountData::EMount )
+					{
+					SetNextRequest( ERequestMount );
+					}
+				else if ( iMountData->iMountType == TMountData::EUnmount )
+					{
+					SetNextRequest( ERequestUnmount );
+					}
+				else if ( iMountData->iMountType == TMountData::EFormat )
+					{
+					SetNextRequest( ERequestFormat );
+					}
+				}
+			else
+				{
+				SetNextRequest( ERequestIdle );
+				iMountDataQueue.Compress();
+				}
+			}
+		break;
+		
+		case ERequestMount:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestMount" );
+			Initialize();
+			StartNotifyL();
+			SetNotPresentToMDE();
+			TRAPD( err, iMmcFileList->BuildFileListL( iFs, iMountData->iDrivePath, iEntryArray ));
+			if ( err == KErrNoMemory )
+				{
+				iMountDataQueue.Insert( iMountData, 0 );
+				iMountData = NULL;
+				Deinitialize();
+				SetNextRequest( ERequestStartTask );
+				break;
+				}
+			
+			// send start event
+			const TInt entryCount = iEntryArray.Count();
+			if( entryCount > 0 )
+				{
+				iHEM->IncreaseItemCount( EHEObserverTypeMMC, entryCount );
+				iHEM->SendEventL( EHEObserverTypeMMC, EHEStateStarted, iHEM->ItemCount( EHEObserverTypeMMC ) );
+				}
+
+			SetNextRequest( ERequestHandleFileEntry );
+			}
+		break;
+		
+		case ERequestUnmount:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestUnmount" );
+			
+			const TUint entryCount = iEntryArray.Count();
+			WRITELOG1( "CMMCMountTaskAO::RunL - ERequestUnmount entryCount = %d", entryCount );
+            if( entryCount )
+        		{
+        		iHEM->DecreaseItemCountL( EHEObserverTypeMMC, entryCount );
+		        }
+            
+            const TUint harvestEntryCount = iHarvestEntryArray.Count();
+            WRITELOG1( "CMMCMountTaskAO::RunL - ERequestUnmount harvestEntryCount = %d", harvestEntryCount );
+            if( harvestEntryCount )
+                {
+                iHEM->DecreaseItemCountL( EHEObserverTypeMMC, harvestEntryCount );
+                }
+			
+			RMsgQueue<TInt> unmountQueue;
+			_LIT( KUnmountHandlerAOString, "unmounthandlerao" );
+			TInt err = unmountQueue.OpenGlobal( KUnmountHandlerAOString );
+			if( err == KErrNone )
+				{
+				unmountQueue.Send( iMountData->iMediaID );
+				}
+			
+			SetNotPresentToMDE();
+			StopNotifyL();
+			SetNextRequest( ERequestCleanup );
+			}
+		break;
+		
+		case ERequestFormat:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestFormat" );
+			SetNotPresentToMDE();
+			RemoveNotPresentFromMDE();
+			StopNotifyL();
+			SetNextRequest( ERequestCleanup );
+			}
+		break;
+		
+		case ERequestHandleFileEntry:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestHandleFileEntry" );
+			
+			if( iNextRequest == ERequestStartTask )
+                {
+                WRITELOG( "CMMCMountTaskAO::RunL - ERequestHandleFileEntry stop processing media is unmounted");
+                SetNextRequest( ERequestStartTask );
+				return;
+                }
+            else if ( iEntryArray.Count() > 0 )
+				{
+				TRAPD( err, iMmcFileList->HandleFileEntryL( *iMdeSession, iEntryArray, 
+						iHarvestEntryArray, iMountData->iMediaID, iHarvesterPluginFactory ));
+				if ( err != KErrNone )
+					{
+					if( err == KErrNoMemory )
+						{
+						iMountDataQueue.Insert( iMountData, 0 );
+						iMountData = NULL;
+						}
+					Deinitialize();
+					SetNextRequest( ERequestStartTask );
+					break;
+					}
+				}
+			else
+				{
+				RemoveNotPresentFromMDE();
+				SetNextRequest( ERequestCleanup );
+				break;
+				}
+				
+			if ( iHarvestEntryArray.Count() > 0 )
+				{
+				SetNextRequest( ERequestHandleReharvest );
+				}
+			else
+				{
+				SetNextRequest( ERequestHandleFileEntry );
+				}
+			}
+		break;
+		
+		case ERequestHandleReharvest:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestHandleReharvest" );
+			
+			if( iNextRequest == ERequestStartTask )
+                {
+                WRITELOG( "CMMCMountTaskAO::RunL - ERequestHandleReharvest stop processing media is unmounted");
+                SetNextRequest( ERequestStartTask );
+				return;
+                }
+         	else if ( iHarvestEntryArray.Count() > 0 )
+				{
+				HandleReharvestL( iHarvestEntryArray );
+				SetNextRequest( ERequestHandleReharvest );
+				}
+          	else
+				{
+				SetNextRequest( ERequestHandleFileEntry );
+				}
+			}
+		break;
+		
+		case ERequestCleanup:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestCleanup" );
+			TBool present = (iMountData->iMountType == TMountData::EMount);
+			iMdeSession->SetMediaL( iMountData->iMediaID, iMountData->iDrivePath[0], present );
+			Deinitialize();
+			SetNextRequest( ERequestStartTask );
+			}
+		break;
+		
+		case ERequestIdle:
+			{
+			WRITELOG( "CMMCMountTaskAO::RunL - ERequestIdle" );
+			// all done
+			}
+		break;
+		
+		default:
+            User::Leave( KErrNotSupported );
+		break;
+		}
+	}
+
+#ifdef _DEBUG
+TInt CMMCMountTaskAO::RunError( TInt aError )
+#else
+TInt CMMCMountTaskAO::RunError( TInt )
+#endif
+	{
+	WRITELOG1( "CMMCMountTaskAO::RunError with error code: %d", aError );
+	Deinitialize();
+	return KErrNone;
+	}
+
+void CMMCMountTaskAO::DoCancel()
+	{
+	WRITELOG( "CMMCMountTaskAO::DoCancel" );
+	}
+
+void CMMCMountTaskAO::SetNextRequest( TRequest aRequest )
+	{
+	WRITELOG("CMMCMountTaskAO::SetNextRequest" );
+	if ( !IsActive() )
+		{
+		iNextRequest = aRequest;
+		TRequestStatus* ptrStatus = &iStatus;
+		User::RequestComplete( ptrStatus, KErrNone );
+		SetActive();
+		}
+	}
+
+void CMMCMountTaskAO::SetNotPresentToMDE()
+	{
+	WRITELOG1("CMMCMountTaskAO::SetNotPresentToMDE - MediaID %d", iMountData->iMediaID);
+	if ( iMountData->iMediaID )
+		{
+		iMdeSession->SetFilesToNotPresent( iMountData->iMediaID );
+		}
+	else
+		{
+		WRITELOG("CMMCMountTaskAO::SetNotPresentToMDE - MediaID 0, not setting");
+		}
+	}
+	
+void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray )
+	{
+	WRITELOG("CMMCMountTaskAO::HandleReharvestL");
+	
+	TInt batchSize( 0 );
+	RPointerArray<CHarvesterData> hdArray;
+	CleanupClosePushL( hdArray );
+	
+	if ( aArray.Count() >= KEntryBufferSize )
+		{
+		batchSize = KEntryBufferSize;
+		}
+	else
+		{
+		batchSize = aArray.Count();
+		}
+			
+	for ( TInt i = 0; i < batchSize; i++ )
+		{
+		CPlaceholderData* ei = aArray[0];
+		
+		HBufC* fileName = ei->Uri().AllocLC();
+		CHarvesterData* hd = CHarvesterData::NewL( fileName );
+		hd->SetOrigin( MdeConstants::Object::EOther );
+		CleanupStack::Pop( fileName );
+		
+		if ( ei->PresentState() == EMdsPlaceholder || 
+			 ei->PresentState() == EMdsModified )
+			{
+			hd->SetEventType( EHarvesterEdit );
+			hd->SetObjectType( ENormal );
+			delete ei;
+			}
+		else
+			{
+			hd->SetEventType( EHarvesterAdd );
+			hd->SetObjectType( EPlaceholder );
+			hd->SetClientData( ei );
+			}
+		
+		hdArray.Append( hd );
+		aArray.Remove( 0 );
+		}
+	
+	aArray.Compress();
+			
+	if ( iObserver )
+		{
+		if( hdArray.Count() > 0)
+			{
+			iObserver->MonitorEvent( hdArray );
+			}
+		}
+	
+	CleanupStack::PopAndDestroy( &hdArray ); 
+	}
+	
+void CMMCMountTaskAO::RemoveNotPresentFromMDE()
+	{
+	WRITELOG( "CMMCMountTaskAO::RemoveNotPresentFromMDE" );
+	
+	iMdeSession->RemoveFilesNotPresent( iMountData->iMediaID );
+	}
+	
+void CMMCMountTaskAO::StartNotifyL()
+	{
+	WRITELOG( "CMMCMountTaskAO::StartNotify" );
+
+	CHarvesterCenRepUtil* cenRepoUtil = CHarvesterCenRepUtil::NewLC();
+	cenRepoUtil->AddIgnorePathsToFspL( iMountData->iDrivePath );
+	cenRepoUtil->FspEngine().AddNotificationPath( iMountData->iDrivePath );
+	CleanupStack::PopAndDestroy( cenRepoUtil );
+	}
+	
+void CMMCMountTaskAO::StopNotifyL()
+	{
+	WRITELOG( "CMMCMountTaskAO::StopNotify" );
+	
+	CHarvesterCenRepUtil* cenRepoUtil = CHarvesterCenRepUtil::NewLC();
+	cenRepoUtil->RemoveIgnorePathsFromFspL( iMountData->iDrivePath );
+	cenRepoUtil->FspEngine().RemoveNotificationPath( iMountData->iDrivePath );
+	CleanupStack::PopAndDestroy( cenRepoUtil );
+	}
+	
+void CMMCMountTaskAO::Initialize()
+	{
+	WRITELOG( "CMMCMountTaskAO::Initialize" );
+	iEntryArray.Reset();
+	iHarvestEntryArray.Reset();
+	}
+	
+void CMMCMountTaskAO::Deinitialize()
+	{
+	WRITELOG( "CMMCMountTaskAO::Deinitialize" );
+    
+    WRITELOG1( "CMMCMountTaskAO::Deinitialize - iEntryArray.Count() = %d", iEntryArray.Count() );
+    if( iEntryArray.Count() > 0)
+        {
+        TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypeMMC, iEntryArray.Count() ) );
+        }
+    
+    WRITELOG1( "CMMCMountTaskAO::Deinitialize - iHarvestEntryArray.Count() = %d", iHarvestEntryArray.Count() );
+    if( iHarvestEntryArray.Count() > 0)
+        {
+        TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypeMMC, iHarvestEntryArray.Count() ) );
+        }
+	
+	iEntryArray.ResetAndDestroy();
+	iHarvestEntryArray.ResetAndDestroy();
+
+	if ( iMountData )
+		{
+		delete iMountData;
+		iMountData = NULL;
+		}
+	}
+
+TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
+	{
+    WRITELOG( "CMMCMountTaskAO::GetInternalDriveMediaId" );
+	    
+	TDriveInfo driveInfo;
+	TDriveList driveList;
+    TInt numOfElements( 0 );
+
+    TInt err = DriveInfo::GetUserVisibleDrives( 
+    		iFs, driveList, numOfElements, 
+    		KDriveAttExclude | KDriveAttRemote | KDriveAttRom );
+    if( err != KErrNone )
+    	{
+    	return 0;
+    	}
+    
+	TUint32 hdMediaId = 0;
+	TInt i( 0 );
+
+	for ( i = 0; i < driveList.Length(); i++ )
+		{
+	    if ( driveList[i] > 0 )
+	    	{
+	    	iFs.Drive( driveInfo, i );
+	        if ( driveInfo.iType == EMediaHardDisk )
+	        	{
+	        	// check if disk is internal
+	        	TUint driveStatus;
+	        	TInt err = DriveInfo::GetDriveStatus( iFs, i, driveStatus );
+	        	if ( (err == KErrNone ) && ( driveStatus & DriveInfo::EDriveInternal ) )
+	        		{
+	        		// get media id
+	        		hdMediaId = FSUtil::MediaID( iFs, i );
+	        		break;
+	        		}
+	        	}
+	    	}
+		}
+
+	return hdMediaId;
+	}
+
+void CMMCMountTaskAO::SetCachingStatus( TBool aCachingStatus )
+	{
+	iCacheEvents = aCachingStatus;
+	if( !iCacheEvents )
+		{
+		SetNextRequest( ERequestStartTask );
+		}
+	}

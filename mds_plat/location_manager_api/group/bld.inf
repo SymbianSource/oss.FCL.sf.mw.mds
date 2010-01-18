@@ -1,0 +1,37 @@
+/*
+* Copyright (c) 2005-2009 Nokia Corporation and/or its subsidiary(-ies). 
+* All rights reserved.
+* This component and the accompanying materials are made available
+* under the terms of "Eclipse Public License v1.0"
+* which accompanies this distribution, and is available
+* at the URL "http://www.eclipse.org/legal/epl-v10.html".
+*
+* Initial Contributors:
+* Nokia Corporation - initial contribution.
+*
+* Contributors:
+*
+* Description:  Build information file
+*
+*/
+
+#include <platform_paths.hrh>
+
+PRJ_PLATFORMS
+    DEFAULT
+
+PRJ_EXPORTS
+../inc/rlocationtrail.h     MW_LAYER_PLATFORM_EXPORT_PATH(rlocationtrail.h)
+../inc/rlocationmanager.h	MW_LAYER_PLATFORM_EXPORT_PATH(rlocationmanager.h)
+../inc/locationtrailpskeys.h MW_LAYER_PLATFORM_EXPORT_PATH(locationtrailpskeys.h)
+../inc/rtracklog.h	MW_LAYER_PLATFORM_EXPORT_PATH(rtracklog.h)
+../inc/rlocationobjectmanipulator.h MW_LAYER_PLATFORM_EXPORT_PATH(rlocationobjectmanipulator.h)
+../inc/locationdatatype.h MW_LAYER_PLATFORM_EXPORT_PATH(locationdatatype.h)
+../inc/locationeventdef.h MW_LAYER_PLATFORM_EXPORT_PATH(locationeventdef.h)
+
+PRJ_MMPFILES
+
+PRJ_TESTMMPFILES
+
+PRJ_TESTEXPORTS
+
