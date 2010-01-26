@@ -71,7 +71,7 @@ void CRenameItem::AddFileEvent(TMdsFSPStatus &aEvent)
 
 void CRenameItem::HandleFileEventsL(CFileEventHandlerAO &aCFileEventHandlerAO)
 	{
-	TInt count = iFileEvents.Count();
+	const TInt count = iFileEvents.Count();
 	for (TInt i = 0; i < count; i++)
 		{
 		aCFileEventHandlerAO.HandleNotificationL(* (iFileEvents[i]));
@@ -184,7 +184,7 @@ TInt CFolderRenamer::RunError( TInt aError )
 void CFolderRenamer::RenameL(const TDesC &aOldName, const TDesC &aNewName)
 	{
     //There comes multiple events for single rename, drop these 
-	TInt count = iRenamedFolders.Count();
+	const TInt count = iRenamedFolders.Count();
 	for (TInt i = 0; i < count; i++)
 		{
 		if ( iRenamedFolders[i]->OldName().CompareF(aOldName) == 0 && 

@@ -98,7 +98,7 @@ private:
 	CImagePresentObserver();
 
 	/**
-	 * EPOC default constructor for performing 2nd stage construction
+	 * default constructor for performing 2nd stage construction
 	 */
 	void ConstructL( CMdESession* aSession, CComposerImagePlugin* aComposer, CMdEHarvesterSession* aMdEHarvesterSession );
 	

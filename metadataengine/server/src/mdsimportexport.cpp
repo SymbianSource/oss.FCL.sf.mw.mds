@@ -19,6 +19,7 @@
 #include <charconv.h>
 #include <convgeneratedcpp.h>
 #include <badesca.h>
+#include <bautils.h>
 #include <e32math.h>
 #include <pathinfo.h>
 
@@ -963,6 +964,16 @@ TInt CMdsImportExport::ImportMetadataL( CMdSSqlObjectManipulate& aManipulate,
 	iDefaultSchema = &aSchemaNew;
     iLineNumber = 0;
     iFailed = 0;
+    
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+    RMdSTransaction transaction( connection );
+    CleanupClosePushL(transaction);
+    const TInt beginError( transaction.Error() );
+    if( beginError != KErrNone )
+        {
+        CleanupStack::PopAndDestroy( &transaction );
+        }
+    
     while( ReadMetadataFileLineL() )
         {
         if ( iLine.Length() > 0 )
@@ -977,6 +988,12 @@ TInt CMdsImportExport::ImportMetadataL( CMdSSqlObjectManipulate& aManipulate,
             }
 		else
         	iLastLineProcessed = ETrue;
+        }
+    
+    if( beginError == KErrNone )
+        {
+        transaction.CommitL();
+        CleanupStack::PopAndDestroy( &transaction );
         }
 
 	iDefaultSchema = NULL;
@@ -1133,16 +1150,11 @@ void CMdsImportExport::ImportMetadataFileObjectL( TLex8& aParser, CMdSSqlObjectM
 	    		beginUri.Compare( KColonBackslashMatch ) == 0 )
 	    	{
 			// check if uri exists
-	        RFileReadStream tmpFile;
-			TInt err = KErrNone;
-			err = tmpFile.Open( iFs, textValue, EFileRead | EFileShareAny );
-			tmpFile.Close();
-			if ( err != KErrNone )
+			if ( !BaflUtils::FileExists( iFs, textValue ) )
 				{
 				_LIT( KError, "uri is not real" );
-				validUri = EFalse;
 				LogError( KError );
-				error = err;
+				User::Leave( KErrNotFound );
 				}
 	    	}
 	    else

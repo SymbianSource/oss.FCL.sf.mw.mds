@@ -55,6 +55,8 @@ private:
 	CHarvesterEventManager* iHem;
     // not own
     CHarvesterMediaIdUtil* iMediaIdUtil;
+    
+    RPointerArray<HBufC> iIgnorePaths;
 };
 
 #endif /*MMCFILELIST_H_*/

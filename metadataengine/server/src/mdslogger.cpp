@@ -20,6 +20,7 @@
 
 
 #ifdef LOG_MASTER_FLAG
+#ifdef _DEBUG
 
 // ========================= MEMBER FUNCTIONS ==================================
 
@@ -149,9 +150,9 @@ void CMdSLogger::LogLit( const TDesC16& aText )
 // CheckSize
 // ------------------------------------------------
 //
+#ifdef MDE_FILE_LOGGING
 void CMdSLogger::CheckSize( TInt aLines )
     {
-#ifdef MDE_FILE_LOGGING
     iLineCounter += aLines;
     if ( iLineCounter < KLogfileMaxLength ) return; // no worries
 
@@ -170,10 +171,13 @@ void CMdSLogger::CheckSize( TInt aLines )
         iAltFileFlag = EFalse;        
         }    
     iLog.SetDateAndTime(EFalse, ETrue);
-#else
-    aLines = 0;
-#endif
     }
+#else
+void CMdSLogger::CheckSize( TInt /*aLines*/ )
+    {
+    // Nothing to check
+    }
+#endif
 
 // ---------------------------------------------------------------------------
 // DescribeL                Returns sql clause with variables
@@ -331,4 +335,6 @@ void CMdSLogger::LogVariableL( CMdsClauseBuffer& aBuf, const TColumn& aColumn )
         }
     }
 
+#endif // _DEBUG
 #endif // LOG_MASTER_FLAG
+

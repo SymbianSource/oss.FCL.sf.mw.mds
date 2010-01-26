@@ -332,6 +332,8 @@ class CMdSServer : public CPolicyServer, public MMdSDiskSpaceNotifierObserver,
         CMDSShutdownObserver* iShutdownObserver;
         
         TBool iShutdown;
+        
+        RThread iClientThread;
     };
 
 #endif // __MDSSERVER_H__

@@ -76,6 +76,13 @@ public:
      */
     void ForceRequests();
 
+    /**
+     * ETrue if there are any unfinished harvesting requests
+     *
+     * @since S60 v5.0
+     */
+    TBool RequestsPending();
+
 protected:
     // from base class CActive
 

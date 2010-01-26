@@ -134,7 +134,7 @@ void CImageComposerAO::AddToQueue( const RArray<TItemId>& aItems, TBool aForce )
     const TInt itemsCount = aItems.Count();
     for ( TInt i = 0; i < itemsCount; ++i )
         {
-        TInt res = iNextItemsSkip.FindInOrder( aItems[i],
+        const TInt res = iNextItemsSkip.FindInOrder( aItems[i],
         		TLinearOrder<TItemId>( CImageComposerAO::CompareTItemIds ) );
         if ( res != KErrNotFound && res >= 0 )
             {
@@ -472,7 +472,6 @@ void CImageComposerAO::ComposeL()
         
         if ( !iMdeObject->OpenForModifications() )
             {
-            // we have get version
             const TItemId objectId = iMdeObject->Id();
             delete iMdeObject;
             iMdeObject = NULL;
@@ -517,18 +516,17 @@ void CImageComposerAO::ComposeL()
 
         CMdEPropertyDef& lastModDatePropDef = iImageObjectDef->GetPropertyDefL(
         		Object::KLastModifiedDateProperty );
-            {
-            CMdEProperty* lastModDateProp = NULL;
-            iMdeObject->Property( lastModDatePropDef, lastModDateProp, 0 );
+        
+        CMdEProperty* lastModDateProp = NULL;
+        iMdeObject->Property( lastModDatePropDef, lastModDateProp, 0 );
 
-            if ( lastModDateProp )
-                {
-                lastModDateProp->SetTimeValueL( fileEntry.iModified );
-                }
-            else
-                {
-                iMdeObject->AddTimePropertyL( lastModDatePropDef, fileEntry.iModified );
-                }
+        if ( lastModDateProp )
+            {
+            lastModDateProp->SetTimeValueL( fileEntry.iModified );
+            }
+        else
+            {
+            iMdeObject->AddTimePropertyL( lastModDatePropDef, fileEntry.iModified );
             }
         iSession->CommitObjectL( *iMdeObject );
         iNextItemsSkip.InsertInOrder( iMdeObject->Id(),

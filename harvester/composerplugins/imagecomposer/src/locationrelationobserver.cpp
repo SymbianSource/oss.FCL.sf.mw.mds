@@ -48,9 +48,9 @@ CLocationRelationObserver* CLocationRelationObserver::NewL( CMdESession* aSessio
 	{
 	WRITELOG( "CLocationRelationObserver::NewL start" );
 	CLocationRelationObserver* self = new (ELeave)CLocationRelationObserver();
-	CleanupStack::PushL(self);
+	CleanupStack::PushL( self );
 	self->ConstructL( aSession, aComposer );
-	CleanupStack::Pop(); // self;
+	CleanupStack::Pop( self ); 
 	WRITELOG( "CLocationRelationObserver::NewL end" );
 	return self;
 	}

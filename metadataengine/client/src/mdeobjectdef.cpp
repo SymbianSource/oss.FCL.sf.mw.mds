@@ -59,7 +59,8 @@ void CMdEObjectDef::ConstructL(CMdCSerializationBuffer& aSchemaBuffer)
         {
 		aSchemaBuffer.PositionL( propertyOffset + i * sizeof(TMdCPropertyDef) );
 		const TMdCPropertyDef& propertyDef = TMdCPropertyDef::GetFromBufferL(aSchemaBuffer);
-		iPropertyDefs.AppendL( CMdEPropertyDef::NewL( propertyDef, aSchemaBuffer, *this ) );
+		CMdEPropertyDef* propertyDefImpl = CMdEPropertyDef::NewL( propertyDef, aSchemaBuffer, *this );
+		iPropertyDefs.InsertInOrder( propertyDefImpl, TLinearOrder<CMdEPropertyDef>(CMdEObjectDef::CompareProperties) );
         }
     }
 
@@ -129,7 +130,7 @@ EXPORT_C CMdEPropertyDef& CMdEObjectDef::GetPropertyDefL( const TDesC& aName )
 	}
 
 CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL( const TDesC& aName, CMdEObjectDef* aChild )
-    {
+    {    
     const TInt propertyDefCount = iPropertyDefs.Count();
     for ( TInt i = 0; i < propertyDefCount; ++i )
         {
@@ -156,16 +157,11 @@ CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL( const TDesC& aName, CMdEObjectD
 
 CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL(TDefId aId, CMdEObjectDef* aChild)
     {
-    const TInt count = iPropertyDefs.Count();
+    const TInt i = iPropertyDefs.FindInOrder(aId, CMdEObjectDef::CompareProperties );
     
-    for ( TInt i = 0; i < count; ++i )
+    if (i >= 0 && i < iPropertyDefs.Count() && iPropertyDefs[i] )
         {
-        CMdEPropertyDef* propDef = iPropertyDefs[i];
-        
-        if( propDef && propDef->Id() == aId )
-        	{
-        	return propDef;
-        	}
+        return iPropertyDefs[i];
         }
 
     CMdEObjectDef* parent = ParentL();
@@ -192,3 +188,14 @@ CMdEPropertyDef* CMdEObjectDef::PropertyDefL(TInt aIndex, CMdEObjectDef* /*aChil
 
 	return iPropertyDefs[aIndex];
 	}
+
+TInt CMdEObjectDef::CompareProperties( const CMdEPropertyDef& aFirst, const CMdEPropertyDef& aSecond )
+    {
+    return aFirst.Id() - aSecond.Id();
+    }
+
+TInt CMdEObjectDef::CompareProperties( const TDefId* aFirst, const CMdEPropertyDef& aSecond )
+    {
+    return *aFirst - aSecond.Id();
+    }
+

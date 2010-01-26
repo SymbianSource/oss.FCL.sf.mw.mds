@@ -31,7 +31,7 @@
 #include <mtclreg.h>
 #include <smsclnt.h>
 #include <driveinfo.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 
 // CONSTANTS
 #ifdef _DEBUG
@@ -328,7 +328,37 @@ void CMessageMonitorPlugin::HandleMsgMovedL( const TMsvId aFolderId1,
             hd->SetTakeSnapshot( EFalse );
             hd->SetBinary( EFalse );
             iMonitorPluginObserver->MonitorEvent( hd );
-            }          
+            }
+            
+               
+#ifdef __WINSCW__
+		else if (!err && KMsvDraftEntryId == aFolderId2 && KMsvGlobalOutBoxIndexEntryId == aFolderId1 )
+			{
+			CClientMtmRegistry* clientMtmReg;
+			clientMtmReg = CClientMtmRegistry::NewL(*iMsvSession);
+			CleanupStack::PushL(clientMtmReg);
+			
+			
+			CSmsClientMtm* smsMtm = static_cast<CSmsClientMtm*>(clientMtmReg->NewMtmL(KUidMsgTypeSMS));	
+			CleanupStack::PushL(smsMtm);
+			smsMtm->SwitchCurrentEntryL( msgId );
+			
+			TMsvSelectionOrdering selection;
+			selection.SetShowInvisibleEntries(ETrue);
+			
+			CMsvEntry* parentEntry = CMsvEntry::NewL( smsMtm->Session(),
+                smsMtm->Entry().Entry().Parent(), selection );
+             
+             CleanupStack::PushL(parentEntry);
+        	// Move the message
+        	TRAP_IGNORE( parentEntry->MoveL( msgId, KMsvSentEntryId ) );
+        	CleanupStack::PopAndDestroy(3,clientMtmReg); // parentEntry
+        				
+
+			
+			}
+#endif             
+		
         }
 	WRITELOG("END CMessageMonitorPlugin::HandleMsgMovedL");	        
 	}

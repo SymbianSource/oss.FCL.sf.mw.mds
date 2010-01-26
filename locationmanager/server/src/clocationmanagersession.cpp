@@ -17,7 +17,7 @@
 
 #include <e32debug.h>
 #include <s32mem.h>
-#include <LbsSatellite.h> 
+#include <lbssatellite.h> 
 #include <locationdatatype.h>
 #include <locationeventdef.h>
 
@@ -88,7 +88,7 @@ void CLocationManagerSession::ServiceL( const RMessage2& aMessage )
     LOG( "CLocationManagerSession::ServiceL" );
     _LIT( KSemaphore, "LocManSynchSemaphore" );
     RSemaphore semaphore;
-    TInt result = semaphore.OpenGlobal( KSemaphore );
+    const TInt result = semaphore.OpenGlobal( KSemaphore );
     LOG1( "CLocationManagerSession::ServiceL - semaphore open result: %d", result );
     iMessage = RMessage2( aMessage );
     if ( result == KErrNone )

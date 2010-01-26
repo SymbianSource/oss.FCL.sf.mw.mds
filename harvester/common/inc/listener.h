@@ -120,7 +120,7 @@ private: // Construction and destruction.
      * @param aPropertyCategory The property's category.   
      * @param aKey       		The P&S key to be watched. 
 	 */
-   	CListener::CListener( const TUid aPropertyCategory,
+   	CListener( const TUid aPropertyCategory,
     			const TUint aKey ); 
     	
    	/**

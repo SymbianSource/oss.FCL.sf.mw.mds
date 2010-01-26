@@ -32,7 +32,7 @@ const TUint32 KScanDelayKey = 0x00000001;
 
 CMmcScannerAO::CMmcScannerAO( TUint32 aMediaId, 
 		CMdEHarvesterSession* aMdEClient, MMonitorPluginObserver* aObserver, 
-		CHarvesterPluginFactory* aHarvesterPluginFactory, CActive::TPriority aPriority ) : 
+		CHarvesterPluginFactory* aHarvesterPluginFactory, const TInt aPriority ) : 
 		CTimer( aPriority ), iState( EUninitialized ), iMmcFileList( NULL )   
 	{
 	iMediaId = aMediaId;
@@ -43,7 +43,7 @@ CMmcScannerAO::CMmcScannerAO( TUint32 aMediaId,
 
 CMmcScannerAO* CMmcScannerAO::NewL( TUint32 aMediaId, CMdEHarvesterSession* aMdEClient,
 		MMonitorPluginObserver* aObserver, CHarvesterPluginFactory* aHarvesterPluginFactory, 
-		CActive::TPriority aPriority, TBool aAlreadyWaited )
+		const TInt aPriority, TBool aAlreadyWaited )
 	{
 	CMmcScannerAO* self = new ( ELeave ) CMmcScannerAO( aMediaId, aMdEClient, aObserver, 
 			aHarvesterPluginFactory, aPriority );
@@ -67,7 +67,7 @@ void CMmcScannerAO::ConstructL( TBool aAlreadyWaited )
         TInt tmpDelay( KDefaultDelay );
         TTimeIntervalMicroSeconds32 delay( tmpDelay * KMillion ); 
         CRepository* repo = CRepository::NewLC( KRepositoryUid );
-        TInt err = repo->Get( KScanDelayKey, tmpDelay );
+        const TInt err = repo->Get( KScanDelayKey, tmpDelay );
         if ( err == KErrNone )
             {
             delay = tmpDelay * KMillion;
@@ -146,12 +146,12 @@ void CMmcScannerAO::RunL()
 				WRITELOG("CMmcScannerAO::RunL - handling file list");
 				iMmcFileList->HandleFileEntryL( *iMdEClient, iEntryArray, 
 						iHarvestEntryArray, iMediaId, iHarvesterPluginFactory );
-				SetState( EHarvestFiles );
-				}
-			else 
-				{
-				SetState( ERemoveNPFiles );
-				}
+				SetState( EProcessFiles );
+                }
+            else 
+                {
+                SetState( EHarvestFiles );
+                }
 			break;
 			}
 		
@@ -165,7 +165,7 @@ void CMmcScannerAO::RunL()
 				}
 			else
 				{
-				SetState( EProcessFiles );
+				SetState( ERemoveNPFiles );
 				}
 			break;
 			}
@@ -181,6 +181,8 @@ void CMmcScannerAO::RunL()
 		case( EDone ):
 			{
 			iFs.Close();
+			iEntryArray.Compress();
+			iHarvestEntryArray.Compress();
 			break;
 			}
 		

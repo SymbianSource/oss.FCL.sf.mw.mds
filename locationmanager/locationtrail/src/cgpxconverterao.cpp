@@ -17,7 +17,7 @@
 
 #include <f32file.h>
 #include <s32file.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 #include "cgpxconverterao.h"
 #include "locationmanagerdebug.h"
 

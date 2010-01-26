@@ -35,7 +35,7 @@
 #include <MCLFSortingStyle.h>
 #include <T_ContentListingFramework.rsg>
 #include <collate.h>
-#include <PathInfo.h>
+#include <pathInfo.h>
 #include <MCLFProcessObserver.h>
 #include <CLFContentListingExtended.hrh>
 

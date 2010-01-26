@@ -21,7 +21,7 @@
 #include "rtracklog.h"
 #include <f32file.h>
 #include <s32file.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 #include <centralrepository.h>
 #include <locationeventdef.h>
 #include "cgpxconverterao.h"

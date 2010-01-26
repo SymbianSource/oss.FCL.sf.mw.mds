@@ -16,8 +16,8 @@
 */
 
 #include <e32cmn.h> 
-#include <LbsErrors.h>
-#include <LbsSatellite.h>
+#include <lbserrors.h>
+#include <lbssatellite.h>
 
 #include "rlocationtrail.h"
 #include "clocationrecord.h"

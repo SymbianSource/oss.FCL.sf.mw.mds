@@ -552,7 +552,7 @@ void CMdSServerSession::FindL( const RMessage2& aMsg )
 	// check that all queries are complete
 	QueriesCompleteL();
 
-    TInt serializedCriteriaLength = aMsg.GetDesLength( EFindArgConditions );
+    const TInt serializedCriteriaLength = aMsg.GetDesLength( EFindArgConditions );
 	CMdCSerializationBuffer* serializedCriteriaBuffer = CMdCSerializationBuffer::NewLC( serializedCriteriaLength );
 	TPtr8 serializedCriteriaBufferPtr(serializedCriteriaBuffer->Buffer());
 	aMsg.ReadL( EFindArgConditions, serializedCriteriaBufferPtr );
@@ -592,7 +592,7 @@ void CMdSServerSession::FindAsyncL( const RMessage2& aMsg )
     // check that all queries are complete
     QueriesCompleteL();
 
-    TInt serializedCriteriaLength = aMsg.GetDesLength( EFindArgConditions );
+    const TInt serializedCriteriaLength = aMsg.GetDesLength( EFindArgConditions );
 	CMdCSerializationBuffer* serializedCriteriaBuffer = CMdCSerializationBuffer::NewLC( serializedCriteriaLength );
 	TPtr8 serializedCriteriaBufferPtr(serializedCriteriaBuffer->Buffer());
 	aMsg.ReadL( EFindArgConditions, serializedCriteriaBufferPtr );
@@ -907,7 +907,7 @@ void CMdSServerSession::CancelObjectL( const RMessage2& aMsg )
 //
 void CMdSServerSession::UpdateL( const RMessage2& aMsg )
     {
-    TInt successfulLength = aMsg.GetDesLengthL( 1 );
+    const TInt successfulLength = aMsg.GetDesLengthL( 1 );
     
     CMdCSerializationBuffer* buffer = CMdCSerializationBuffer::NewLC( aMsg, 0 );
     CMdCSerializationBuffer* successfullBuffer = CMdCSerializationBuffer::NewLC( successfulLength );
@@ -926,7 +926,7 @@ void CMdSServerSession::RegisterL( const RMessage2& aMsg )
     __LOG3( ELogServer, "-> Register %u for NS: %u Type: %d",
         (TUint32)aMsg.Int0(), (TDefId)aMsg.Int3(), aMsg.Int1() );
 
-    TInt length = aMsg.GetDesLength( 2 );
+    const TInt length = aMsg.GetDesLength( 2 );
 	CMdCSerializationBuffer* buffer = CMdCSerializationBuffer::NewLC( length );
 	TPtr8 bufferPtr( buffer->Buffer() );
 	aMsg.ReadL( 2, bufferPtr );
@@ -982,7 +982,7 @@ void CMdSServerSession::ListenL( const RMessage2& aMsg )
 void CMdSServerSession::UnregisterL( const RMessage2& aMsg )
     {
     __LOG1( ELogServer, "-> Unregister %d", aMsg.Int0() );
-    TInt id = aMsg.Int0();
+    const TInt id = aMsg.Int0();
     iServer.Notifier().RemoveEntryL(id);
 	TInt count = iNotificationCache.Count();
 	for(TInt i(count - 1); i >= 0; --i)

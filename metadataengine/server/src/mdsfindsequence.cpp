@@ -125,8 +125,7 @@ TInt CMdSFindSequence::FindL(
  
     iFindOperation = CreateOperationL( aSerializedCriteria );
 
-    TInt result = KErrNone;
-    result = iFindOperation->ExecuteL();
+    const TInt result( iFindOperation->ExecuteL() );
     
     iFindResults = iFindOperation->Results();
     
@@ -152,7 +151,7 @@ TInt CMdSFindSequence::ContinueL()
 		iFindResults = NULL;
 		}
     
-    TInt result = iFindOperation->ContinueL();
+    const TInt result = iFindOperation->ContinueL();
 
     if ( result == KErrNone )
         {
@@ -328,7 +327,7 @@ void CMdSFindSequence::DoCancel()
         CleanUp();
         return;
         }
-    TInt state = iFindOperation->State();
+    const TInt state = iFindOperation->State();
     if ( state == CMdSSqlFindOperation::EStateIdle )
         {
         // loop is idle - safe to clean up.

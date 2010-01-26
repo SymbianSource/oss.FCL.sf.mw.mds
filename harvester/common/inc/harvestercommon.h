@@ -90,6 +90,7 @@ enum TMdsOomStatus
 	TMdsOomMemoryGood
 	};
 
+const TInt KHarvesterGetRootDirFlags = EDirsFirst;
 const TInt KHarvesterGetDirFlags = ESortByDate | EDescending | EDirsFirst;
 
 const TInt KOriginIgnored = 255;

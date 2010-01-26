@@ -34,8 +34,8 @@ EPOCHEAPSIZE      0x8000 0x400000
 CAPABILITY        CAP_SERVER AllFiles
 VENDORID        	VID_DEFAULT
 
-//MACRO             LOG_MASTER_FLAG
-MACRO             LOG_QUERY
+MACRO             LOG_MASTER_FLAG
+//MACRO             LOG_QUERY
 MACRO          	  LOG_DB
 // MACRO          LOG_MUTEX
 MACRO             LOG_SERVER

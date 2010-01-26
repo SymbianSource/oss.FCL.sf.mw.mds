@@ -66,10 +66,11 @@ TBool CMMCMonitorAO::StartMonitoring( MMMCMonitorObserver& aObserver, RArray<TMd
 	
     BuildDriveList();
     
-    for ( TInt i = 0; i < aMedias.Count(); i++ )
+    const TInt count( aMedias.Count() );
+    for ( TInt i = 0; i < count; i++ )
     	{
     	TInt drive(0);
-    	TInt err = iFs.CharToDrive( aMedias[i].iDrive, drive );
+    	const TInt err = iFs.CharToDrive( aMedias[i].iDrive, drive );
     	if ( err == KErrNone )
     		{
     		WRITELOG2( "CMMCMonitorAO::StartMonitoring - set drive %d mediaid to %d ", drive, aMedias[i].iMediaId );

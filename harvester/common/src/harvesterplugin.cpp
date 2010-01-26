@@ -24,7 +24,10 @@
 #include "harvesterlog.h"
 #include "harvestercommon.h"
 #include "harvesterblacklist.h"
+#include "harvestereventmanager.h"
 #include "mdsutils.h"
+
+const TInt KCacheItemCountForEventCaching = 1;
 
 // ---------------------------------------------------------------------------
 // NewL
@@ -49,6 +52,7 @@ void CHarvesterPlugin::ConstructL()
 	{
 	User::LeaveIfError( iFs.Connect() );
 	iState = EHarvesterIdle;
+	iHarvesterEventManager = CHarvesterEventManager::GetInstanceL();
 	CActiveScheduler::Add( this );
 	}
 
@@ -86,6 +90,11 @@ EXPORT_C void CHarvesterPlugin::ListImplementationsL(
 EXPORT_C CHarvesterPlugin::~CHarvesterPlugin() // destruct - virtual
 	{
 	Cancel();
+
+    if (iHarvesterEventManager)
+        {
+        iHarvesterEventManager->ReleaseInstance();
+        }
 	
 	iFs.Close();
 	REComSession::DestroyedImplementation( iDtor_ID_Key );
@@ -139,10 +148,22 @@ EXPORT_C void CHarvesterPlugin::RunL()
             if( iQueue->Count() == 0 )
                 {
                 SetNextRequest( EHarvesterIdle );
+                iHarvesting = EFalse;                       
+                iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
+                iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
                 iQueue->Compress();
                 }
             else
             	{
+                if ( !iHarvesting )
+                    {
+                    iHarvesting = ETrue;
+                    iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateStarted );
+                    // This next line is for caching the harvester started event for observers registering
+                    // after harvesting has already started
+                    iHarvesterEventManager->IncreaseItemCount( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
+                    }
+            
             	CHarvesterData* hd = (*iQueue)[0];
             	iQueue->Remove( 0 );
             	const TDesC& uri = hd->Uri();

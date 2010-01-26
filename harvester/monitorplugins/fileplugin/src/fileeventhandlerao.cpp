@@ -165,6 +165,7 @@ void CFileEventHandlerAO::RunL()
     	                    {
     	                    iQueue.Remove( 0 );
     	                    delete tempItem;
+    	                    tempItem = NULL;
     	                    iEventArray->AppendL( status );
     	                    }
     	                else
@@ -811,7 +812,8 @@ void CFileEventHandlerAO::SetIgnoreListL( RPointerArray<TDesC>& aList )
     
     iIgnoreList.ResetAndDestroy();
     
-    for ( TInt i = aList.Count(); --i >= 0; )
+    const TInt count( aList.Count() );
+    for ( TInt i = count; --i >= 0; )
         {
         TDesC* listPath = aList[i];
         
@@ -843,7 +845,7 @@ CProcessOriginMapper& CFileEventHandlerAO::Mapper()
 void CFileEventHandlerAO::NotMoveEvent(RPointerArray<CHarvesterData>& aHDArray)
 	{
 	TInt count = aHDArray.Count();
-	for (int i = 0; i < count; ++i)
+	for (TInt i = 0; i < count; ++i)
 		{
 		CHarvesterData* hd = aHDArray[i];
         iObserver->MonitorEvent( hd );

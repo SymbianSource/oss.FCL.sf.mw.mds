@@ -35,7 +35,7 @@ public:
 	// Two-phased constructor.
 	static CMmcScannerAO* NewL( TUint32 aMediaId, CMdEHarvesterSession* aMdEClient,
 			MMonitorPluginObserver* aObserver, CHarvesterPluginFactory* aHarvesterPluginFactory,
-			CActive::TPriority aPriority, TBool aAlreadyWaited );
+			const TInt aPriority, TBool aAlreadyWaited );
 
 public:
 
@@ -43,7 +43,7 @@ private:
 	// C++ constructor
 	CMmcScannerAO( TUint32 aMediaId, CMdEHarvesterSession* aMdEClient, 
 			MMonitorPluginObserver* aObserver, CHarvesterPluginFactory* aHarvesterPluginFactory,
-			CActive::TPriority aPriority );
+			const TInt aPriority );
 
 	// Second-phase constructor
 	void ConstructL( TBool aAlreadyWaited );

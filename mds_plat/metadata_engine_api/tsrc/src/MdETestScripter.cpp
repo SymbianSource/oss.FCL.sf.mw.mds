@@ -18,7 +18,7 @@
 // INCLUDE FILES
 #include <StifTestInterface.h>
 #include <SettingServerClient.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 #include <mdesession.h>
 #include "MdETestScripter.h"
 #include "MdETestScripterAO.h"

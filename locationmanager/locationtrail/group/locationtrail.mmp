@@ -35,6 +35,7 @@ nostrictdef
 
 USERINCLUDE     ../inc
 USERINCLUDE     ../../inc
+USERINCLUDE     ../../../inc
 
 SOURCEPATH      ../src
 SOURCE          clocationrecord.cpp

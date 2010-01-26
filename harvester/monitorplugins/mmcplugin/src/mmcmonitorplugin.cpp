@@ -24,6 +24,8 @@
 
 #include <e32cmn.h>
 
+const TInt KMassStorageScanCustomPriority = 5;
+
 _LIT( KColon, ":" );
 
 // construct/destruct
@@ -106,8 +108,8 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
     hdMediaId = iMountTask->GetInternalDriveMediaId();
     TBool alreadyWaited( EFalse );
     
-    
-    for ( TInt i = 0; i < medias.Count(); i++ )
+    const TInt count( medias.Count() );
+    for ( TInt i = 0; i < count; i++ )
     	{
     	TRAP_IGNORE( iMdEClient->GetMediaL( medias[i].iMediaId, driveLetter, presentState ) );
     	
@@ -136,7 +138,7 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
 			medias.Append( hdInfo );
 			
 			TRAP_IGNORE( iHddScanner = CMmcScannerAO::NewL( hdMediaId, iMdEClient, iObserver,
-			    				aHarvesterPluginFactory, CActive::EPriorityUserInput, alreadyWaited ));
+			    				aHarvesterPluginFactory, KMassStorageScanCustomPriority, alreadyWaited ));
 			}
 		}
 
@@ -279,7 +281,6 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias )
     {
     WRITELOG( "CMMCMonitorPlugin::StartMonitoringAllMMCs" );
-    TInt count( 0 );
     
     RFs fs;
     User::LeaveIfError( fs.Connect() );
@@ -297,6 +298,7 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
     TChar drive;
     const TInt acount = driveList.Length();
     const TInt mediaCount = aMedias.Count();
+    TInt count( 0 );
     
     // set removed medias to not present
     for ( i = 0; i < mediaCount; i++ )

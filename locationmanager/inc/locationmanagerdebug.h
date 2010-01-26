@@ -18,6 +18,8 @@
 #ifndef LOCATIONMANAGERDEBUG_H
 #define LOCATIONMANAGERDEBUG_H
 
+#include "harvesterlog.h"
+
 /**
  *  Usage:  LOG(_L("[MODULE_NAME]\t Trace text here"));
  *          TRACE(Print(_L("[MODULE_NAME]\t Trace text here with parameter %d"), iCount));

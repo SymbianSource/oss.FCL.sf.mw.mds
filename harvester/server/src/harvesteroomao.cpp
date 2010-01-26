@@ -73,8 +73,8 @@ void CHarvesterOomAO::RunL()
 	{
 	User::LeaveIfError( iStatus.Int() );
 	
-	TInt oomStatus(0);
-	TInt err = iOomMsgQueue.Receive( oomStatus );
+	TInt oomStatus( 0 );
+	const TInt err = iOomMsgQueue.Receive( oomStatus );
 	
 	if( oomStatus == TMdsOomFreeRam )
 		{

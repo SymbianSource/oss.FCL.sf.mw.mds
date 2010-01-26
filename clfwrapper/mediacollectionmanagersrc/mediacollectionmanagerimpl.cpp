@@ -220,7 +220,7 @@ TInt32 CMediaCollectionManagerImpl::GetDriveByIdL( TInt /* aId */ )
     {
     User::Leave( KErrNotSupported );
     
-    TInt drive( 0 );
+    const TInt drive( 0 );
     return drive;
     }
 

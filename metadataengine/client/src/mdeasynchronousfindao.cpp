@@ -246,20 +246,30 @@ TInt CMdEAsynchronousFindAO::RunError(TInt aError)
 
     const TQueryType mode = iQuery.Type();
 
-    if ( mode == EQueryTypeObject ) 
+    switch( mode )
         {
-        CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
-        qi.DoNotifyCompleted( aError );
-        }
-    else if ( mode == EQueryTypeRelation )
-        {
-        CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
-        qi.DoNotifyCompleted( aError );
-        }
-    else if ( mode == EQueryTypeEvent )
-        {
-        CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
-        qi.DoNotifyCompleted( aError );
+        case EQueryTypeObject: 
+            {
+            CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
+            qi.DoNotifyCompleted( aError );
+            break;
+            }
+        case EQueryTypeRelation:
+            {
+            CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
+            qi.DoNotifyCompleted( aError );
+            break;
+            }
+        case EQueryTypeEvent:
+            {
+            CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
+            qi.DoNotifyCompleted( aError );
+            break;
+            }
+        default:
+            {
+            return KErrNone;
+            }
         }
 
 	return KErrNone;
@@ -274,20 +284,30 @@ void CMdEAsynchronousFindAO::DoNotifyResultsL( TInt aStatus )
         {
         const TQueryType mode = iQuery.Type();
 
-        if ( mode == EQueryTypeObject )
+        switch( mode )
             {
-            CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iResultList );
-            }
-        else if ( mode == EQueryTypeRelation )
-            {
-            CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iResultList );
-            }
-        else if ( mode == EQueryTypeEvent )
-            {
-            CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iResultList );
+            case EQueryTypeObject:
+                {
+                CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iResultList );
+                break;
+                }
+            case EQueryTypeRelation:
+                {
+                CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iResultList );
+                break;
+                }
+            case EQueryTypeEvent:
+                {
+                CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iResultList );
+                break;
+                }
+            default:
+                {
+                // Nothing to do
+                }
             }
 
         // get rid of local results list
@@ -300,20 +320,30 @@ void CMdEAsynchronousFindAO::DoNotifyResultsL( TInt aStatus )
         {
         const TQueryType mode = iQuery.Type();
         
-        if ( mode == EQueryTypeObject )
+        switch( mode )
             {
-            CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iIdResultList );
-            }
-        else if ( mode == EQueryTypeRelation )
-            {
-            CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iIdResultList );
-            }
-        else if ( mode == EQueryTypeEvent )
-            {
-            CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
-            qi.DoNotifyResultsL( iIdResultList );
+            case EQueryTypeObject:
+                {
+                CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iIdResultList );
+                break;
+                }
+            case EQueryTypeRelation:
+                {
+                CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iIdResultList );
+                break;
+                }
+            case EQueryTypeEvent:
+                {
+                CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
+                qi.DoNotifyResultsL( iIdResultList );
+                break;
+                }
+            default:
+                {
+                // Nothing to do
+                }
             }
 
         // get rid of local results list
@@ -323,20 +353,30 @@ void CMdEAsynchronousFindAO::DoNotifyResultsL( TInt aStatus )
         {
         const TQueryType mode = iQuery.Type();
         
-        if ( mode == EQueryTypeObject )
+        switch( mode )
             {
-            CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
-            qi.DoNotifyResults( iCountResult );
-            }
-        else if ( mode == EQueryTypeRelation )
-            {
-            CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
-            qi.DoNotifyResults( iCountResult );
-            }
-        else if ( mode == EQueryTypeEvent )
-            {
-            CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
-            qi.DoNotifyResults( iCountResult );
+            case EQueryTypeObject:
+                {
+                CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
+                qi.DoNotifyResults( iCountResult );
+                break;
+                }
+            case EQueryTypeRelation:
+                {
+                CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
+                qi.DoNotifyResults( iCountResult );
+                break;
+                }
+            case EQueryTypeEvent:
+                {
+                CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
+                qi.DoNotifyResults( iCountResult );
+                break;
+                }
+            default:
+                {
+                // Nothing to do
+                }
             }
         }
     else if ( ( aStatus == EAsyncFindSetReady ||
@@ -365,20 +405,30 @@ void CMdEAsynchronousFindAO::DoNotifyL( TBool aNewResults, TInt aStatus )
         
         const TQueryType mode = iQuery.Type();
 
-        if ( mode == EQueryTypeObject ) 
+        switch( mode )
             {
-            CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
-            qi.DoNotifyCompleted( code );
-            }
-        else if ( mode == EQueryTypeRelation )
-            {
-            CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
-            qi.DoNotifyCompleted( code );
-            }
-        else if ( mode == EQueryTypeEvent )
-            {
-            CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
-            qi.DoNotifyCompleted( code );
+            case EQueryTypeObject:
+                {
+                CMdEObjectQueryImpl& qi = (CMdEObjectQueryImpl&)iQuery;
+                qi.DoNotifyCompleted( code );
+                break;
+                }
+            case EQueryTypeRelation:
+                {
+                CMdERelationQueryImpl& qi = (CMdERelationQueryImpl&)iQuery;
+                qi.DoNotifyCompleted( code );
+                break;
+                }
+            case EQueryTypeEvent:
+                {
+                CMdEEventQueryImpl& qi = (CMdEEventQueryImpl&)iQuery;
+                qi.DoNotifyCompleted( code );
+                break;
+                }
+            default:
+                {
+                // Nothing to do
+                }
             }
         }
     

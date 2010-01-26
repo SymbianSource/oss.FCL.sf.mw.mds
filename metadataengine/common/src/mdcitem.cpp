@@ -20,7 +20,7 @@
 //  TMdCObject
 ///////////////////
 
-EXPORT_C TMdCObject::TMdCObject() : TMdCItem( EMdCObject )
+EXPORT_C TMdCObject::TMdCObject() : TMdCItem( EMdCObject ), iFlags( 0 )
 	{
 	}
 
@@ -53,7 +53,8 @@ EXPORT_C const TMdCObject& TMdCObject::GetFromBufferL( CMdCSerializationBuffer& 
 //  TMdCRelation
 ///////////////////
 
-EXPORT_C TMdCRelation::TMdCRelation() : TMdCItem( EMdCRelation )
+EXPORT_C TMdCRelation::TMdCRelation() : TMdCItem( EMdCRelation ),
+        iLeftObjectId( 0 ), iRightObjectId( 0 )
 	{
 	}
 

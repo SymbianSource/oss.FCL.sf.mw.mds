@@ -15,6 +15,7 @@
 */
 
 // INCLUDE FILES
+#include <f32file.h>
 #include "mdsserver.h"
 #include "mdscommoninternal.h"
 #include "mdsserversession.h"
@@ -30,7 +31,6 @@
 #include "mdebackuprestorewatcher.h"
 #include "mdsschema.h"
 #include "mdcserializationbuffer.h"
-#include <f32file.h>
 
 __DEFINE_LOGGER
 
@@ -289,7 +289,7 @@ void CMdSServer::HandleDiskSpaceNotificationL( TDiskSpaceDirection aDiskSpaceDir
 	variables.AppendL( TColumn( KMemoryCardLimit ) );
 	variables.AppendL( TColumn( KObjectCleanupLimit ) );
 	
-	TInt rowCount = iDefaultDBConnection->ExecuteL( clause->ConstBufferL(), variables );
+	const TInt rowCount = iDefaultDBConnection->ExecuteL( clause->ConstBufferL(), variables );
 
 	CleanupStack::PopAndDestroy( 2, clause ); // variables, clause
 	}
@@ -408,8 +408,8 @@ CMdSServer::CMdSServer( TInt aPriority ) :
 
 CMdSServer::~CMdSServer()
     {
-    
     iShutdown = ETrue;
+    iClientThread.Close();
     
 	delete iBURWatcher;
 	delete iDiskSpaceGarbageCollectorNotifier;
@@ -544,7 +544,7 @@ TInt CMdSServer::SetHarvestingPrioritizationChunkL( const RMessagePtr2 aMessage,
 	// if there happens to be old chunk, close it
 	iHarvestingPrioritizationChunk.Close();
 
-	TInt error = iHarvestingPrioritizationChunk.Open( aMessage, aParam, EFalse );
+	const TInt error = iHarvestingPrioritizationChunk.Open( aMessage, aParam, EFalse );
 
 	if( error != KErrNone )
 		{
@@ -573,7 +573,9 @@ TInt CMdSServer::AddHarvestingPrioritizationObserver( RMessagePtr2 aMessage )
 		{
 		iHarvestingPrioritizationLocked = EFalse;
 
+		iClientThread.Close();
 		iHarvestingPrioritizationObserver = aMessage;
+		iHarvestingPrioritizationObserver.Client( iClientThread );
 
 		// reserve space for harvesting prioritization URI count
 		iHarvestingPrioritizationLimit = CMdCSerializationBuffer::KRequiredSizeForTInt32;
@@ -583,15 +585,14 @@ TInt CMdSServer::AddHarvestingPrioritizationObserver( RMessagePtr2 aMessage )
 		}
 	else
 	    {
-        RThread clientThread;
-        iHarvestingPrioritizationObserver.Client( clientThread );
-        TExitType exitType = clientThread.ExitType();
-        clientThread.Close();
+        TExitType exitType = iClientThread.ExitType();
         if( EExitPending != exitType )
             {
             iHarvestingPrioritizationLocked = EFalse;
 
+            iClientThread.Close();
             iHarvestingPrioritizationObserver = aMessage;
+            iHarvestingPrioritizationObserver.Client( iClientThread );
 
             // reserve space for harvesting prioritization URI count
             iHarvestingPrioritizationLimit = CMdCSerializationBuffer::KRequiredSizeForTInt32;
@@ -707,14 +708,11 @@ void CMdSServer::NotifyHarvestingPrioritizationObserver( TInt aStatus ) const
 	{
 	if( !iHarvestingPrioritizationObserver.IsNull() )
 		{
-	    RThread clientThread;
-	    iHarvestingPrioritizationObserver.Client( clientThread );
-	    TExitType exitType = clientThread.ExitType();
+	    TExitType exitType = iClientThread.ExitType();
 	    if( EExitPending == exitType )
 	        {
 	        iHarvestingPrioritizationObserver.Complete( aStatus );
 	        }
-	    clientThread.Close();
 		}
 	}
 
@@ -853,7 +851,6 @@ void CMdSServer::CheckInitSriptL()
     CleanupClosePushL( fs );
     
     RFileReadStream tmpFile;
-    TInt err( KErrNone );
     TBuf<KMaxFileName> privatePath;
     TBuf<KMaxFileName> schema;
     TBuf<KMaxFileName> defaultImportProfile;
@@ -872,8 +869,8 @@ void CMdSServer::CheckInitSriptL()
     
     CFileMan* fileMan = CFileMan::NewL( fs );
     CleanupStack::PushL( fileMan);
-            
-    err = tmpFile.Open( fs, schema, EFileRead | EFileShareAny );
+    
+    TInt err = tmpFile.Open( fs, schema, EFileRead | EFileShareAny );
     __LOG1( ELogAlways, "open schema.mde %d", err );
     tmpFile.Close();
     if ( err != KErrNone )

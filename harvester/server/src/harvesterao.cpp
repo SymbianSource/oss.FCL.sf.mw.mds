@@ -47,7 +47,7 @@ const TInt KPlaceholderQueueSize = 99;
 const TInt KContainerPlaceholderQueueSize = 10;
 const TInt KObjectDefStrSize = 20;
 
-const TInt KCacheItemCountForEventCaching = 1;
+const TInt KHarvesterAOCustomPriority = 5;
 
 _LIT( KTAGDaemonName, "ThumbAGDaemon" );
 _LIT( KTAGDaemonExe, "thumbagdaemon.exe" );
@@ -114,7 +114,7 @@ CHarvesterAO* CHarvesterAO::NewL()
 // CHarvesterAO
 // ---------------------------------------------------------------------------
 //
-CHarvesterAO::CHarvesterAO() : CActive( CActive::EPriorityStandard )
+CHarvesterAO::CHarvesterAO() : CActive( KHarvesterAOCustomPriority)
     {
     WRITELOG( "CHarvesterAO::CHarvesterAO() - begin" );
     
@@ -123,7 +123,6 @@ CHarvesterAO::CHarvesterAO() : CActive( CActive::EPriorityStandard )
     
     iContextEngineInitialized = EFalse;
     iMdeSessionInitialized = EFalse;
-    iHarvesting = EFalse;
     }
      
 // ---------------------------------------------------------------------------
@@ -320,7 +319,7 @@ void CHarvesterAO::StartMonitoring()
     {
     WRITELOG( "CHarvesterAO::StartMonitoring()" );
 
-    TInt count( iMonitorPluginArray.Count() );  
+    const TInt count( iMonitorPluginArray.Count() );  
     
     for ( TInt i = 0; i < count; i++ )
         {
@@ -337,7 +336,7 @@ void CHarvesterAO::StopMonitoring()
     {
     WRITELOG( "CHarvesterAO::StopMonitoring()" );
 
-    TInt count( iMonitorPluginArray.Count() );
+    const TInt count( iMonitorPluginArray.Count() );
     
     for ( TInt i = 0; i < count; i++ )
         {
@@ -352,7 +351,7 @@ void CHarvesterAO::StopMonitoring()
 void CHarvesterAO::PauseMonitoring()
     {
     WRITELOG( "CHarvesterAO::PauseMonitoring()" );
-    TInt count( iMonitorPluginArray.Count() );
+    const TInt count( iMonitorPluginArray.Count() );
     
     for ( TInt i = 0; i<count; i++ )
         {
@@ -369,7 +368,7 @@ void CHarvesterAO::ResumeMonitoring()
     {
     WRITELOG( "CHarvesterAO::ResumeMonitoring()" );
     
-    TInt count( iMonitorPluginArray.Count() );
+    const TInt count( iMonitorPluginArray.Count() );
     
     for ( TInt i=0; i < count; i++ )
         {
@@ -389,7 +388,6 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 	
     TUint32 mediaId(0);
     TUint removed(0);
-    TInt err(0);
     CHarvesterData* hd = NULL;
     
 #ifdef _DEBUG
@@ -402,6 +400,8 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 		iReadyPHArray.ResetAndDestroy();
 		}
 
+    TInt err( KErrNone );
+	
 #ifdef _DEBUG
 	WRITELOG1( "CHarvesterAO::HandleUnmount() iPHArray.Count() = %d", iPHArray.Count() );
 #endif
@@ -466,14 +466,15 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 	removed = 0;
 	
 	RPointerArray<CHarvesterPluginInfo>& hpiArray = iHarvesterPluginFactory->GetPluginInfos();
-	if( hpiArray.Count() > 0 )
+	const TInt arrayCount( hpiArray.Count() );
+	if( arrayCount > 0 )
 		{
 		RArray<TItemId> placeholders;
 		
-		TUint32 mediaId(0);
-		TInt err(0);
+		TUint32 mediaId( 0 );
+		TInt err( KErrNone );
 		
-		for( TInt i = hpiArray.Count(); --i >= 0; )
+		for( TInt i = arrayCount; --i >= 0; )
 			{
 			CHarvesterPluginInfo* hpi = hpiArray[i];
 			for( TInt j = hpi->iQueue.Count(); --j >= 0; )
@@ -529,8 +530,7 @@ void CHarvesterAO::StartComposersL()
     TCleanupItem cleanupItem( MdsUtils::CleanupEComArray, &infoArray );
     CleanupStack::PushL( cleanupItem );
     CComposerPlugin::ListImplementationsL( infoArray );
-    TInt count( 0 );
-    count = infoArray.Count();
+    const TInt count( infoArray.Count() );
 
     for ( TInt i=0; i < count; i++ )
         {
@@ -560,7 +560,8 @@ void CHarvesterAO::StopComposers()
     {
     WRITELOG( "CHarvesterAO::StopComposers()" );
     
-    for ( TInt i = iComposerPluginArray.Count(); --i >= 0; )
+    const TInt count( iComposerPluginArray.Count() );
+    for ( TInt i = count; --i >= 0; )
         {
         iComposerPluginArray[i]->RemoveSession();
         }
@@ -589,7 +590,8 @@ TBool CHarvesterAO::IsComposingReady()
     {
     WRITELOG( "CHarvesterAO::IsComposingReady()" );
     
-    for ( TInt i = iComposerPluginArray.Count(); --i >= 0; )
+    const TInt count( iComposerPluginArray.Count() );
+    for ( TInt i = count; --i >= 0; )
         {
         if ( iComposerPluginArray[i]->IsComposingComplete() == EFalse )
             {
@@ -706,7 +708,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		    TEntry* entry = new (ELeave) TEntry();
 		    CleanupStack::PushL( entry );
 		    const TDesC& uri = hd->Uri();
-		    TInt err = iFs.Entry( uri, *entry );
+		    const TInt err = iFs.Entry( uri, *entry );
 		    if ( err != KErrNone )
 		    	{
 		    	WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - cannot create placeholder data object for camera. file does not exists" );
@@ -771,16 +773,25 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
     	// set origin
 		mdeObject->AddUint8PropertyL( *iPropDefs->iOriginPropertyDef, hd->Origin() );
     	
-    	CPlaceholderData* ph = static_cast<CPlaceholderData*>( hd->ClientData() );
-	    TInt isPreinstalled = ph->Preinstalled();
+    	CPlaceholderData* ph = NULL;
+    	if( hd->TakeSnapshot() )
+    	    {
+    	    ph = static_cast<CPlaceholderData*>( hd->ClientData() );
+    	    }
+    	else
+    	    {
+    	    ph = phData;
+    	    }
+    	
+	    const TInt isPreinstalled = ph->Preinstalled();
 	    if( isPreinstalled == MdeConstants::MediaObject::EPreinstalled )
 	    	{
 	    	WRITELOG("CHarvesterAO::HandlePlaceholdersL() - preinstalled");
 	    	mdeObject->AddInt32PropertyL( *iPropDefs->iPreinstalledPropertyDef, isPreinstalled );
-	    	}	    
+	    	}
 		
 	    hd->SetEventType( EHarvesterEdit );
-	    
+		
 		// skip 
 		if( hd->TakeSnapshot() )
 			{
@@ -803,7 +814,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		iPHArray.Remove( i );
 		}
 	
-	TInt objectCount = mdeObjectArray.Count();  
+	const TInt objectCount = mdeObjectArray.Count();  
 	
     if( objectCount > 0 )
 		{
@@ -827,7 +838,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 			}
 		
 #ifdef _DEBUG
-		for (TInt i = 0; i < mdeObjectArray.Count(); ++i)
+		for (TInt i = 0; i < objectCount; ++i)
 			{
 			CMdEObject* mdeObject = mdeObjectArray[i];
 			if(mdeObject->Id() == 0)
@@ -1026,8 +1037,7 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
 	        		WRITELOG( "CHarvesterAO::HarvestingCompleted() - Creating location object. " );
 	        		RLocationObjectManipulator lo;
 	        		
-	        		TInt loError = KErrNone;     		
-	        		loError = lo.Connect();
+	        		const TInt loError = lo.Connect();     		
 	        		
 	        		if (loError == KErrNone)
 	        			{
@@ -1081,6 +1091,8 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
         else
             {
             WRITELOG1( "CHarvesterAO::HarvestingCompleted() - unknown error: %d", errorCode );
+            delete aHD;
+            aHD = NULL;
             }
         
         WRITELOG( "==============================ERROR done =========================" );
@@ -1115,6 +1127,13 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         	{
             WRITELOG( "CHarvesterAO::HandleSessionOpened() - error creating mde harvester session" );
         	}
+        
+        TRAPD( ohTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
+        if ( ohTrap != KErrNone )
+                {
+                WRITELOG( "CHarvesterAO::HandleSessionOpened() - ObjectHandler creation failed" );
+                }
+        
 #ifdef _DEBUG
         TRAP( errorTrap, PreallocateNamespaceL( aSession.GetDefaultNamespaceDefL() ) );
         if ( errorTrap != KErrNone )
@@ -1165,12 +1184,6 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         	{
         	WRITELOG( "CHarvesterAO::HandleSessionOpened() - couldn't create on demand observer" );
         	}
-
-    	TRAPD( ohTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
-    	if ( ohTrap != KErrNone )
-				{
-				WRITELOG( "CHarvesterAO::HandleSessionOpened() - ObjectHandler creation failed" );
-				}
     	
         // Initializing pause indicator
         iServerPaused = EFalse;
@@ -1297,6 +1310,9 @@ void CHarvesterAO::RunL()
         case ERequestIdle:
             {
             WRITELOG( "CHarvesterAO::RunL - ERequestIdle" );
+            iReadyPHArray.Compress();
+            iContainerPHArray.Compress();
+            iPHArray.Compress();
             }
         break;
 
@@ -1308,15 +1324,6 @@ void CHarvesterAO::RunL()
             // harvest new items first...
             if ( iQueue->ItemsInQueue() > 0 )
                 {
-                if ( !iHarvesting )
-                	{
-                	iHarvesting = ETrue;
-                	iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateStarted );
-                	// This next line is for caching the harvester started event for observers registering
-                	// after harvesting has already started
-                	iHarvesterEventManager->IncreaseItemCount( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
-                	}
-                
                 ReadItemFromQueueL();
 				SetNextRequest( ERequestHarvest );
                 }
@@ -1337,24 +1344,24 @@ void CHarvesterAO::RunL()
 #ifdef _DEBUG
             		WRITELOG1("CHarvesterAO::RunL - items in ready pharray: %d", iReadyPHArray.Count() );
 #endif   		
-            		for ( TInt i = iReadyPHArray.Count(); --i >= 0; )
+            		const TInt beginIndex( iReadyPHArray.Count() );
+            		TInt endIndex( beginIndex - KPlaceholderQueueSize );
+            		if( endIndex < 0 )
+            		    {
+            		    endIndex = 0;
+            		    }
+            		for ( TInt i = beginIndex; --i >= endIndex; )
             			{
                 		CheckFileExtensionAndHarvestL( iReadyPHArray[i] );
                 		iReadyPHArray.Remove( i );
             			}
+            		if( iReadyPHArray.Count() )
+            		    {
+            		    SetNextRequest( ERequestHarvest );
+            		    break;
+            		    }
             		iReadyPHArray.Reset();
             		}
-				
-				if ( iHarvesting && !UnharvestedItemsLeftInPlugins() && 
-					 !iReHarvester->ItemsInQueue() )
-					{
-					iHarvesting = EFalse;						
-					iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
-					iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
-				    iReadyPHArray.Compress();
-				    iContainerPHArray.Compress();
-				    iPHArray.Compress();
-					}
 
                 SetNextRequest( ERequestIdle );
                 }
@@ -1797,13 +1804,13 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
             return;
             }
 
-        #ifdef _DEBUG
+#ifdef _DEBUG
         const TInt count = albumIds.Count();
         for (TInt i = 0; i < count; ++i)
             {
             WRITELOG2( "RHarvesterClient::HarvestFileWithUID - album id[%d]: %d", i, albumIds[i] );
             }
-        #endif
+#endif
         
         delete albumIdBuf;
         albumIdBuf = NULL;
@@ -2411,7 +2418,7 @@ void CHarvesterAO::SetHarvesterStatusObserver( MHarvesterStatusObserver* aObserv
 TBool CHarvesterAO::UnharvestedItemsLeftInPlugins()
 	{
 	RPointerArray<CHarvesterPluginInfo>& infos = iHarvesterPluginFactory->GetPluginInfos();
-	TInt count = infos.Count();
+	const TInt count = infos.Count();
 	for ( TInt i = count; --i >= 0; )
 		{
 		if ( infos[i]->iQueue.Count() > 0 )

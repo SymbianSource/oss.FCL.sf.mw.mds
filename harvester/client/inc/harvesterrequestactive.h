@@ -137,7 +137,7 @@ private:
     /**
      * Session. Ref.
      */
-    RHarvesterClient& iClient;
+    RHarvesterClient iClient;
 
     /**
      * Observer to receive notifications about completed operations. Not owned.
@@ -157,7 +157,7 @@ private:
     TBool iAddLocation;
     
     // not own
-    CHarvesterRequestQueue* iRequestQueue;
+    mutable CHarvesterRequestQueue* iRequestQueue;
     
     TPckg<TBool> iLocation;
     
@@ -172,6 +172,8 @@ private:
      * If set, this request object can be deleted.
      */
     TBool iRequestCompleted;
+    
+    TBool iCancelled;
 };
 
 #endif // HARVESTERREQUESTACTIVE_H
@@ -180,7 +182,7 @@ private:
 
 // INLINE FUNCTIONS
 
-inline TBool CHarvesterRequestActive::RequestCompleted()const
+inline TBool CHarvesterRequestActive::RequestCompleted() const
     {
     return iRequestCompleted;
     }

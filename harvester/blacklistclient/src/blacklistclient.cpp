@@ -151,7 +151,7 @@ void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) cons
     ipcArgs.Set( 1, &aUri );
     ipcArgs.Set( 2, &mediaIdPckg );
  
-    TInt err = SendReceive( EBlacklistRemoveFromDB, ipcArgs );
+    const TInt err = SendReceive( EBlacklistRemoveFromDB, ipcArgs );
     User::LeaveIfError( err );
 
     WRITELOG( "CBlacklistServer::RemoveFromDBL - end" );
@@ -168,7 +168,7 @@ void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
     TPckgBuf<TInt> handleBuf;
     TIpcArgs ipcArgs;
     ipcArgs.Set( 1, &handleBuf );
-    TInt err = SendReceive( EGetBlacklistData, ipcArgs );
+    const TInt err = SendReceive( EGetBlacklistData, ipcArgs );
     User::LeaveIfError( err );
     aHandle = handleBuf();
 
@@ -270,7 +270,7 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
     {
     WRITELOG( "CBlacklistServer::RemoveFromMemoryTableL - begin" );
 
-    TInt index = GetListIndex( aUri, aMediaId );
+    const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
         CBlacklistItem* item = iBlacklistMemoryTable[index];
@@ -290,7 +290,7 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
     {
     WRITELOG( "CBlacklistServer::IsBlacklistedL - begin" );
 
-    TInt index = GetListIndex( aUri, aMediaId );
+    const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
         TInt64 modified( 0 );

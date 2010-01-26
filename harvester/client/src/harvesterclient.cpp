@@ -169,7 +169,11 @@ EXPORT_C void RHarvesterClient::Close()
     
     WRITELOG( "RHarvesterClient::Close() - UnregisterHarvest done" );
     
-    iRequestQueue->ForceRequests();
+    if( iRequestQueue && iRequestQueue->RequestsPending() )
+        {
+        iRequestQueue->Cancel();
+        iRequestQueue->ForceRequests();
+        }
     
     delete iRequestQueue;
     iRequestQueue = NULL;

@@ -234,7 +234,7 @@ void CMMCMountTaskAO::RunL()
 			
 			RMsgQueue<TInt> unmountQueue;
 			_LIT( KUnmountHandlerAOString, "unmounthandlerao" );
-			TInt err = unmountQueue.OpenGlobal( KUnmountHandlerAOString );
+			const TInt err = unmountQueue.OpenGlobal( KUnmountHandlerAOString );
 			if( err == KErrNone )
 				{
 				unmountQueue.Send( iMountData->iMediaID );
@@ -281,21 +281,25 @@ void CMMCMountTaskAO::RunL()
 					SetNextRequest( ERequestStartTask );
 					break;
 					}
-				}
-			else
-				{
-				RemoveNotPresentFromMDE();
-				SetNextRequest( ERequestCleanup );
-				break;
-				}
 				
-			if ( iHarvestEntryArray.Count() > 0 )
+	            if ( iEntryArray.Count() > 0 )
+	                {
+	                SetNextRequest( ERequestHandleFileEntry );
+	                break;
+	                }
+				}
+			
+		    if ( iHarvestEntryArray.Count() > 0 )
 				{
 				SetNextRequest( ERequestHandleReharvest );
+				break;
 				}
 			else
 				{
-				SetNextRequest( ERequestHandleFileEntry );
+                // All detected entries are set as present at this stage, clear not present entries
+                RemoveNotPresentFromMDE();
+                SetNextRequest( ERequestCleanup );
+                break;
 				}
 			}
 		break;
@@ -430,7 +434,10 @@ void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray 
 		aArray.Remove( 0 );
 		}
 	
-	aArray.Compress();
+    if( aArray.Count() == 0 )
+        {
+        aArray.Compress();
+        }
 			
 	if ( iObserver )
 		{
@@ -473,8 +480,8 @@ void CMMCMountTaskAO::StopNotifyL()
 void CMMCMountTaskAO::Initialize()
 	{
 	WRITELOG( "CMMCMountTaskAO::Initialize" );
-	iEntryArray.Reset();
-	iHarvestEntryArray.Reset();
+    iEntryArray.ResetAndDestroy();
+    iHarvestEntryArray.ResetAndDestroy();
 	}
 	
 void CMMCMountTaskAO::Deinitialize()
@@ -511,7 +518,7 @@ TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
 	TDriveList driveList;
     TInt numOfElements( 0 );
 
-    TInt err = DriveInfo::GetUserVisibleDrives( 
+    const TInt err = DriveInfo::GetUserVisibleDrives( 
     		iFs, driveList, numOfElements, 
     		KDriveAttExclude | KDriveAttRemote | KDriveAttRom );
     if( err != KErrNone )
@@ -531,7 +538,7 @@ TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
 	        	{
 	        	// check if disk is internal
 	        	TUint driveStatus;
-	        	TInt err = DriveInfo::GetDriveStatus( iFs, i, driveStatus );
+	        	const TInt err = DriveInfo::GetDriveStatus( iFs, i, driveStatus );
 	        	if ( (err == KErrNone ) && ( driveStatus & DriveInfo::EDriveInternal ) )
 	        		{
 	        		// get media id

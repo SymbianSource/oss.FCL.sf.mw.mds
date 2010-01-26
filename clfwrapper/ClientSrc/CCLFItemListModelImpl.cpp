@@ -482,7 +482,7 @@ void CCLFItemListModelImpl::OperationCompleteL( TInt aError )
         error = iItemProvider->GetItems( iItemArray );
         if ( error == KErrNone )
             {
-            TRAP( error, RefreshL( ECLFRefreshAll ) );
+            RefreshL( ECLFRefreshAll );
             }
         }
     iOperationObserver.HandleOperationEventL( ECLFRefreshComplete, error );

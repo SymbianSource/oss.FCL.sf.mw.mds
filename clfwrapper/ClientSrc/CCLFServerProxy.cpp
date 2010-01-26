@@ -17,7 +17,7 @@
 
 
 // INCLUDE FILES
-#include <PathInfo.h>
+#include <pathinfo.h>
 #include <driveinfo.h>
 #include <s32mem.h>
 #include <bautils.h>
@@ -186,7 +186,7 @@ void CUpdateIDsHandler::HandleObjectNotification( const TItemId aId, TObserverNo
     {
     iWasNotificationHandled = EFalse;
 
-    TInt index = iIdsPendingUpdate.Find( aId );
+    const TInt index = iIdsPendingUpdate.Find( aId );
     if ( index != KErrNotFound )
         {
         iWasNotificationHandled = ETrue;
@@ -286,7 +286,7 @@ void CItemsDeletedHandler::HandleObjectNotification( const TItemId aId, TObserve
 
     if ( aType == ENotifyRemove )
         {
-        TInt index = iIdsPendingRemoval.Find( aId );
+        const TInt index = iIdsPendingRemoval.Find( aId );
         if ( index != KErrNotFound )
             {
             iWasNotificationHandled = ETrue;
@@ -708,13 +708,14 @@ void CUpdateFoldersHandler::DoHarvestL( const TDesC& aUri )
 //
 void CUpdateFoldersHandler::HarvestingComplete( TDesC& aURI, const TInt aError )
     {
-    const TFileName uri( aURI );
     TBool match( EFalse );
     TCollationMethod m = *Mem::CollationMethodByIndex( 0 );
 
     iHarvestError = aError;
     m.iFlags = ( TCollationMethod::EIgnoreNone | TCollationMethod::EFoldCase );   
 
+    const TFileName uri( aURI );
+    
     if ( uri.CompareC( iHarvestingFile, 3, &m ) == 0 )
         {
         match = ETrue;
@@ -1021,6 +1022,7 @@ void CCLFServerProxy::StartHandlingL( CUpdateItemsHandler* aHandler )
         if ( aHandler->AllDone() )
             {
             delete aHandler;
+            aHandler = NULL;
             iUpdateItemsHandlerArray.Remove( iUpdateItemsHandlerArray.Count() - 1 );
             }
         else
@@ -1059,6 +1061,7 @@ void CCLFServerProxy::HandleObjectNotification( CMdESession& /*aSession*/,
                 iUpdateItemsHandlerArray[ j ]->AsyncStopScheduler();
                 iUpdateItemsHandlerArray[j]->SetRemoveObserverFlag( EFalse );
                 delete iUpdateItemsHandlerArray[ j ]; 
+                iUpdateItemsHandlerArray[ j ] = NULL;
                 iUpdateItemsHandlerArray.Remove( j );
                 j--; // Compensate for the removed handler
                 }
@@ -1108,6 +1111,7 @@ void CCLFServerProxy::HandleObjectPresentNotification( CMdESession& /*aSession*/
                 iUpdateItemsHandlerArray[ j ]->AsyncStopScheduler();
                 iUpdateItemsHandlerArray[j]->SetRemoveObserverFlag( EFalse );
                 delete iUpdateItemsHandlerArray[ j ]; 
+                iUpdateItemsHandlerArray[ j ] = NULL;
                 iUpdateItemsHandlerArray.Remove( j );
                 j--; // Compensate for the removed handler
                 }

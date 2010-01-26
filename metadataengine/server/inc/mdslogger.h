@@ -45,8 +45,8 @@ enum TLogCategory
     ELogServer      = 0x0010, // client/server commands
     };
 
-
 #ifdef LOG_MASTER_FLAG
+#ifdef _DEBUG
 
 const TChar KNewLine = '\n';
 const TInt KLineLength = 80;
@@ -57,7 +57,9 @@ _LIT(KDirectory, "Metadata");
 _LIT(KFilename, "server.txt");
 _LIT(KAltFilename, "server2.txt");
 
+#ifdef LOG_QUERY
 #define MDE_FILE_LOGGING
+#endif
 
 // CLASS DECLARATION
 /**
@@ -164,11 +166,11 @@ class CMdSLogger : public CBase
     #define __LOG1(CATEGORY,A,B)        {if (gLogger->IsActive(CATEGORY)) { gLogger->Log().WriteFormat( _L(A), B ); gLogger->CheckSize( 1 ); }}
     #define __LOG2(CATEGORY,A,B,C)      {if (gLogger->IsActive(CATEGORY)) { gLogger->Log().WriteFormat( _L(A), B, C ); gLogger->CheckSize( 1 ); }}
     #define __LOG3(CATEGORY,A,B,C,D)    {if (gLogger->IsActive(CATEGORY)) { gLogger->Log().WriteFormat( _L(A), B, C, D ); gLogger->CheckSize( 1 ); }}
-#else
+#else // MDE_FILE_LOGGING
 	#define __LOG1(CATEGORY,A,B)        {if (gLogger->IsActive(CATEGORY)) { RDebug::Print( _L(A), B ); }}
 	#define __LOG2(CATEGORY,A,B,C)      {if (gLogger->IsActive(CATEGORY)) { RDebug::Print( _L(A), B, C ); }}
 	#define __LOG3(CATEGORY,A,B,C,D)    {if (gLogger->IsActive(CATEGORY)) { RDebug::Print( _L(A), B, C, D ); }}
-#endif
+#endif // MDE_FILE_LOGGING
 
 	#ifdef LOG_QUERY
 	    #define __LOGQUERY_16(INFO, BUFFER, ROWDATA) \
@@ -180,7 +182,23 @@ class CMdSLogger : public CBase
 	    #define __LOGQUERY_16(INFO, BUFFER, ROWDATA)
 	#endif //LOG_QUERY
 
-#else
+#else // _DEBUG
+
+#define __DEFINE_LOGGER 
+#define __USES_LOGGER
+#define __INIT_LOGGER
+#define __DESTROY_LOGGER
+#define __LOGLB(CATEGORY,A)
+#define __LOG(CATEGORY,A)
+#define __LOG1(CATEGORY,A,B)
+#define __LOG2(CATEGORY,A,B,C)
+#define __LOG3(CATEGORY,A,B,C,D)
+#define __LOGQUERY_16(INFO, BUFFER, ROWDATA)
+
+#endif // _DEBUG
+
+#else // LOG_MASTER_FLAG
+
     #define __DEFINE_LOGGER 
     #define __USES_LOGGER
     #define __INIT_LOGGER
@@ -191,7 +209,8 @@ class CMdSLogger : public CBase
     #define __LOG2(CATEGORY,A,B,C)
     #define __LOG3(CATEGORY,A,B,C,D)
 	#define __LOGQUERY_16(INFO, BUFFER, ROWDATA)
-#endif  // METADATA_LOG
+
+#endif  // LOG_MASTER_FLAG
 
 
 #endif  //__MDSLOGGER_H__

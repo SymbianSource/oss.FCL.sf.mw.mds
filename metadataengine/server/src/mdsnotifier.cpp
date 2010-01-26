@@ -108,7 +108,7 @@ void CMdSNotifier::TEntry::TriggerL(
 	TUint32 aCompleteCode,
     const RArray<TItemId>& aIdArray )
     {
-    TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
+    const TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
     iRemoteSizeMsgSlot = KErrNotFound;
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
@@ -137,7 +137,7 @@ void CMdSNotifier::TEntry::TriggerRelationItemsL(
 	CMdCSerializationBuffer& aBuffer,
 	const RArray<TItemId>& aRelationIdArray)
     {
-    TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
+    const TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
     iRemoteSizeMsgSlot = KErrNotFound;
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
@@ -303,7 +303,7 @@ void CMdSNotifier::TEntry::CacheL(TUint32 aCompleteCode)
 void CMdSNotifier::TEntry::TriggerCachedL(TUint32 aCompleteCode, 
 		CMdCSerializationBuffer* aData)
     {
-    TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
+    const TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
     iRemoteSizeMsgSlot = KErrNotFound;
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
@@ -596,7 +596,7 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	            	if(e.IsPending())
 	            		{
 		            	// Match found. Trigger notifier entry.
-		            	TInt err;
+		            	TInt err( KErrNone );
 		            	
 		            	if( allMatches )
 		            		{

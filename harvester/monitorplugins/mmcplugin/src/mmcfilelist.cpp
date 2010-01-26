@@ -52,6 +52,7 @@ void CMmcFileList::ConstructL()
 	{
 	iHem = CHarvesterEventManager::GetInstanceL();
 	iMediaIdUtil = &RMediaIdUtil::GetInstanceL();
+	CHarvesterCenRepUtil::GetIgnorePathL( iIgnorePaths );
 	}
 
 CMmcFileList::~CMmcFileList()
@@ -61,6 +62,8 @@ CMmcFileList::~CMmcFileList()
 		iHem->ReleaseInstance();
 		}
 	RMediaIdUtil::ReleaseInstance();
+	iIgnorePaths.ResetAndDestroy();
+	iIgnorePaths.Close();
 	}
 
 TBool CMmcFileList::IsDescInArray(const TPtrC& aSearch, const RPointerArray<HBufC>& aArray)
@@ -96,18 +99,22 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 	
 	WRITELOG1( "CMmcFileList::BuildFileListL - mediaId: %d", mediaId );
 	
-	RPointerArray<HBufC> ignorePaths;
-	TCleanupItem cleanupItem( MdsUtils::CleanupPtrArray<HBufC>, &ignorePaths );
-    CleanupStack::PushL( cleanupItem );
-    
-    CHarvesterCenRepUtil::GetIgnorePathL( ignorePaths );
-	
     CDir* directory = NULL;
     TFileName name; 
+    TBool rootDir( ETrue );
     
 	while ( path->Count() > 0 )
 		{
-		TInt error = aFs.GetDir( (*path)[0], KEntryAttDir, KHarvesterGetDirFlags, directory );
+		TInt error( KErrNone );
+		if( rootDir )
+		    {
+		    error = aFs.GetDir( (*path)[0], KEntryAttDir, KHarvesterGetRootDirFlags, directory );
+		    rootDir = EFalse;
+		    }
+		else
+		    {
+		    error = aFs.GetDir( (*path)[0], KEntryAttDir, KHarvesterGetDirFlags, directory );
+		    }
 		if ( error == KErrNone )
 			{
 			for ( TInt i=0; i < directory->Count(); ++i )
@@ -127,8 +134,8 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 			
 				if ( entry.IsDir() )
 					{
-					// If path is too long, skip it as the file cannot be supported
-	                if( name.Length() >= KMaxPath )
+					// If path is too long with backslash, skip it as the file cannot be supported
+	                if( name.Length() + 1 >= KMaxPath )
 	                    {
 	                    continue;
 	                    }
@@ -140,7 +147,7 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 					// remove drive letter and colon from path
 					TPtrC pathOnly = name.Mid( 2 );
 					
-					if ( IsDescInArray( pathOnly, ignorePaths ) )
+					if ( IsDescInArray( pathOnly, iIgnorePaths ) )
 						{
 						continue;
 						}
@@ -170,8 +177,6 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 		delete directory;
 		directory = NULL;
 		}
-	
-	CleanupStack::PopAndDestroy( &ignorePaths );
 	
 	CleanupStack::PopAndDestroy( path );
 	

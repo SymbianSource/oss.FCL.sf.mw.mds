@@ -25,6 +25,7 @@ class CMdESession;
 class CHarvesterBlacklist;
 class CHarvesterData;
 class CMdEPropertyDef;
+class CHarvesterEventManager;
 
 // Uid for this interface
 const TUid KCHarvesterPluginInterfaceUid = { 0x200009F8 };
@@ -240,6 +241,10 @@ private:
 
 	CMdEPropertyDef* iOriginPropertyDef;
 	CMdEPropertyDef* iTitlePropertyDef;
+	
+    TBool iHarvesting;
+	
+	CHarvesterEventManager* iHarvesterEventManager;
     };
 
 #endif // __CHARVESTERPLUGIN_H__

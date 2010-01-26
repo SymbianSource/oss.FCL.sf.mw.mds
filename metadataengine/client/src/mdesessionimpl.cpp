@@ -222,6 +222,9 @@ CMdESessionImpl::CMdESessionImpl(MMdESessionObserver& aObserver)
 
 CMdESessionImpl::~CMdESessionImpl()
 	{
+    // No session errors should be sent during deconstruction to avoid possible double deletion
+    iSessionObserver = NULL;
+    
 	Close();
 
 	delete iSchemaBuffer;
@@ -450,7 +453,7 @@ void CMdESessionImpl::RemoveSchemaObserverL(MMdESchemaObserver& aObserver)
 
 	CMdENamespaceDef& defaultNamespaceDef = GetDefaultNamespaceDefL();
 
-    TInt index = FindNotifier( ESchemaModify, &aObserver, defaultNamespaceDef );
+    const TInt index = FindNotifier( ESchemaModify, &aObserver, defaultNamespaceDef );
     if ( index != KErrNotFound )
         {
 	    iNotifiers[index]->Cancel();
@@ -1628,7 +1631,7 @@ TInt CMdESessionImpl::RemoveRelationsL(const RArray<TItemId>& aId,
 	CleanupStack::Pop( successfulBuffer );
 	CleanupClosePushL( dataBuffer );
     
-    TInt firstItemError = DeserializeIdsL( dataBuffer, NULL, NULL, 
+    const TInt firstItemError = DeserializeIdsL( dataBuffer, NULL, NULL, 
     		&aSuccessful );
     CleanupStack::PopAndDestroy( &dataBuffer ); // successfulBuffer, buffer
     CleanupStack::PopAndDestroy( buffer ); // successfulBuffer, buffer
@@ -2093,7 +2096,7 @@ TInt CMdESessionImpl::RemoveEventsL( const RArray<TItemId>& aId,
 	CleanupClosePushL( dataBuffer );
 	
     iSession.DoRemoveItemsL( *buffer, *successfulBuffer );
-    TInt firstItemError = DeserializeIdsL( dataBuffer, NULL, 
+    const TInt firstItemError = DeserializeIdsL( dataBuffer, NULL, 
     		&aSuccessful );
 
     CleanupStack::PopAndDestroy( &dataBuffer );
@@ -2511,7 +2514,7 @@ void CMdESessionImpl::RemoveObjectObserverL(
     	namespaceDef = aNamespaceDef;
     	}
 
-    TInt index = FindNotifier( 
+    const TInt index = FindNotifier( 
     		EObjectNotifyAdd | EObjectNotifyModify | EObjectNotifyRemove,
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
@@ -2533,7 +2536,7 @@ void CMdESessionImpl::RemoveObjectPresentObserverL(
 	// if namespace is not given get default namespace definition
     CMdENamespaceDef& namespaceDef = GetDefaultNamespaceDefL();
 
-    TInt index = FindNotifier( EObjectNotifyPresent | EObjectNotifyNotPresent,
+    const TInt index = FindNotifier( EObjectNotifyPresent | EObjectNotifyNotPresent,
     		&aObserver, namespaceDef );
     if ( index != KErrNotFound )
         {
@@ -2562,7 +2565,7 @@ void CMdESessionImpl::RemoveRelationObserverL(
     	namespaceDef = aNamespaceDef;
     	}
 
-    TInt index = FindNotifier( 
+    const TInt index = FindNotifier( 
     		ERelationNotifyAdd | ERelationNotifyModify | ERelationNotifyRemove,
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
@@ -2592,7 +2595,7 @@ void CMdESessionImpl::RemoveRelationItemObserverL(
     	namespaceDef = aNamespaceDef;
     	}
 
-    TInt index = FindNotifier( 
+    const TInt index = FindNotifier( 
     		/*ERelationItemNotifyAdd | ERelationItemNotifyModify |*/ 
     		ERelationItemNotifyRemove,
     		&aObserver, *namespaceDef );
@@ -2615,7 +2618,7 @@ void CMdESessionImpl::RemoveRelationPresentObserverL(
 	// if namespace is not given get default namespace definition
     CMdENamespaceDef& namespaceDef = GetDefaultNamespaceDefL();
 
-    TInt index = FindNotifier( 
+    const TInt index = FindNotifier( 
     		ERelationNotifyPresent | ERelationNotifyNotPresent,
     		&aObserver, namespaceDef );
     if ( index != KErrNotFound )
@@ -2645,7 +2648,7 @@ void CMdESessionImpl::RemoveEventObserverL(
     	namespaceDef = aNamespaceDef;
     	}
     
-    TInt index = FindNotifier( EEventNotifyAdd | EEventNotifyRemove,
+    const TInt index = FindNotifier( EEventNotifyAdd | EEventNotifyRemove,
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
@@ -2676,7 +2679,7 @@ TInt CMdESessionImpl::FindNotifier( TUint32 aNotifyType, TAny* aObserver,
 
 void CMdESessionImpl::NotifierInError( CMdENotifierAO* aNotifier )
     {
-    TInt index = iNotifiers.Find( aNotifier );
+    const TInt index = iNotifiers.Find( aNotifier );
     delete aNotifier;
     iNotifiers.Remove( index );
     }

@@ -525,7 +525,6 @@ class CHarvesterAO : public CActive,
         CHarvesterEventManager* iHarvesterEventManager;
                 
         MHarvesterStatusObserver* iHarvesterStatusObserver;
-        TBool iHarvesting;
         
         CRestoreWatcher* iRestoreWatcher;
         

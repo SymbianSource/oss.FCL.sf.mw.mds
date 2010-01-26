@@ -148,11 +148,11 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
             WRITELOG( "CHarvesterQueue::Append() - found a blacklisted file" );
             delete aItem;
             aItem = NULL;
-            err = KErrCorrupt;
+            return;
             }
         }
 
-    if ( err != KErrCorrupt )
+    if ( err == KErrNone )
         {
 		// check if fast harvest file and add to start of queue
     	if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
@@ -168,13 +168,8 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
 			{
 			delete aItem;
 			aItem = NULL;
+			return;
 			}
-        }
-
-    if ( err != KErrNone )
-        {
-        WRITELOG1( "CHarvesterQueue::Append() - error: %d", err );
-        delete aItem;
         }
     }
 
@@ -253,9 +248,5 @@ void CHarvesterQueue::MonitorEvent(
     	{
     	MonitorEvent( aHarvesterDataArray[i] );
     	}
-    
-    // "clear" array after ownership of items
-    // was changed for MonitorEvent-method
-    aHarvesterDataArray.Reset();
     }
 

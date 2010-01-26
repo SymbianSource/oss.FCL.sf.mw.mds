@@ -258,7 +258,7 @@ void CCLFItemImpl::DetermineIfMusicL( CMdEObjectDef& aObjectDef, TInt32& aValue 
         {
         // Get the actual data
         CMdEProperty* prop = NULL;
-        TInt index = iMdEObject.Property( *propertyDef, prop );
+        const TInt index = iMdEObject.Property( *propertyDef, prop );
         if ( prop )
             {
             const TInt num = sizeof ( clfwrappermusictypes ) / sizeof( TDesC* );

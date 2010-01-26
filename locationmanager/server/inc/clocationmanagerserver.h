@@ -224,7 +224,7 @@ public:
      * @param aHandle
      * @return None.
      */
-    void CLocationManagerServer::CancelTrackLogNotificationRequest( const TInt aHandle );
+    void CancelTrackLogNotificationRequest( const TInt aHandle );
 
     /**
      * Get current network cell id.

@@ -293,7 +293,7 @@ class RMdsStatement
             {
             }
 
-        inline void RMdsStatement::Close()
+        inline void Close()
             {
             iStatement.Close();
             }

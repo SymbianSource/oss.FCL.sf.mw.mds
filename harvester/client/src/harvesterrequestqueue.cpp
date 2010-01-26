@@ -45,7 +45,7 @@ CHarvesterRequestQueue* CHarvesterRequestQueue::NewL()
 // C++ default constructor can NOT contain any code, that might leave.
 // ---------------------------------------------------------------------------
 //
-CHarvesterRequestQueue::CHarvesterRequestQueue(): CActive( CActive::EPriorityStandard )
+CHarvesterRequestQueue::CHarvesterRequestQueue(): CActive( CActive::EPriorityUserInput )
     {
     CActiveScheduler::Add( this );
     }
@@ -119,61 +119,81 @@ void CHarvesterRequestQueue::RunL()
     WRITELOG2( "CHarvesterRequestQueue::RunL() begin - requests: %d, active requests: %d",
                iRequests.Count(), iActiveRequests );
     
-    CHarvesterRequestActive* selectedRequest = NULL;
-    
-    for ( TInt i = 0; i < iRequests.Count(); i++ )
+    const TInt status = iStatus.Int();
+
+    if ( status >= KErrNone && !iShutdown )
         {
-        CHarvesterRequestActive* request = iRequests[i];
-        
-        // remove completed tasks    
-        if ( request->RequestCompleted() && !request->IsActive() )
+        CHarvesterRequestActive* selectedRequest = NULL;
+    
+        for ( TInt i = 0; i < iRequests.Count(); i++ )
             {
-            // delete completed task
-            delete request;
-            iRequests.Remove( i );
-            
-            // correct the index so that no tasks are skipped
-            i--;
-            if(i <= -1)
+            CHarvesterRequestActive* request = iRequests[i];
+        
+            // remove completed tasks    
+            if ( !request || (request->RequestCompleted() && !request->IsActive()) )
                 {
-                i = -1;
-                }
+                // delete completed task
+                delete request;
+                request = NULL;
+                iRequests.Remove( i );
             
-            WRITELOG( "CHarvesterRequestQueue::RunL() - removing completed request");
+                // correct the index so that no tasks are skipped
+                i--;
+                if(i <= -1)
+                    {
+                    i = -1;
+                    }
+            
+                WRITELOG( "CHarvesterRequestQueue::RunL() - removing completed request");
+                }
+            // select priorised task
+            else
+                {
+                // not yet activated
+                if( !request->IsActive() )
+                     {
+                    selectedRequest = request;
+                    break;
+                    }
+                }
             }
-        // select priorised task
+
+        // activate selected
+        if ( selectedRequest && !iShutdown )
+            {
+            iActiveRequests++;
+            selectedRequest->Start();
+            }
+ 
+#ifdef _DEBUG        
+        WRITELOG2( "CHarvesterRequestQueue::RunL() end - requests: %d, active requests: %d",
+                iRequests.Count(), iActiveRequests );
+#endif
+    
+        // continue processing if needed
+        if ( !iShutdown && (iActiveRequests < KMaxClientRequests)  && 
+                (iRequests.Count() > iActiveRequests))
+            {  
+            SetActive();
+            TRequestStatus* statusPtr = &iStatus;
+            User::RequestComplete( statusPtr, KErrNone );
+            }
         else
             {
-            // not yet activated
-            if( !request->IsActive() )
-                {
-                selectedRequest = request;
-                }
+            iRequests.Compress();
             }
         }
-
-    // activate selected
-    if ( selectedRequest )
+    else if( status != KErrCancel )
         {
-        iActiveRequests++;
-        selectedRequest->Start();
+        // continue processing if needed
+        if ( !iShutdown && (iActiveRequests < KMaxClientRequests)  && 
+                (iRequests.Count() > iActiveRequests))
+            {  
+            SetActive();
+            TRequestStatus* statusPtr = &iStatus;
+            User::RequestComplete( statusPtr, KErrNone );
+            }
         }
-    
-    WRITELOG2( "CHarvesterRequestQueue::RunL() end - requests: %d, active requests: %d",
-            iRequests.Count(), iActiveRequests );
-    
-    // continue processing if needed
-    if ( !iShutdown && (iActiveRequests < KMaxClientRequests)  && 
-            (iRequests.Count() > iActiveRequests))
-        {  
-        SetActive();
-        TRequestStatus* statusPtr = &iStatus;
-        User::RequestComplete( statusPtr, KErrNone );
-        }
-    else
-    	{
-    	iRequests.Compress();
-    	}
     }
 
 // ---------------------------------------------------------------------------
@@ -203,13 +223,18 @@ TInt CHarvesterRequestQueue::RunError( TInt aError )
 void CHarvesterRequestQueue::DoCancel()
     {
     WRITELOG( "CHarvesterRequestQueue::DoCancel()");
-    
-    for( TInt i(0); i < iRequests.Count(); i++ )
-        {
-        iRequests[i]->Cancel();
-        }
-    
+
     iShutdown = ETrue;
+    
+    const TInt count( iRequests.Count() );
+    for( TInt i = 0; i < count; i++ )
+        {
+        CHarvesterRequestActive* request = iRequests[i];
+        if( request )
+            {
+            request->Cancel();
+            }
+        }
     }
 
 
@@ -247,30 +272,40 @@ void CHarvesterRequestQueue::ForceRequests()
     {
     WRITELOG( "CHarvesterRequestQueue::ForceRequests()");
     
-    Cancel();
-    
     for ( TInt i = 0; i < iRequests.Count(); i++ )
         {
         CHarvesterRequestActive* request = iRequests[i];
-        // remove completed tasks    
-        if ( request->RequestCompleted() )
+          
+        if ( request && !request->RequestCompleted() )
             {
-            // delete completed task
-            delete request;
-            iRequests.Remove( i );
+			request->ForceHarvest();
+			}
+        // delete completed task
+        delete request;
+        request = NULL;
+        iRequests.Remove( i );
         
-            // correct the index so that no tasks are skipped
-            i--;
-            if(i <= -1)
-                {
-                i = -1;
-                }
-            }
-        else
+        // correct the index so that no tasks are skipped
+        i--;
+        if(i <= -1)
             {
-            iRequests[i]->ForceHarvest();
+            i = -1;
             }
         }
     }
 
+// ---------------------------------------------------------------------------
+// CHarvesterRequestQueue::DoCancel()
+// ---------------------------------------------------------------------------
+//
+TBool CHarvesterRequestQueue::RequestsPending()
+    {
+    if( iRequests.Count() > 0 )
+        {
+        return ETrue;
+        }
+    return EFalse;
+    }
+
 // End of file
+

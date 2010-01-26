@@ -25,6 +25,7 @@
 
 #include "harvesteraudioplugin.h"
 #include "harvesteraudiopluginutils.h"
+#include "mdsutils.h"
 
 #include "harvesterlog.h"
 
@@ -144,13 +145,15 @@ void CHarvesterAudioPlugin::HarvestL( CHarvesterData* aHD )
 	{
 	WRITELOG( "CHarvesterAudioPlugin::HarvestL()" );
 	
-	TInt err = KErrNone;
-	
-	TRAP( err, DoHarvestL( aHD ) );
-	
-	if ( err != KErrNone )
+	TRAPD( error, DoHarvestL( aHD ) );
+	if ( error != KErrNone )
 	    {
-	    aHD->SetErrorCode( err );
+        WRITELOG1( "CHarvesterAudioPlugin::HarvestL() - error: %d", error );
+        TInt convertedError = KErrNone;
+        MdsUtils::ConvertTrapError( error, convertedError );
+        aHD->SetErrorCode( convertedError );
+        WRITELOG1( "CHarvesterAudioPlugin::HarvestL() - returning: %d", convertedError );
+	    
 	    }
 	}
 
@@ -259,6 +262,8 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
 
 	CMdeObjectWrapper::HandleObjectPropertyL(
               mdeObject, *iPropDefs->iSizePropertyDef, &entry.iSize, aIsAdd );
+	
+	mdeObject.SetPlaceholder( EFalse );
     }
 
 // ---------------------------------------------------------------------------

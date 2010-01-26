@@ -322,17 +322,12 @@ void CHarvesterVideoPlugin::HarvestL( CHarvesterData* aHD )
         
         if ( isNewObject || mdeObject.Placeholder() )
             {
-            TRAP( error, HandleObjectPropertiesL( *aHD, *fileData, ETrue ) );
+            TRAP_IGNORE( HandleObjectPropertiesL( *aHD, *fileData, ETrue ) );
             mdeObject.SetPlaceholder( EFalse );
             }
         else
             {
-            TRAP( error, HandleObjectPropertiesL( *aHD, *fileData, EFalse ) );
-            }
-
-        if ( error != KErrNone )
-            {
-            WRITELOG1( "CHarvesterVideoPlugin::HarvestSingleFileL() - Handling object failed: ", error );
+            TRAP_IGNORE( HandleObjectPropertiesL( *aHD, *fileData, EFalse ) );
             }
     	}
     else

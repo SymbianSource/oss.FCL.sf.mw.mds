@@ -19,7 +19,7 @@
 #include <e32std.h>
 #include <uri16.h>
 #include <e32math.h>
-#include <LbsPosition.h> 
+#include <lbsposition.h> 
 #include <etel3rdparty.h>
 
 #include "locationcontextplugin.h"

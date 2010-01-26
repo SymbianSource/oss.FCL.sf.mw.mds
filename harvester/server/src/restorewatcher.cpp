@@ -19,7 +19,7 @@
 #include <centralrepository.h>
 #include <sbdefs.h>
 #include <driveinfo.h>
-#include <PathInfo.h>
+#include <pathinfo.h>
 
 // USER INCLUDE
 #include "restorewatcher.h"

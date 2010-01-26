@@ -1122,6 +1122,7 @@ TInt CLocationManagerServer::DeleteTrackLogL( const TDesC& aUri )
     	{
     	TItemId objectId = mdeObject->Id();
 	    delete mdeObject;
+	    mdeObject = NULL;
 	    
 		TTime time( 0 );
 		CMdENamespaceDef& nsDef = iMdeSession->GetDefaultNamespaceDefL();

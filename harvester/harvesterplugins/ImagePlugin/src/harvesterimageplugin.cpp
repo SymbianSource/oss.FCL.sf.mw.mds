@@ -266,12 +266,14 @@ void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
     CHarvestData* harvestData = CHarvestData::NewL();
     CleanupStack::PushL( harvestData );
         
-    const TInt errorCode = GatherDataL( mdeObject, *fileData, *harvestData );
-    if ( errorCode == KErrNone || errorCode == KErrCompletion ) // ok, something got harvested
+    TInt errorCode( KErrNone );
+    TRAPD( error, errorCode = GatherDataL( mdeObject, *fileData, *harvestData ) );
+    if ( error == KErrNone && (errorCode == KErrNone || errorCode == KErrCompletion ) ) // ok, something got harvested
         {
         if ( mdeObject.Id() == 0 || mdeObject.Placeholder() ) // is a new object or placeholder
             {
             TRAP_IGNORE( HandleObjectPropertiesL( *harvestData, *fileData, *aHD, ETrue ) );
+            mdeObject.SetPlaceholder( EFalse );
             }
         else   // not a new object
             {
@@ -304,6 +306,14 @@ void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
         	
         	aHD->SetLocationData( locData );
         	}
+        }
+    else if( error != KErrNone)
+        {
+        WRITELOG1( "CHarvesterImagePlugin::HarvestL() - other error: %d", error );
+        TInt convertedError = KErrNone;
+        MdsUtils::ConvertTrapError( error, convertedError );
+        aHD->SetErrorCode( convertedError );
+        WRITELOG1( "CHarvesterImagePlugin::HarvestL() - returning: %d", convertedError );
         }
     else
         {

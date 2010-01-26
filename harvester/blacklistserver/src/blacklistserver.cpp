@@ -23,7 +23,7 @@
 #include "mdssqliteconnection.h"
 #include "mdcserializationbuffer.h"
 
-#include <PathInfo.h>
+#include <pathinfo.h>
 
 // Security policy
 const TUint KServerPolicyRangeCount = 6;
@@ -154,7 +154,7 @@ void CBlacklistServer::ConstructL()
     {
     WRITELOG( "CBlacklistServer::ConstructL - begin" );
 
-    TInt error = Start( KBlacklistServerName );
+    const TInt error = Start( KBlacklistServerName );
 
     if ( error != KErrNone )
         {
@@ -474,7 +474,7 @@ void CBlacklistServer::RemoveFromMemoryTable( const TDesC& aUri,
 
     WRITELOG( "CBlacklistServer::RemoveFromMemoryTable - begin" );
 
-    TInt index = GetMemoryTableIndex( aUri, aMediaId );
+    const TInt index = GetMemoryTableIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
         CBlacklistItem * item = iBlacklistMemoryTable[index];

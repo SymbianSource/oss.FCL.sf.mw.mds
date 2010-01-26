@@ -68,7 +68,7 @@ CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient,
     HBufC8* aAlbumIds, TBool& aAddLocation, CHarvesterRequestQueue* aQueue )
     : CActive( CActive::EPriorityStandard ), iClient( aClient ), iObserver( aObserver ), 
     iService( aService ), iUri( aUri ), iAlbumIds( aAlbumIds ), iAddLocation( aAddLocation ),
-    iRequestQueue( aQueue ), iLocation( EFalse )
+    iRequestQueue( aQueue ), iLocation( EFalse ), iCancelled( EFalse )
     {
     CActiveScheduler::Add( this );
     }
@@ -115,7 +115,7 @@ TInt CHarvesterRequestActive::RunError( TInt aError )
 //
 void CHarvesterRequestActive::DoCancel()
     {
-    // Nothing to do here
+    iCancelled = ETrue;
     }
 
 // ---------------------------------------------------------------------------
@@ -130,8 +130,11 @@ void CHarvesterRequestActive::Start()
     TIpcArgs ipcArgs( &iUri, iAlbumIds, &iLocation );
     iPersistentArgs = ipcArgs;
     
-    iClient.HarvestFile( iService, iPersistentArgs, iStatus );
-    SetActive();
+    if( !iCancelled )
+        {
+        iClient.HarvestFile( iService, iPersistentArgs, iStatus );
+        SetActive();
+        }
     }
 
 // ---------------------------------------------------------------------------
