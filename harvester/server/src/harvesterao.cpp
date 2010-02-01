@@ -188,6 +188,7 @@ CHarvesterAO::~CHarvesterAO()
     iContainerPHArray.ResetAndDestroy();
     iContainerPHArray.Close();
 	
+    delete iHarvesterOomAO;
     delete iRestoreWatcher;
 	delete iOnDemandAO;
 	delete iMdEHarvesterSession;
