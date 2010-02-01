@@ -84,6 +84,7 @@ MMediaCollectionInfo* CMediaCollectionManagerImpl::CollectionInfoByIdLC(
     {
     User::Leave( KErrNotSupported );
 
+    // to stop compile warnings
     MMediaCollectionInfo* info = NULL;
     return info;
     }
@@ -99,6 +100,7 @@ TInt CMediaCollectionManagerImpl::CreateCollectionL(
     {
     User::Leave( KErrNotSupported );
 
+    // to stop compile warnings
     TInt collectionID( 0 );
     return collectionID;
     }
@@ -220,6 +222,7 @@ TInt32 CMediaCollectionManagerImpl::GetDriveByIdL( TInt /* aId */ )
     {
     User::Leave( KErrNotSupported );
     
+    // to stop compile warnings
     const TInt drive( 0 );
     return drive;
     }

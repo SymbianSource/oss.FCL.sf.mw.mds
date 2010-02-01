@@ -82,9 +82,9 @@ class CMdSMaintenanceEngine : public CBase
                               CMdCSerializationBuffer& aItems );
         
         /**
-         * Stores C-drive media id to the DB.
+         * Stores drive media id to the DB.
          */
-        void StoreCDriveMediaIdL();
+        void StoreDriveMediaIdsL();
 
   	    /**
 	    * Creates metadata tables to database.

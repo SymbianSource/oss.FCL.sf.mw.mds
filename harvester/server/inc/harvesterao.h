@@ -534,6 +534,8 @@ class CHarvesterAO : public CActive,
         CHarvesterMediaIdUtil* iMediaIdUtil;
         
         CHarvesterAoPropertyDefs* iPropDefs;
+        
+        TBool iMassMemoryIdChecked;
 	};
 	
 #endif //__CHARVESTERAO_H__

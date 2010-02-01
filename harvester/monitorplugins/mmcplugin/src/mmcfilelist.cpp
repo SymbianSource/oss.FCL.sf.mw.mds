@@ -87,7 +87,7 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 		RPointerArray<CPlaceholderData>& aEntryArray )
 	{
 	WRITELOG( "CMmcFileList::BuildFileListL - start" );
-	CDesCArrayFlat* path = new(ELeave) CDesCArrayFlat( 8 );
+	CDesCArrayFlat* path = new(ELeave) CDesCArrayFlat( 10 );
 	CleanupStack::PushL( path );
 	TFileName firstPath;
 	firstPath.Copy( aDrivePath );
@@ -191,14 +191,11 @@ void CMmcFileList::HandleFileEntryL( CMdEHarvesterSession& aMdeSession,
 	WRITELOG( "CMmcFileList::HandleFileEntryL()" );
 	
 	// calculate batch size
-	TInt batchSize( 0 );
-	if ( aEntryArray.Count() >= KEntryBufferSize )
+	TInt batchSize( KEntryBufferSize );
+	const TInt count( aEntryArray.Count() );
+	if ( count < KEntryBufferSize )
 		{
-		batchSize = KEntryBufferSize;
-		}
-	else
-		{
-		batchSize = aEntryArray.Count();
+		batchSize = count;
 		}
 
 #ifdef _DEBUG

@@ -808,8 +808,18 @@ void RMdEEngineSession::DoChangePath(
 
 void RMdEEngineSession::DoChangeCDriveMediaId()
 	{
-	SendReceive( EChangeMediaId );
+	Send( EChangeMediaId );
 	}
+
+void RMdEEngineSession::DoCheckMassStorageMediaId( const TUint32 aMediaId  )
+    {
+    TPckgC<TUint32> mediaIdPckg( aMediaId );
+
+    TIpcArgs ipcArgs;
+    ipcArgs.Set( 0, &mediaIdPckg );
+
+    SendReceive( EChangeMassStorageMediaId, ipcArgs );
+    }
 
 void RMdEEngineSession::DoSetPendingL( const RArray<TItemId>& aObjectIds )
 	{

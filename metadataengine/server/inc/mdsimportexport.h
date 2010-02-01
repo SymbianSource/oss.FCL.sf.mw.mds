@@ -520,6 +520,8 @@ private:
     TInt iLastDriveNumber;
     
     TVolumeInfo iLastVolumeInfo;
+    
+    TBool iLogEnabled;
     };
 
 

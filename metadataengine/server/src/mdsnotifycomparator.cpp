@@ -151,7 +151,7 @@ TBool CMdSNotifyComparator::MatchL(
     	}
     else if( ( items.iEvents.iPtr.iCount > 0 ) && 
     		 ( itemIds.iEventIds.iPtr.iCount > 0 ) && 
-    		 ( aType & ( EEventNotifyAdd /*| EEventNotifyRemove*/ ) ) )
+    		 ( aType & ( EEventNotifyAdd ) ) )
     	{
     	// event ID count and event item count should match
 		__ASSERT_DEBUG( items.iEvents.iPtr.iCount == itemIds.iEventIds.iPtr.iCount, MMdCCommon::Panic( KErrCorrupt ) );
@@ -183,7 +183,7 @@ TBool CMdSNotifyComparator::MatchL(
     	}
     else if( ( items.iRelations.iPtr.iCount > 0 ) && 
     		 ( itemIds.iRelationIds.iPtr.iCount > 0 ) && 
-    		 ( aType & ( ERelationNotifyAdd | ERelationNotifyModify /*| ERelationNotifyRemove*/ ) ) )
+    		 ( aType & ( ERelationNotifyAdd | ERelationNotifyModify ) ) )
     	{
     	// relation ID count and relation item count should match
 		__ASSERT_DEBUG( items.iRelations.iPtr.iCount == itemIds.iRelationIds.iPtr.iCount, MMdCCommon::Panic( KErrCorrupt ) );

@@ -1020,6 +1020,27 @@ void CMdSSqlObjectManipulate::ChangeMediaIdL()
 	CleanupStack::PopAndDestroy( &clauseOne );
 	}
 
+void CMdSSqlObjectManipulate::CheckMassStorageMediaIdL( const TUint32 aMediaId )
+    {
+    TUint32 oldMediaId( 0 );
+    const TInt rowCount = MMdsPreferences::GetL( KMassStorageMediaIdKey, 
+                                                                 MMdsPreferences::EPreferenceValueGet, oldMediaId );
+    if( rowCount == 0 )
+        {
+        MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet, (TUint32) aMediaId );
+        }
+    else if( aMediaId != oldMediaId )
+        {
+        RArray<TItemId> objectIds;
+        CleanupClosePushL( objectIds );
+        MMdsPreferences::UpdateL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet, (TUint32) aMediaId );
+        SetFilesToNotPresentL( oldMediaId, EFalse, objectIds );
+        objectIds.Reset();
+        RemoveFilesNotPresentL( oldMediaId, &objectIds );
+        CleanupStack::PopAndDestroy( &objectIds );
+        }
+    }
+
 const CMdsPropertyDef& CMdSSqlObjectManipulate::ReadPropertyL( 
 		CMdCSerializationBuffer& aBuffer, const CMdsObjectDef& aObjectDef,
 		CMdsClauseBuffer& aBaseObjectClause, CMdsClauseBuffer& aObjectClause,

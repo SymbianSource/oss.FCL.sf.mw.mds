@@ -19,7 +19,7 @@
 #define R_RLOCATIONMANAGER_H
 
 #include <e32base.h>
-#include <LbsPosition.h>
+#include <lbsposition.h>
 #include <etel3rdparty.h>
 
 /**

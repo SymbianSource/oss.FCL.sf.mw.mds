@@ -465,6 +465,8 @@ class CMdSSqlObjectManipulate: public CBase
 		 */
 		TInt GetPendingL(TDefId aObjectDefId, TInt aBufferSize, 
 				RArray<TItemId>& aObjectIds);
+
+		void CheckMassStorageMediaIdL( const TUint32 aMediaId );
 		
     protected: // personal methods
 

@@ -130,7 +130,6 @@ NONSHARABLE_CLASS(CMdENotifierAO) : public CActive
         */
         void DoNotifyObserver();
 		
-		
 		void DecodeIdBufferL();
 		void DecodeRelationItemBufferL();
 

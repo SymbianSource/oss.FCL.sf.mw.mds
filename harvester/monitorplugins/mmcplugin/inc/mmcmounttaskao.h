@@ -93,6 +93,7 @@ class CMMCMountTaskAO : public CActive
 		CMmcFileList* iMmcFileList;
 		CHarvesterEventManager* iHEM;
         TBool iCacheEvents;
+        RPointerArray<CHarvesterData> iHdArray;
 		
 	};
 

@@ -20,9 +20,9 @@
 #define CTRACKLOG_H_
 
 #include <f32file.h>
-#include <Lbs.h>
+#include <lbs.h>
 #include "clocationrecord.h"
-#include <LbsSatellite.h>
+#include <lbsSatellite.h>
 
 class MTrackLogObserver;
 class CGpxConverterAO;

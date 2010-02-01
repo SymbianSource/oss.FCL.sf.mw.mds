@@ -410,6 +410,12 @@ void CMdSServerSession::ServiceFunctionL( const RMessage2& aMessage )
         	ChangeMediaIdL( aMessage );
         	break;
         	}	
+
+        case EChangeMassStorageMediaId:
+            {
+            CheckMassStorageMediaIdL( aMessage );
+            break;
+            }   
         	
         case ESetPending:
         	{
@@ -1508,6 +1514,15 @@ void CMdSServerSession::ChangeMediaIdL( const RMessage2& /*aMessage*/ )
 	{
 	iServer.Manipulate().ChangeMediaIdL();
 	}
+
+void CMdSServerSession::CheckMassStorageMediaIdL( const RMessage2& aMessage )
+    {
+    TUint32 mediaId;
+    TPckg<TUint32> mediaIdPckg( mediaId );
+    aMessage.ReadL( 0, mediaIdPckg );
+
+    iServer.Manipulate().CheckMassStorageMediaIdL( mediaId );
+    }
 
 void CMdSServerSession::SetPendingL(const RMessage2& aMessage)
 	{

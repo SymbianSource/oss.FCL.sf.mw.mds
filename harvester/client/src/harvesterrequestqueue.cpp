@@ -125,7 +125,8 @@ void CHarvesterRequestQueue::RunL()
         {
         CHarvesterRequestActive* selectedRequest = NULL;
     
-        for ( TInt i = 0; i < iRequests.Count(); i++ )
+        TInt endIndex( iRequests.Count() );
+        for ( TInt i = 0; i < endIndex; i++ )
             {
             CHarvesterRequestActive* request = iRequests[i];
         
@@ -139,10 +140,7 @@ void CHarvesterRequestQueue::RunL()
             
                 // correct the index so that no tasks are skipped
                 i--;
-                if(i <= -1)
-                    {
-                    i = -1;
-                    }
+                endIndex--;
             
                 WRITELOG( "CHarvesterRequestQueue::RunL() - removing completed request");
                 }
@@ -233,6 +231,7 @@ void CHarvesterRequestQueue::DoCancel()
         if( request )
             {
             request->Cancel();
+            request->iRequestQueue = NULL;
             }
         }
     }

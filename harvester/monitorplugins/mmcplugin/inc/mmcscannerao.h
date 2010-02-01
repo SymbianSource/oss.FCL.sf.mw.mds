@@ -20,6 +20,7 @@
 #include <e32base.h>	// For CActive, link against: euser.lib
 
 #include <e32std.h>		// For RTimer, link against: euser.lib
+#include <harvesterdata.h>
 #include "mdeharvestersession.h"
 #include "mmcfilelist.h"
 
@@ -95,6 +96,8 @@ private:
 	
 	// Not owned
 	MMonitorPluginObserver* iObserver;
+	
+	RPointerArray<CHarvesterData> iHdArray;
 	};
 
 #endif // CMMCSCANNERAO_H

@@ -326,6 +326,11 @@ public:
 	 */
 	IMPORT_C void ResetDBL();
 
+	/**
+	 * Update DB with current internal mass storage media id
+	 */
+    void CheckMassStorageMediaId( const TUint32 aMediaId );
+
 private:
 	CMdESessionImpl* iSession;
 

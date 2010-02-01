@@ -17,7 +17,7 @@
 #ifndef LOCATIONDATATYPE_H_
 #define LOCATIONDATATYPE_H_
 
-#include <LbsPosition.h>
+#include <lbsposition.h>
 #include <etel3rdparty.h>
 
 /*

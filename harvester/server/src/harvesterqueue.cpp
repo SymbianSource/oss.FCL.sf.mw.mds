@@ -244,7 +244,8 @@ void CHarvesterQueue::MonitorEvent( CHarvesterData* aHarvesterData )
 void CHarvesterQueue::MonitorEvent(
         RPointerArray<CHarvesterData>& aHarvesterDataArray )
     {
-    for( TInt i = aHarvesterDataArray.Count(); --i >= 0; )
+    const TInt count( aHarvesterDataArray.Count() );
+    for( TInt i = 0; i < count; i++ )
     	{
     	MonitorEvent( aHarvesterDataArray[i] );
     	}

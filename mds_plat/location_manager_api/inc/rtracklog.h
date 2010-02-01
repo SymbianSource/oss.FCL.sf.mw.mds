@@ -18,7 +18,7 @@
 #ifndef RTRACKLOG_H_
 #define RTRACKLOG_H_
 
-#include <LbsSatellite.h> 
+#include <lbssatellite.h> 
 #include <rlocationmanager.h>
 #include <locationeventdef.h>
 

@@ -17,13 +17,11 @@
 #include "mmcscannerao.h"
 #include "harvesterlog.h"
 #include "fsutil.h"
-#include <harvesterdata.h>
 #include <placeholderdata.h>
 #include <centralrepository.h>
 
 _LIT( KColon, ":" );
 
-const TInt KEntryBufferSize = 100;
 const TInt KDefaultDelay = 4;
 const TInt KMillion = 1000000;
 
@@ -95,6 +93,9 @@ CMmcScannerAO::~CMmcScannerAO()
 	iHarvestEntryArray.ResetAndDestroy();
 	iHarvestEntryArray.Close();
 	
+    iHdArray.ResetAndDestroy();
+	iHdArray.Close();
+	
 	iFs.Close();
 	}
 
@@ -165,6 +166,15 @@ void CMmcScannerAO::RunL()
 				}
 			else
 				{
+                if ( iObserver )
+                    {
+                    if( iHdArray.Count() > 0)
+                        {
+                        iObserver->MonitorEvent( iHdArray );
+                        }
+                    }
+                iHdArray.Reset();
+                iHdArray.Compress();
 				SetState( ERemoveNPFiles );
 				}
 			break;
@@ -181,6 +191,8 @@ void CMmcScannerAO::RunL()
 		case( EDone ):
 			{
 			iFs.Close();
+		    iHdArray.Reset();
+		    iHdArray.Compress();
 			iEntryArray.Compress();
 			iHarvestEntryArray.Compress();
 			break;
@@ -195,23 +207,19 @@ void CMmcScannerAO::RunL()
 void CMmcScannerAO::HandleReharvestL()
 	{
 	WRITELOG("CMMCMountTaskAO::HandleReharvestL");
-		
-	TInt batchSize( 0 );
-	RPointerArray<CHarvesterData> hdArray;
-	CleanupClosePushL( hdArray );
-	
-    if ( iHarvestEntryArray.Count() >= KEntryBufferSize )
+
+    const TInt count( iHarvestEntryArray.Count() );
+    TInt batchSize( KMmcEntryBufferSize );
+    if ( count < KMmcEntryBufferSize )
         {
-        batchSize = KEntryBufferSize;
+        batchSize = count;
         }
-    else
-        {
-        batchSize = iHarvestEntryArray.Count();
-        }
+
+    const TInt endIndex( count - batchSize );
         
-    for ( TInt i = 0; i < batchSize; i++ )
+    for ( TInt i = count; --i >= endIndex; )
         {
-        CPlaceholderData* ei = iHarvestEntryArray[0];
+        CPlaceholderData* ei = iHarvestEntryArray[i];
 
         HBufC* fileName = ei->Uri().AllocLC();
         CHarvesterData* hd = CHarvesterData::NewL( fileName );
@@ -231,28 +239,14 @@ void CMmcScannerAO::HandleReharvestL()
 			hd->SetObjectType( EPlaceholder );
 			hd->SetClientData( ei );
 			}
-		hdArray.Append( hd );
-        iHarvestEntryArray.Remove( 0 );
+		iHdArray.Append( hd );
+        iHarvestEntryArray.Remove( i );
         }
 
     if( iHarvestEntryArray.Count() == 0 )
     	{
     	iHarvestEntryArray.Compress();
     	}
-    
-	if ( iObserver )
-		{
-		if( hdArray.Count() > 0)
-			{
-			iObserver->MonitorEvent( hdArray );
-			}
-		else
-			{
-			iObserver->MonitorEvent( hdArray[0] );
-			}
-		}
-	
-	CleanupStack::PopAndDestroy( &hdArray ); 
 	}
 	
 

@@ -306,6 +306,11 @@ class CMdSServerSession : public CSession2
         void ChangeMediaIdL( const RMessage2& aMessage );
         
         /**
+         * Check media id of internal mass storage to DB and update items accordingly
+         */
+        void CheckMassStorageMediaIdL( const RMessage2& aMessage );
+        
+        /**
          * Set "binary composing to file" pending flag to objects.
          * 
          * @param aMessage message from client where first argument is 

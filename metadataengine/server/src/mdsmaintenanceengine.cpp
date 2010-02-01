@@ -16,6 +16,8 @@
 */
 
 // INCLUDE FILES
+#include <driveinfo.h>
+
 #include "mdsmaintenanceengine.h"
 #include "mdslogger.h"
 #include "mdsmanipulationengine.h"
@@ -153,7 +155,7 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
        		TRAP_IGNORE( ImportMetadataL( aManipulate, aSchema, KMdsDefaultRomImportFile ) );
        		}
        	
-       	StoreCDriveMediaIdL();
+       	StoreDriveMediaIdsL();
         }
     else
         {
@@ -226,10 +228,10 @@ void CMdSMaintenanceEngine::ExportMetadataL( CMdsSchema& aSchema, const TDesC16&
     }
 
 // ------------------------------------------------
-// StoreCDriveMediaIdL
+// StoreDriveMediaIdsL
 // ------------------------------------------------
 //
-void CMdSMaintenanceEngine::StoreCDriveMediaIdL()
+void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
 	{
 	RFs fs;
     User::LeaveIfError( fs.Connect() );
@@ -238,6 +240,26 @@ void CMdSMaintenanceEngine::StoreCDriveMediaIdL()
     fs.Volume( volumeInfo, EDriveC );
     MMdsPreferences::InsertL( KCMediaIdKey, MMdsPreferences::EPreferenceValueSet,
     		(TUint32) volumeInfo.iUniqueID );
+
+    TInt drive( -1 );
+    TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+    if( massStorageError == KErrNone )
+        {
+        TVolumeInfo massStorageVolumeInfo;
+        fs.Volume( massStorageVolumeInfo, drive );
+        const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
+        massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+        if( massStorageError == KErrNone )
+            {
+            fs.Volume( massStorageVolumeInfo, drive );
+            // Update mass storage media id if the mass storage is not memory card
+            if( massStorageVolumeInfo.iUniqueID != massStorageMediaId && massStorageMediaId != 0 )
+                {
+                MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
+                        (TUint32) massStorageMediaId );
+                }
+            }
+        }
     
     CleanupStack::PopAndDestroy( &fs );
 	}

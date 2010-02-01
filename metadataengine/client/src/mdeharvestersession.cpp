@@ -342,3 +342,8 @@ EXPORT_C TInt CMdEHarvesterSession::GetPending(
 			aObjectIdBuffer );
 	}
 
+EXPORT_C void CMdEHarvesterSession::CheckMassStorageMediaId( const TUint32 aMediaId  )
+    {
+    iSession->EngineSession().DoCheckMassStorageMediaId( aMediaId );
+    }
+

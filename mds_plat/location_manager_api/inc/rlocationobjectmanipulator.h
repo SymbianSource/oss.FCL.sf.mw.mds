@@ -21,7 +21,7 @@
 #include <locationdatatype.h>
 #include <etel3rdparty.h>
 #include <rlocationmanager.h>
-#include <LbsPosition.h> 
+#include <lbsposition.h> 
 
 #include "mdccommon.h"
 

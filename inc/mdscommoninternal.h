@@ -48,6 +48,9 @@ _LIT( KMdSServerName,"MdSServer" ); // Server name
 _LIT( KSchemaChunkName, "MdSSchema" );
 
 _LIT( KCMediaIdKey, "CDriveMediaId" );
+_LIT( KMassStorageMediaIdKey, "MassStorageMediaId" );
+
+const TInt KMmcEntryBufferSize = 100;
 
 // The server version. A version must be specified when
 // creating a session with the server.
@@ -124,6 +127,7 @@ enum TMdEServRqst
     EGetPending,			// Get objects with pending flag
     EResetDB,              	// Reset database (works only in DEBUG build)
     EChangeMediaId,			// Change C-drive media id and update objects
+    EChangeMassStorageMediaId,         // Change internal mass storage media id and update objects
     EUnknownMdEServRqst     // handle for unknown requests
     };
 

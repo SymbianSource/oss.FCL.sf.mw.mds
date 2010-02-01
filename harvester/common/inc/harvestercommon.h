@@ -91,7 +91,7 @@ enum TMdsOomStatus
 	};
 
 const TInt KHarvesterGetRootDirFlags = EDirsFirst;
-const TInt KHarvesterGetDirFlags = ESortByDate | EDescending | EDirsFirst;
+const TInt KHarvesterGetDirFlags = ESortByDate | EAscending | EDirsFirst;
 
 const TInt KOriginIgnored = 255;
 const TInt KOriginFastHarvest = 254;
@@ -100,6 +100,9 @@ const CActive::TPriority KHarvesterPriorityContextEngine = CActive::EPriorityUse
 const CActive::TPriority KHarvesterPriorityMonitorPlugin = CActive::EPriorityUserInput;
 const CActive::TPriority KHarvesterPriorityComposerPlugin = CActive::EPriorityStandard;
 const CActive::TPriority KHarvesterPriorityHarvestingPlugin = CActive::EPriorityStandard;
+
+// Between Standard and UserInput to allow components to react to important events correctly
+const TInt KHarvesterCustomImportantPriority = 5;
 
 #endif
 

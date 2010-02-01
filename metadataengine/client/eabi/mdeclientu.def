@@ -365,4 +365,5 @@ EXPORTS
 	_ZN20CMdEHarvesterSession13ResetPendingLERK6RArrayImE @ 364 NONAME
 	_ZN19CMdEObjectCondition18SetPlaceholderOnlyEi @ 365 NONAME
 	_ZNK19CMdEObjectCondition15PlaceholderOnlyEv @ 366 NONAME
+	_ZN20CMdEHarvesterSession23CheckMassStorageMediaIdEm @ 367 NONAME
 

@@ -294,4 +294,5 @@ EXPORTS
 	?SetPendingL@CMdEHarvesterSession@@QAEXABV?$RArray@K@@@Z @ 293 NONAME ; void CMdEHarvesterSession::SetPendingL(class RArray<unsigned long> const &)
 	?PlaceholderOnly@CMdEObjectCondition@@QBEHXZ @ 294 NONAME ; int CMdEObjectCondition::PlaceholderOnly(void) const
 	?SetPlaceholderOnly@CMdEObjectCondition@@QAEXH@Z @ 295 NONAME ; void CMdEObjectCondition::SetPlaceholderOnly(int)
+	?CheckMassStorageMediaId@CMdEHarvesterSession@@QAEXK@Z @ 296 NONAME ; void CMdEHarvesterSession::CheckMassStorageMediaId(unsigned long)
 

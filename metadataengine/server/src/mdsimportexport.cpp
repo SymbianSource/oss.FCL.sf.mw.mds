@@ -51,10 +51,12 @@
 const TInt KMdsMaxUriLenght = KMaxFileName;
 const TChar KMdsLineFeed = '\n';
 
+#ifdef _DEBUG
 const TInt KMdsMaxLogLineLenght( 2056 );
 
 _LIT( KMdsErrorLogDirectory, "Metadata" );
 _LIT( KMdsErrorLogFilename, "importerror.log" );
+#endif
 
 // keyword definitions in import file
 _LIT8( KMdsKeywordComment,     "//" );
@@ -117,8 +119,13 @@ CMdsImportExport::~CMdsImportExport()
 	{
    	delete iConverter;
 
-    iLog.CloseLog(); 
-    iLog.Close();
+#ifdef _DEBUG
+   	if( iLogEnabled )
+   	    {
+        iLog.CloseLog(); 
+        iLog.Close();
+   	    }
+#endif
     iFs.Close();
 
    	delete iBuffer;
@@ -136,10 +143,16 @@ void CMdsImportExport::ConstructL()
 
     User::LeaveIfError( iFs.Connect() );
     iConverter->PrepareToConvertToOrFromL( KCharacterSetIdentifierUtf8, iFs );
-    
-    User::LeaveIfError( iLog.Connect( ) );
-    iLog.CreateLog( KMdsErrorLogDirectory, KMdsErrorLogFilename, EFileLoggingModeOverwrite );
-    iLog.SetDateAndTime(EFalse, ETrue);
+
+#ifdef _DEBUG
+    const TInt logError( iLog.Connect( ) );
+    if( logError == KErrNone )
+        {
+        iLogEnabled = ETrue;
+        iLog.CreateLog( KMdsErrorLogDirectory, KMdsErrorLogFilename, EFileLoggingModeOverwrite );
+        iLog.SetDateAndTime(EFalse, ETrue);
+        }
+#endif
 
 	iBuffer = NULL;
     iLastObjectDef = NULL;
@@ -2474,19 +2487,28 @@ TDesC8& CMdsImportExport::Conv16To8( const TDesC16& aUnicode, TDes8& aBuffer )
 // LogError
 // ------------------------------------------------
 //
+#ifdef _DEBUG
 void CMdsImportExport::LogError( const TDesC& aMessage )
     {
-    _LIT( KParseError, "Parse error: %S" );
-    _LIT( KCurrentFile, "Current file: %S" );
-    _LIT( KCurrentLineNum, "Current line number: %d" );
-    _LIT( KCurrentLine, "Current line: %S" );
-    iLog.WriteFormat( KParseError, &aMessage );
-    iLog.WriteFormat( KCurrentFile, &iFileName );
-    iLog.WriteFormat( KCurrentLineNum, iLineNumber );
-    TBuf16<KMdsMaxLogLineLenght> line16;
-    Conv8To16( iLine, line16 );
-    iLog.WriteFormat( KCurrentLine, &line16 );
+    if( iLogEnabled )
+        {
+        _LIT( KParseError, "Parse error: %S" );
+        _LIT( KCurrentFile, "Current file: %S" );
+        _LIT( KCurrentLineNum, "Current line number: %d" );
+        _LIT( KCurrentLine, "Current line: %S" );
+        iLog.WriteFormat( KParseError, &aMessage );
+        iLog.WriteFormat( KCurrentFile, &iFileName );
+        iLog.WriteFormat( KCurrentLineNum, iLineNumber );
+        TBuf16<KMdsMaxLogLineLenght> line16;
+        Conv8To16( iLine, line16 );
+        iLog.WriteFormat( KCurrentLine, &line16 );
+        }
     }
+#else
+void CMdsImportExport::LogError( const TDesC& /*aMessage*/ )
+    {
+    }
+#endif
 
 
 // ------------------------------------------------

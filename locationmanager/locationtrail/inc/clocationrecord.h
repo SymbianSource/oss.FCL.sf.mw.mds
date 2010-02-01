@@ -20,7 +20,7 @@
 
 #include <e32base.h>
 #include <e32property.h>
-#include <Lbs.h>
+#include <lbs.h>
 
 #include "rlocationtrail.h"
 #include "locationdatatype.h"

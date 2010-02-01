@@ -93,6 +93,7 @@ const TInt KMdsRanges[KMdsRangeCount] =
     EGetPending,
     EResetDB,
     EChangeMediaId,
+    EChangeMassStorageMediaId,
     EUnknownMdEServRqst     // handle for unknown requests
     };
 
@@ -140,7 +141,8 @@ const TUint8 KMdsElementsIndex[KMdsRangeCount] =
     CPolicyServer::ECustomCheck, 	// EGetPendingCount
     CPolicyServer::ECustomCheck, 	// EGetPending
     CPolicyServer::ECustomCheck, 	// EResetDB
-    CPolicyServer::ECustomCheck, 	// EChangeMediaId
+    CPolicyServer::ECustomCheck,    // EChangeMediaId
+    CPolicyServer::ECustomCheck,    // EChangeMassStorageMediaId
     CPolicyServer::ENotSupported	// EUnknownMdEServRqst
     };
 
@@ -170,6 +172,7 @@ CPolicyServer::TCustomResult CMdSServer::CustomSecurityCheckL(
         case EAddRelationDef:
         case EAddEventDef:
         case EImportSchema:
+        case EChangeMassStorageMediaId:
         case ESetObjectToPresentByGuid:
             {
             if( aMsg.HasCapability( ECapabilityWriteDeviceData ) )

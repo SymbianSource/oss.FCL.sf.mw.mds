@@ -19,8 +19,8 @@
 #ifndef C_CPOSITIONINFO_H
 #define C_CPOSITIONINFO_H
 
-#include <Lbs.h>
-#include <LbsSatellite.h>
+#include <lbs.h>
+#include <lbssatellite.h>
 #include "rlocationtrail.h"
 
 /**

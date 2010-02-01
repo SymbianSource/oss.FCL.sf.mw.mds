@@ -24,8 +24,6 @@
 
 #include <e32cmn.h>
 
-const TInt KMassStorageScanCustomPriority = 5;
-
 _LIT( KColon, ":" );
 
 // construct/destruct
@@ -138,7 +136,7 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
 			medias.Append( hdInfo );
 			
 			TRAP_IGNORE( iHddScanner = CMmcScannerAO::NewL( hdMediaId, iMdEClient, iObserver,
-			    				aHarvesterPluginFactory, KMassStorageScanCustomPriority, alreadyWaited ));
+			    				aHarvesterPluginFactory, KHarvesterCustomImportantPriority, alreadyWaited ));
 			}
 		}
 

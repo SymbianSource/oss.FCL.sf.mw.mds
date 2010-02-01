@@ -134,6 +134,8 @@ private:
 private:
     // data
 
+    friend class CHarvesterRequestQueue;
+    
     /**
      * Session. Ref.
      */
@@ -157,7 +159,7 @@ private:
     TBool iAddLocation;
     
     // not own
-    mutable CHarvesterRequestQueue* iRequestQueue;
+    CHarvesterRequestQueue* iRequestQueue;
     
     TPckg<TBool> iLocation;
     

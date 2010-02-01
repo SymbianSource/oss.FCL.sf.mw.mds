@@ -391,9 +391,21 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             break;
 
 		case EFsFormatOpen:
+		    {
 			WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFormatOpen" );
 			// get the drive letter
-			err = iFsSession.Volume( volInfo, drvNumber );
+		    RFsPlugin fsplugin( aRequest ); 
+	        const TInt rfsPluginError( fsplugin.Connect() );
+	        if( rfsPluginError == KErrNone )
+	            {
+	            err = fsplugin.Volume( volInfo, drvNumber );
+	            }
+	        else
+	            {
+	            err = iFsSession.Volume( volInfo, drvNumber );
+	            }
+	        fsplugin.Close();
+	        
 			if( KErrNone == err )
 				{
 				iFormatOldMediaId = volInfo.iUniqueID;
@@ -406,6 +418,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 				iFormatDriveNumber = -1;
 				}
 			return KErrNone;
+		    }
 
 		case EFsFormatSubClose:
 			WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFormatSubClose" );

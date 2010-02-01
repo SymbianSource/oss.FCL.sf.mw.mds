@@ -29,8 +29,6 @@
 #include "harvesterplugininfo.h"
 #include "harvesterpluginfactory.h"
 
-const TInt KEntryBufferSize = 100;
-
 //-----------------------------------------------------------------------------
 // CMMCMountTaskAO
 //-----------------------------------------------------------------------------
@@ -58,7 +56,7 @@ void CMMCMountTaskAO::ConstructL()
 	}
 
 CMMCMountTaskAO::CMMCMountTaskAO() :
-		CActive( KHarvesterPriorityMonitorPlugin )
+		CActive( KHarvesterCustomImportantPriority )
 	{
 	WRITELOG( "CMMCMountTaskAO::CMMCMountTaskAO" );
 	}
@@ -81,6 +79,8 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 		}
 	
 	delete iMmcFileList;
+	iHdArray.ResetAndDestroy();
+	iHdArray.Close();
 	}
 	
 void CMMCMountTaskAO::SetMonitorObserver( MMonitorPluginObserver& aObserver )
@@ -155,6 +155,8 @@ void CMMCMountTaskAO::RunL()
 				delete iMountData;
 				iMountData = NULL;
 				}
+			
+			iHdArray.ResetAndDestroy();
 			
 			if( iMountDataQueue.Count() > 0 )
 				{
@@ -279,7 +281,7 @@ void CMMCMountTaskAO::RunL()
 						}
 					Deinitialize();
 					SetNextRequest( ERequestStartTask );
-					break;
+					return;
 					}
 				
 	            if ( iEntryArray.Count() > 0 )
@@ -302,7 +304,6 @@ void CMMCMountTaskAO::RunL()
                 break;
 				}
 			}
-		break;
 		
 		case ERequestHandleReharvest:
 			{
@@ -318,13 +319,23 @@ void CMMCMountTaskAO::RunL()
 				{
 				HandleReharvestL( iHarvestEntryArray );
 				SetNextRequest( ERequestHandleReharvest );
+				break;
 				}
           	else
 				{
+                if ( iObserver )
+                    {
+                    if( iHdArray.Count() > 0)
+                        {
+                        iObserver->MonitorEvent( iHdArray );
+                        }
+                    }
+                iHdArray.Reset();
+                iHdArray.Compress();
 				SetNextRequest( ERequestHandleFileEntry );
+				break;
 				}
 			}
-		break;
 		
 		case ERequestCleanup:
 			{
@@ -394,22 +405,18 @@ void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray 
 	{
 	WRITELOG("CMMCMountTaskAO::HandleReharvestL");
 	
-	TInt batchSize( 0 );
-	RPointerArray<CHarvesterData> hdArray;
-	CleanupClosePushL( hdArray );
+	const TInt count( aArray.Count() );
+	TInt batchSize( KMmcEntryBufferSize );
+	if ( count < KMmcEntryBufferSize )
+		{
+	    batchSize = count;
+		}
+
+	const TInt endIndex( count - batchSize );
 	
-	if ( aArray.Count() >= KEntryBufferSize )
+	for ( TInt i = count; --i >= endIndex; )
 		{
-		batchSize = KEntryBufferSize;
-		}
-	else
-		{
-		batchSize = aArray.Count();
-		}
-			
-	for ( TInt i = 0; i < batchSize; i++ )
-		{
-		CPlaceholderData* ei = aArray[0];
+		CPlaceholderData* ei = aArray[i];
 		
 		HBufC* fileName = ei->Uri().AllocLC();
 		CHarvesterData* hd = CHarvesterData::NewL( fileName );
@@ -430,24 +437,14 @@ void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray 
 			hd->SetClientData( ei );
 			}
 		
-		hdArray.Append( hd );
-		aArray.Remove( 0 );
+		iHdArray.Append( hd );
+		aArray.Remove( i );
 		}
 	
     if( aArray.Count() == 0 )
         {
         aArray.Compress();
         }
-			
-	if ( iObserver )
-		{
-		if( hdArray.Count() > 0)
-			{
-			iObserver->MonitorEvent( hdArray );
-			}
-		}
-	
-	CleanupStack::PopAndDestroy( &hdArray ); 
 	}
 	
 void CMMCMountTaskAO::RemoveNotPresentFromMDE()

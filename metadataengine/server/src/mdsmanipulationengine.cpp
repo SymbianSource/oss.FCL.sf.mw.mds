@@ -1002,6 +1002,20 @@ void CMdSManipulationEngine::ChangeMediaIdL()
 	CleanupStack::PopAndDestroy( &transaction );
 	}
 
+void CMdSManipulationEngine::CheckMassStorageMediaIdL( const TUint32 aMediaId )
+    {
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+    RMdSTransaction transaction( connection );
+    CleanupClosePushL( transaction );
+    User::LeaveIfError( transaction.Error() );
+    
+    iManipulate->CheckMassStorageMediaIdL( aMediaId );
+    
+    transaction.CommitL();
+
+    CleanupStack::PopAndDestroy( &transaction );
+    }
+
 void CMdSManipulationEngine::AddRelationDefL( TDefId aNamespaceId, const TDesC& aRelationDefName )
 	{
 	CMdsNamespaceDef* namespaceDef = CONST_CAST( CMdsNamespaceDef*, iSchema.GetNamespaceByIdL( aNamespaceId ) );

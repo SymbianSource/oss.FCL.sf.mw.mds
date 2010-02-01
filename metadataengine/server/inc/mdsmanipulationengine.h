@@ -240,7 +240,12 @@ class CMdSManipulationEngine : public CBase, public MMdSGarbageCollectorObserver
 		 * Updates C drive media id for all objects with the old media id. 
 		 */
 		void ChangeMediaIdL();
-		
+
+        /**
+         * Updates internal mass storage media id for all objects. 
+         */
+        void CheckMassStorageMediaIdL( const TUint32 aMediaId );
+        
 		/**
 		 * Adds new relation definition to the DB.
 		 * @param aNamespaceId namespace id

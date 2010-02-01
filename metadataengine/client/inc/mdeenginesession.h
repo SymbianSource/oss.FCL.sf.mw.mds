@@ -465,6 +465,11 @@ class RMdEEngineSession : public RSessionBase
 		 */
 		void DoChangeCDriveMediaId();
 		
+        /**
+         * Change intenal mass storage media id in the DB and update objects accordingly
+         */
+        void DoCheckMassStorageMediaId( const TUint32 aMediaId );
+		
 		/**
 		 * Set "binary composing to file" pending flag to objects
 		 *

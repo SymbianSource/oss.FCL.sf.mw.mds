@@ -2523,6 +2523,7 @@ void CMdESessionImpl::RemoveObjectObserverL(
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
+    	iNotifiers.Compress();
         }
     else
     	{
@@ -2544,6 +2545,7 @@ void CMdESessionImpl::RemoveObjectPresentObserverL(
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
+    	iNotifiers.Compress();
         }
     else
     	{
@@ -2574,6 +2576,7 @@ void CMdESessionImpl::RemoveRelationObserverL(
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
+    	iNotifiers.Compress();
         }
     else
     	{
@@ -2627,6 +2630,7 @@ void CMdESessionImpl::RemoveRelationPresentObserverL(
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
+    	iNotifiers.Compress();
         }
     else
     	{

@@ -20,7 +20,7 @@
 
 #include <e32base.h>
 #include <etel3rdparty.h>
-#include <LbsPosition.h>
+#include <lbsposition.h>
 #include <rlocationmanager.h>
 #include <locationdatatype.h>
 

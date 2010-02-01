@@ -441,27 +441,28 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                 *iPropDefs->iDatePropertyDef, &releaseDate, aIsAdd );
         }
-    
+
     if( iHarvestAlbumArt && iTNM && jpeg.Length() > 0 )
         {
-        HBufC8* jpegBuf = jpeg.AllocLC();
-        TBuf<KMimeLength> mimeType( KNullDesC );
+        HBufC8* jpegBuf = jpeg.AllocLC();  
+        _LIT( KAlbumArtMimeType, "image/jpeg" );
+        TBuf<KMimeLength> mimeType;
+        mimeType.Copy( KAlbumArtMimeType );
         CThumbnailObjectSource* tnmSource = CThumbnailObjectSource::NewL( jpegBuf, mimeType, uri );
-        CleanupStack::Pop(); // jpegBuf
         // Ownership of buffer is transferred to Thumbnail Manager
+        CleanupStack::Pop(); // jpegBuf
         iTNM->CreateThumbnails( *tnmSource );
         delete tnmSource;
         TBool thumbnailPresent( ETrue );
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                           *iPropDefs->iThumbnailPropertyDef, &thumbnailPresent, aIsAdd );
         }
-    else if( iHarvestAlbumArt )
+    else if( iHarvestAlbumArt && iTNM )
         {
         TBool thumbnailNotPresent( EFalse );
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                           *iPropDefs->iThumbnailPropertyDef, &thumbnailNotPresent, aIsAdd );
         }
-       
     
     iAudioParser->ResetL();
     
