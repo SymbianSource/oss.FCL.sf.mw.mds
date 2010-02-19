@@ -340,11 +340,6 @@ private:
      */
     TInt iInterval;
     
-    /**
-     * Buffer size for tracklog
-     */ 
-    TInt iBufferSize;
-    
     TBool                  iRequestCurrentLoc;
     TBool                  iTrailStarted;
     

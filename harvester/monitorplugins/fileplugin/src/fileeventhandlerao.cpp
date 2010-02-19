@@ -37,7 +37,7 @@ using namespace MdeConstants;
 const TUid KRepositoryUid = { 0x20007182 };
 const TUint32 KCacheSizeKey = 0x00000001;
 
-const TInt KMaxEventsAtTime = 20;
+const TInt KMaxEventsAtTime = 25;
 const TInt KMaxEventsGranularity = 20;
 
 // ---------------------------------------------------------------------------
@@ -101,9 +101,6 @@ CFileEventHandlerAO::~CFileEventHandlerAO()
     
     Cancel();
     
-    iIgnoreList.ResetAndDestroy();
-    iIgnoreList.Close();
-    
     iFs.Close();
     
     delete iMapper;
@@ -128,6 +125,9 @@ void CFileEventHandlerAO::RunL()
     	{
     	case ( ERequestIdle ):
     		{
+    	    iQueue.Compress();
+    	    iEventArray->Compress();
+    	    iUriArray.Compress();
         	break;
     		}
     	
@@ -218,33 +218,26 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
     TOrigin origin = MdeConstants::Object::EOther;
     if ( iMapper )
         {
-        TRAPD( originErr, origin = iMapper->OriginL( status.iProcessId ) );
-        if( originErr == KErrNone )
-        	{
-        	if ( origin == KOriginIgnored )
-                {
-                WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored origin for %S", &status.iFileName );
-                return;
-                }
-        	else if( origin == KOriginFastHarvest )
-        	    {
-        	    WRITELOG( "CFileEventHandlerAO::HandleNotificationL - potential fast harvest file detected" );
-        	    fastHarvest = ETrue;
-        	    }
+        origin = iMapper->OriginL( status.iProcessId );
+        if ( origin == KOriginIgnored )
+            {
+            WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored origin for %S", &status.iFileName );
+            return;
+            }
+        else if( origin == KOriginFastHarvest )
+            {
+            WRITELOG( "CFileEventHandlerAO::HandleNotificationL - potential fast harvest file detected" );
+            fastHarvest = ETrue;
+            }
     
-            _LIT(KCameraTemp,"camcordertmp");
-        	if ( origin == MdeConstants::Object::ECamera &&
-        			(aEvent.iFileEventType == EMdsFileCreated || 
-					aEvent.iFileName.FindF(KCameraTemp) != KErrNotFound) )        		
-                {
-                WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored camera origin for %S", &status.iFileName );
-                return;
-                }
-        	}
-        else
-        	{
-        	origin = MdeConstants::Object::EOther;
-        	}
+        _LIT(KCameraTemp,"camcordertmp");
+        if ( origin == MdeConstants::Object::ECamera &&
+        		(aEvent.iFileEventType == EMdsFileCreated || 
+				aEvent.iFileName.FindF(KCameraTemp) != KErrNotFound) )        		
+            {
+            WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored camera origin for %S", &status.iFileName );
+            return;
+            }
         }
 
     // ignore created file event if extension is not supported by any harverter plugin
@@ -307,8 +300,10 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
             	RenameToMDEL( status.iFileName, hd->Uri(), hd->Origin() );
             	CleanupStack::PopAndDestroy( hd );
             	}
-
-            DeleteFromMDEL( status.iFileName );
+            else
+                {
+                DeleteFromMDEL( status.iFileName );
+                }
             }
         break;
 
@@ -349,14 +344,12 @@ void CFileEventHandlerAO::HandleMultideletionL( CArrayFixSeg< TMdsFSPStatus >* a
         TOrigin origin = MdeConstants::Object::EOther;
         if ( iMapper )
             {
-            TRAPD( originErr, origin = iMapper->OriginL( status.iProcessId ) );
-            if( originErr == KErrNone )
+            origin = iMapper->OriginL( status.iProcessId );
+            // Used only for delete events so fast harvest origin is not used
+            if ( origin == KOriginIgnored )
                 {
-                if ( origin == KOriginIgnored )
-                    {
-                    WRITELOG1( "CFileEventHandlerAO::HandleMultideletionL - ignored origin for %S", &status.iFileName );
-                    continue;
-                    }
+                WRITELOG1( "CFileEventHandlerAO::HandleMultideletionL - ignored origin for %S", &status.iFileName );
+                continue;
                 }
             }
         
@@ -369,7 +362,10 @@ void CFileEventHandlerAO::HandleMultideletionL( CArrayFixSeg< TMdsFSPStatus >* a
             RenameToMDEL( status.iFileName, hd->Uri(), hd->Origin() );
             CleanupStack::PopAndDestroy( hd );
             }
-        iUriArray.Append( &(status.iFileName) );
+        else
+            {
+            iUriArray.Append( &(status.iFileName) );
+            }
         }
     MultiDeleteFromMDEL( iUriArray );
     }
@@ -800,29 +796,6 @@ void CFileEventHandlerAO::DoCancel()
 CFileEventHandlerAO::CFileEventHandlerAO() : 
 		CActive( KHarvesterPriorityMonitorPlugin )
     {
-    }
-
-// ---------------------------------------------------------------------------
-// CFileEventHandlerAO::SetIgnoreListL()
-// ---------------------------------------------------------------------------
-//
-void CFileEventHandlerAO::SetIgnoreListL( RPointerArray<TDesC>& aList )
-    {
-    WRITELOG( "CFileEventHandlerAO::SetIgnoreListL" );
-    
-    iIgnoreList.ResetAndDestroy();
-    
-    const TInt count( aList.Count() );
-    for ( TInt i = count; --i >= 0; )
-        {
-        TDesC* listPath = aList[i];
-        
-        HBufC* name = listPath->AllocLC();
-
-        iIgnoreList.AppendL( name );
-        
-        CleanupStack::Pop( name );
-        }
     }
 
 // ---------------------------------------------------------------------------

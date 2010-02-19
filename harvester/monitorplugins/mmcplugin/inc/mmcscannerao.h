@@ -23,6 +23,7 @@
 #include <harvesterdata.h>
 #include "mdeharvestersession.h"
 #include "mmcfilelist.h"
+#include "harvestereventmanager.h"
 
 // FORWARD DECLARATION
 class MMonitorPluginObserver;
@@ -98,6 +99,8 @@ private:
 	MMonitorPluginObserver* iObserver;
 	
 	RPointerArray<CHarvesterData> iHdArray;
+	
+    CHarvesterEventManager* iHEM;
 	};
 
 #endif // CMMCSCANNERAO_H

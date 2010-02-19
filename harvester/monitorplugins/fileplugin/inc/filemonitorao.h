@@ -132,11 +132,6 @@ class CFileMonitorAO : public CActive
          * @var Flag to signal if iFs is connected.
          */
         TBool iFsConnectOk;
-        
-        /**
-         * @var An ignore list. Contains paths not to monitor.
-         */
-        RPointerArray<TDesC> iIgnoreList;
 
         /**
          * 

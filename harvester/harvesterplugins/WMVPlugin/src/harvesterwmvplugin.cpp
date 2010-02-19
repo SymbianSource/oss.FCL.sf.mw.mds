@@ -122,6 +122,24 @@ void CHarvesterWMVPlugin::HarvestL( CHarvesterData* aHD )
     }
 
 // ---------------------------------------------------------------------------
+// CHarvesterWMVPlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterWMVPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    
+    ContentAccess::CContent* content = NULL;
+    
+    TRAPD( err, content = ContentAccess::CContent::NewL( aUri ) );
+    if (err == KErrNone) 
+        {
+        err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
+        delete content;
+        }
+    }
+
+// ---------------------------------------------------------------------------
 // Default constructor
 // ---------------------------------------------------------------------------
 //
@@ -204,9 +222,9 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
     	// File size
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iSizePropertyDef, &aClipDetails.iFileSize, aIsAdd );
+        // Mime Type
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
     	}
-
-    // Mime Type
-    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    		*iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
     }
+

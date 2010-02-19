@@ -347,18 +347,39 @@ EXPORT_C TInt CMdEObject::PropertyCount(const CMdEPropertyDef& aDef) const
 
 EXPORT_C TInt CMdEObject::Property(const CMdEPropertyDef& aDef, CMdEProperty*& aProperty, TInt aStartAt) const
     {
-    if (aStartAt <= 0)
+    const TInt count = iPropertyArray.Count();
+
+    if( aStartAt >= 0 )
         {
-        const TInt i = iPropertyArray.FindInOrder(aDef, CMdEObject::CompareProperties );
-        if (i >= 0 && i < iPropertyArray.Count() && !iPropertyArray[i]->Removed())
+        TInt low( aStartAt );
+        TInt high( count );
+    
+        while( low < high )
             {
-            aProperty = iPropertyArray[i];
-            return i;
+            TInt mid( (low+high)>>1 );
+            
+            TInt compare( aDef.Compare( iPropertyArray[mid]->Def() ) );
+            if( compare == 0 )
+                {
+                if( !iPropertyArray[mid]->Removed() )
+                    {
+                    aProperty = iPropertyArray[mid];
+                    return mid;
+                    }
+                }
+            else if( compare > 0 )
+                {
+                low = mid + 1;
+                }
+            else
+                {
+                high = mid;
+                }
             }
         }
     return KErrNotFound;
     }
-
+    
 EXPORT_C CMdEProperty& CMdEObject::AddBoolPropertyL(CMdEPropertyDef& aDef, TBool aValue)
 	{
     if( aDef.PropertyType() != EPropertyBool )
@@ -545,7 +566,7 @@ void CMdEObject::DoAddPropertyL(CMdEProperty& aProperty)
 								TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
 	if (err == KErrAlreadyExists)
 		{
-		TInt f = iPropertyArray.FindInOrder(&aProperty,
+		const TInt f = iPropertyArray.FindInOrder(&aProperty,
 								TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
 
 		// this must never happen
@@ -704,13 +725,29 @@ EXPORT_C void CMdEObject::MovePropertiesL(CMdEObject& aObject)
 	// but don't remove yet from other object
 	for ( TInt i = 0; i < arraySize; ++i )
 		{
-		TRAPD( err, iPropertyArray.AppendL( aObject.iPropertyArray[i] ) );
-		if (err != KErrNone)
-			{
-			// restore this objects to original state
-			iPropertyArray.Reset();
-			User::Leave( err );
-			}
+        TInt err = iPropertyArray.InsertInOrder(aObject.iPropertyArray[i], 
+                                TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
+    
+        if (err == KErrAlreadyExists)
+            {
+            const TInt f = iPropertyArray.FindInOrder(aObject.iPropertyArray[i],
+                                TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
+
+            if( !iPropertyArray[f]->Removed() )
+                {
+				continue;
+                }
+
+            CMdEProperty* oldProperty = iPropertyArray[f];
+            iPropertyArray[f] = aObject.iPropertyArray[i];
+            delete oldProperty;
+            }
+        else if (err < KErrNone)
+            {
+            // restore this objects to original state
+            iPropertyArray.Reset();
+            User::Leave(err);
+            }	
 		}
 
 	// remove properties from other object
@@ -1000,7 +1037,27 @@ CMdEObject* CMdEObject::NewLC( CMdESession* aSession, CMdCSerializationBuffer& a
 					+ i * sizeof(TMdCProperty) );
 
 			CMdEProperty* property = CMdEProperty::NewLC( *newObject, aBuffer );
-			newObject->iPropertyArray.AppendL( property );
+		    TInt err = newObject->iPropertyArray.InsertInOrder(property, 
+		                                TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
+		    
+		    if (err == KErrAlreadyExists)
+		        {
+		        const TInt f = newObject->iPropertyArray.FindInOrder(property,
+		                                TLinearOrder<CMdEProperty>(CMdEObject::CompareProperties));
+
+		        if( !newObject->iPropertyArray[f]->Removed() )
+		            {
+		            continue;
+		            }
+
+		        CMdEProperty* oldProperty = newObject->iPropertyArray[f];
+		        newObject->iPropertyArray[f] = property;
+		        delete oldProperty;
+		        }
+		    else if (err < KErrNone)
+		        {
+		        User::Leave(err);
+		        }
 			CleanupStack::Pop( property );
 			}
 		}
@@ -1027,9 +1084,4 @@ TMdEInstanceType CMdEObject::InstanceType() const
 	{
 	return EMdETypeObject;
 	}
-
-TInt CMdEObject::CompareProperties(const CMdEPropertyDef* aPropertyDef, const CMdEProperty& aProperty)
-    {
-    return aPropertyDef->Compare( aProperty.Def() );
-    }
 

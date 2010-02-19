@@ -699,18 +699,6 @@ private:
 	 */
 	TUint32 ModifiedPropertiesCount() const;
 
-    /**
-     * Compares two properties.
-     *
-     * @param aFirst   First property.
-     * @param aSecond  Second property.
-     *
-     * @return  0, if the properties are equal;
-     *          a negative value, if the first property is less than the second;
-     *          a positive value, if the first property is greater than the second.
-     */
-	static TInt CompareProperties(const CMdEPropertyDef* aPropertyDef, const CMdEProperty& aProperty);
-	
 private:
 
 	/** Object definition.

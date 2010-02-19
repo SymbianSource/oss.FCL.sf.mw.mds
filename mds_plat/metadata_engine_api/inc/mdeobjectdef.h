@@ -116,31 +116,9 @@ private:
 	CMdEPropertyDef* GetPropertyDefL(const TDesC& aName, CMdEObjectDef* aChild);
 
 	void ConstructL(CMdCSerializationBuffer& aSchemaBuffer);
-	
-    /**
-     * Compares two properties.
-     *
-     * @param aFirst   First property.
-     * @param aSecond  Second property.
-     *
-     * @return  0, if the properties are equal;
-     *          a negative value, if the first property is less than the second;
-     *          a positive value, if the first property is greater than the second.
-     */
-    static TInt CompareProperties( const CMdEPropertyDef& aFirst, const CMdEPropertyDef& aSecond );
 
-    /**
-     * Compares two properties.
-     *
-     * @param aFirst   First property id.
-     * @param aSecond  Second property.
-     *
-     * @return  0, if the properties are equal;
-     *          a negative value, if the first property is less than the second;
-     *          a positive value, if the first property is greater than the second.
-     */
-    static TInt CompareProperties( const TDefId* aFirst, const CMdEPropertyDef& aSecond );
-    
+    static TInt CompareProperties(const CMdEPropertyDef& aFirst, const CMdEPropertyDef& aSecond);
+	
 private:
 	const TMdCObjectDef& iObjectDef;
 	CMdENamespaceDef& iNamespaceDef;

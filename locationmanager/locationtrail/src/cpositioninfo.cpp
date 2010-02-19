@@ -149,7 +149,9 @@ void CPositionInfo::Stop()
     {
     Cancel();
     
-    // Start shutdown timer...
+    iFirstInterval = ETrue;
+    iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds(KFirstInterval) );
+    
     iPositioner.Close();
     iPosServer.Close();
     }    
@@ -161,17 +163,10 @@ void CPositionInfo::Stop()
 void CPositionInfo::RunL()
     { 
     iTrail->Position( iPositionInfo, iStatus.Int() );
-    if ( iFirstInterval && IsActive() )
+    if ( iFirstInterval && iTrailCaptureSetting == RLocationTrail::ECaptureAll )
     	{
-    	Cancel();
-    	iUpdateOptions.SetUpdateInterval( iUpdateInterval );
-        if ( iTrailCaptureSetting == RLocationTrail::ECaptureAll ) 
-        	{
-        	User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );
-        	iPositioner.NotifyPositionUpdate( iPositionInfo, iStatus );
-        	}
-    	SetActive();
-    	
+    	iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds( iUpdateInterval ) );
+    	User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );
     	iFirstInterval = EFalse;
     	}
     }    

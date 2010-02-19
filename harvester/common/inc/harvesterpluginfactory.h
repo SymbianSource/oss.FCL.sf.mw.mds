@@ -25,6 +25,7 @@ class CHarvesterPluginInfo;
 class CHarvesterPlugin;
 class CHarvesterData;
 class CHarvesterBlacklist;
+class CHarvesterEventManager;
 
 NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 	{
@@ -40,6 +41,8 @@ NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 		IMPORT_C void SetBlacklist( CHarvesterBlacklist& aBlacklist );
 		IMPORT_C TBool IsSupportedFileExtension( const TDesC& aFileName );
 		IMPORT_C TBool IsContainerFileL( const TDesC& aURI );
+		
+		IMPORT_C void SendHarvestingStatusEventL( TBool aStarted );
 
 	private:
 		CHarvesterPluginFactory();
@@ -47,10 +50,14 @@ NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 		void SetupHarvesterPluginInfoL();
 		void AddNewPluginL( const TDesC8& aType, const TDesC8& aOpaque, TUid aPluginUid );
 		void GetSupportedPluginsL( RPointerArray<CHarvesterPluginInfo>& aSupportedPlugins, const TDesC& aExt );
+		void SetPluginInfo( CHarvesterData* aHD );
 		
 	private:
 		RPointerArray<CHarvesterPluginInfo> iHarvesterPluginInfoArray;
 		CHarvesterBlacklist* iBlacklist;
+		  
+	    TBool iHarvesting;
+		CHarvesterEventManager* iHarvesterEventManager;
 	};
 
 #endif

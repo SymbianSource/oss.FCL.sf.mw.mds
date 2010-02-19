@@ -50,6 +50,9 @@ CMdsFileServerPlugin::~CMdsFileServerPlugin()
     
     iCreatedFiles.ResetAndDestroy();
     iCreatedFiles.Close();
+    
+    iModifiedFiles.ResetAndDestroy();
+    iModifiedFiles.Close();
   
     iPaths.ResetAndDestroy();
     iPaths.Close();
@@ -181,6 +184,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 	TInt function = aRequest.Function();
 	
 	iFileName.Zero();
+    iNewFileName.Zero();
 	
 #ifdef _DEBUG_EVENTS
     PrintDebugEvents( function );
@@ -198,7 +202,6 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
         }
     
     const TBool formatFunction = function == EFsFormatOpen || function == EFsFormatSubClose;
-    iNewFileName.Zero();
         
     WRITELOG1( "----- CMdsFileServerPlugin::DoRequestL() - plugin function: %d -----", function );
 
@@ -374,11 +377,42 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             break;
 
         case EFsFileSetModified:
-        case EFsSetEntry:
+        
             WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileSetModified" );
+            iModifiedFiles.Append( iFileName.AllocL() );
             fileEventType = EMdsFileModified;
             break;
 
+        case EFsSetEntry:
+            {
+            WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsSetEntry" );
+
+            TBool found = EFalse;
+
+            for ( TInt i = iModifiedFiles.Count(); --i >= 0; )
+                    {
+                    if ( MdsUtils::Compare( iFileName, *(iModifiedFiles[i]) ) == 0 )
+                      {
+                        delete iModifiedFiles[i];
+                        iModifiedFiles.Remove( i );
+                        found = ETrue;
+                        }
+                    }
+            
+            if( iModifiedFiles.Count() == 0 )
+                {
+                iModifiedFiles.GranularCompress();
+                }
+            
+            if ( found )
+                {
+                return KErrNone;
+                }
+            
+            fileEventType = EMdsFileModified;
+            }
+            break;            
+            
         case EFsFileReplace:
         case EFsReplace:
             WRITELOG1( "CMdsFileServerPlugin::DoRequestL() - EFsReplace/EFsFileReplace, new file: %S", &iNewFileName );
@@ -543,7 +577,7 @@ CMdsFileServerPluginConn::CMdsFileServerPluginConn(
 
 
 /**
-* The destructor for the test virus scanner hook.
+* The destructor.
 * @internalComponent
 */
 CMdsFileServerPluginConn::~CMdsFileServerPluginConn()
@@ -734,7 +768,8 @@ TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aReq
     if ( status.iFileName.Length() > 0 )
         {
         // check if already exists
-        for ( TInt i = iPaths.Count(); --i >= 0; )
+        const TInt count( iPaths.Count() );
+        for ( TInt i = count; --i >= 0; )
             {
             TDesC* tf = iPaths[i];
             if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
@@ -779,21 +814,18 @@ TInt CMdsFileServerPlugin::RemoveNotificationPath( const CFsPluginConnRequest& a
     
     if ( status.iFileName.Length() > 0 )
         {
-        // check if already exist
-        if ( iPaths.Count() > 0 )
+        for ( TInt i = iPaths.Count(); --i >= 0; )
             {
-            for ( TInt i = iPaths.Count(); --i >= 0; )
+            TDesC* tf = iPaths[i];
+            if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
                 {
-                TDesC* tf = iPaths[i];
-                if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
-                    {
-                    WRITELOG1( "CMdsFileServerPlugin::RemoveNotificationPath() - remove path: %S", &status.iFileName );
-                    delete tf;
-                    tf = NULL;
-                    iPaths.Remove( i );
-                    }
+                WRITELOG1( "CMdsFileServerPlugin::RemoveNotificationPath() - remove path: %S", &status.iFileName );
+                delete tf;
+                tf = NULL;
+                iPaths.Remove( i );
                 }
             }
+        iPaths.Compress();
         }
     else
         {
@@ -882,6 +914,7 @@ TInt CMdsFileServerPlugin::RemoveIgnorePath( const CFsPluginConnRequest& aReques
                 iIgnorePaths.Remove( i );
                 }
             }
+        iIgnorePaths.Compress();
         }
     else
         {

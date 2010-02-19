@@ -115,7 +115,8 @@ CHarvesterData* CHarvesterQueue::GetNextItem()
         item = iItemQueue[0];
         iItemQueue.Remove( 0 );	
         }
-   	else
+   	   
+   	if( iItemQueue.Count() == 0 )
         {
         WRITELOG( "Harvester queue items zero!" );
         iItemQueue.Compress();
@@ -134,7 +135,7 @@ CHarvesterData* CHarvesterQueue::GetNextItem()
 void CHarvesterQueue::Append( CHarvesterData* aItem )
 	{
     WRITELOG( "CHarvesterQueue::Append()" );
-    TInt err = KErrNone;
+    TInt err( KErrNone );
 
     if ( iBlacklist )
         {
@@ -152,24 +153,20 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
             }
         }
 
-    if ( err == KErrNone )
-        {
-		// check if fast harvest file and add to start of queue
-    	if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
-    		{
-    		err = iItemQueue.Insert( aItem, 0 );
-    		}
-    	else
-    		{
-    		err = iItemQueue.Append( aItem );
-    		}
+	// check if fast harvest file and add to start of queue
+    if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
+    	{
+    	err = iItemQueue.Insert( aItem, 0 );
+    	}
+    else
+    	{
+    	err = iItemQueue.Append( aItem );
+    	}
     	
-    	if( err != KErrNone )
-			{
-			delete aItem;
-			aItem = NULL;
-			return;
-			}
+    if( err != KErrNone )
+		{
+		delete aItem;
+		aItem = NULL;
         }
     }
 

@@ -181,6 +181,10 @@ public:
     */
     void HarvestL( CHarvesterData* aHarvesterData );
 
+protected: // from CHarvesterPlugin
+    
+    void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+    
 private:
 
     /**

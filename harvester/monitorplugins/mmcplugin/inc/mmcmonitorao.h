@@ -62,6 +62,7 @@ class CMMCMonitorAO : public CActive
         * Starts monitoring the MMC insertions and removals.
         *
         * @param aObserver  Both events are notified via the aObserver.
+        * @param aMedias Array of present medias
         * @return ETrue if success, EFalse if not
         */
         TBool StartMonitoring( MMMCMonitorObserver& aObserver, RArray<TMdEMediaInfo>& aMedias );

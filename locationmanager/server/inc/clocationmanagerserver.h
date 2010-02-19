@@ -387,6 +387,13 @@ private:
     static TInt PositioningStopTimeout( TAny* aAny );
     
     /**
+     * Callback function to check if files were added to remapping queue with delay
+     * @param aAny, a pointer to CLocationRecord object
+     * @return Error code
+     */
+    static TInt CheckForRemappingCallback( TAny* aAny );
+    
+    /**
      * Stops location trail and deletes the positioning stop timer.
      */
     void StopRecording();
@@ -456,6 +463,7 @@ private:
     RArray<TItemId> iTargetObjectIds;
     TItemId iTagId;
     TInt iLocManStopDelay;
+    TInt iLocManStopRemapDelay;
     
     RLocationTrail::TTrailCaptureSetting iCaptureSetting;
     TBool iRemoveLocation;    

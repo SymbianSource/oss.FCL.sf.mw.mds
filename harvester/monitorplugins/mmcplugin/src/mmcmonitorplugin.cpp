@@ -22,6 +22,10 @@
 #include "harvestercenreputil.h"
 #include <driveinfo.h>
 
+#ifdef __WINSCW__
+#include <pathinfo.h>
+#endif
+
 #include <e32cmn.h>
 
 _LIT( KColon, ":" );
@@ -40,6 +44,8 @@ void CMMCMonitorPlugin::ConstructL() // second-phase constructor
     {
     WRITELOG( "CMMCMonitorPlugin::ConstructL" );
 
+    User::LeaveIfError( iFs.Connect() );
+    
     iMMCMonitor = CMMCMonitorAO::NewL();
     iMountTask = CMMCMountTaskAO::NewL();
     iUsbMonitor = CMMCUsbAO::NewL();
@@ -69,6 +75,8 @@ CMMCMonitorPlugin::~CMMCMonitorPlugin() // destruct
 	
 	delete iMmcScanner;
 	delete iHddScanner;
+	
+	iFs.Close();
     }
 
 TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
@@ -120,6 +128,12 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
     		}
     	}
  
+    if( hdMediaId == 0 )
+        {
+        // Try to fetch internall mass storage media id again if it was not mounted
+        hdMediaId = iMountTask->GetInternalDriveMediaId();
+        }
+    
     // scan mass storage to catch all chances even if battery dies during operation that should  be catched
     if( hdMediaId )
 		{
@@ -207,18 +221,10 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
         }
     if( aMediaID != 0 && aEventType == EMounted)
     	{
-	    RFs fs;
-	    const TInt err = fs.Connect();
-	    if ( err != KErrNone )
-	    	{
-	        delete mountData;
-	    	return;
-	    	}
-
 	    TUint status;
 	    TInt drive;
-	    fs.CharToDrive( aDriveChar, drive );
-		if( DriveInfo::GetDriveStatus( fs, drive, status ) == KErrNone )
+	    iFs.CharToDrive( aDriveChar, drive );
+		if( DriveInfo::GetDriveStatus( iFs, drive, status ) == KErrNone )
 			{
 			//The "Out of disk space" mde query uses the MdE_Preferences table
 			if( !(status & DriveInfo::EDriveInternal) )
@@ -226,8 +232,6 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 				iMdEClient->AddMemoryCard( aMediaID );
 				}
 			}
-		
-		fs.Close();
     	}
 
     mountData->iDrivePath.Append( aDriveChar );
@@ -240,6 +244,10 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EMounted" );
             mountData->iMountType = TMountData::EMount;
+            if( !iMountTask->IsActive() )
+                {
+                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
+                }
             iMountTask->StartMount( *mountData );
             }
         break;
@@ -254,6 +262,10 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             	{
 	            WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EDismounted" );
 	            mountData->iMountType = TMountData::EUnmount;
+	            if( !iMountTask->IsActive() )
+	                {
+	                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
+	                }
 	            iMountTask->StartUnmount( *mountData );
             	}
             }
@@ -263,6 +275,10 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EFormatted" );
             mountData->iMountType = TMountData::EFormat;
+            if( !iMountTask->IsActive() )
+                {
+                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
+                }
             iMountTask->StartUnmount( *mountData );
             }
         break;
@@ -279,18 +295,20 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias )
     {
     WRITELOG( "CMMCMonitorPlugin::StartMonitoringAllMMCs" );
-    
-    RFs fs;
-    User::LeaveIfError( fs.Connect() );
-    CleanupClosePushL( fs );
-        
+
     TDriveInfo driveInfo;
     TDriveList driveList;
     TInt numOfElements( 0 );
-    DriveInfo::GetUserVisibleDrives( fs, 
+    DriveInfo::GetUserVisibleDrives( iFs, 
                                                         driveList, 
                                                         numOfElements, 
                                                         KDriveAttExclude | KDriveAttRemote | KDriveAttRom );
+
+#ifdef __WINSCW__
+    TFileName systemPath = PathInfo::GetPath( PathInfo::EPhoneMemoryRootPath );
+    TInt systemDriveNum( -1 );
+    iFs.CharToDrive( systemPath[0], systemDriveNum );
+#endif
     
     TInt i( 0 );
     TChar drive;
@@ -302,8 +320,8 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
     for ( i = 0; i < mediaCount; i++ )
     	{
     	TInt driveNum(0);
-    	fs.CharToDrive( aMedias[i].iDrive, driveNum );
-    	TUint32 mediaId = FSUtil::MediaID( fs, driveNum );
+    	iFs.CharToDrive( aMedias[i].iDrive, driveNum );
+    	TUint32 mediaId = FSUtil::MediaID( iFs, driveNum );
     	if ( mediaId != aMedias[i].iMediaId ) 
     		{
     		iMdEClient->SetMediaL( aMedias[i].iMediaId, aMedias[i].iDrive, EFalse );
@@ -312,10 +330,17 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
     
     for ( i = 0; i < acount; i++ )
         {
+#ifdef __WINSCW__
+        if ( i == systemDriveNum )
+            {
+            continue;
+            }
+#endif
+    
         if ( driveList[i] > 0 )
             {
             TUint driveStatus( 0 );
-            DriveInfo::GetDriveStatus( fs, i, driveStatus ); 
+            DriveInfo::GetDriveStatus( iFs, i, driveStatus ); 
 
             if ( driveStatus & DriveInfo::EDriveUsbMemory )
                 {
@@ -323,15 +348,17 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
                 continue;
                 }
             
-            fs.Drive( driveInfo, i );
-            if ( driveInfo.iDriveAtt & KDriveAttRemovable && driveInfo.iType != EMediaNotPresent )
+            iFs.Drive( driveInfo, i );
+            if ( ((driveInfo.iDriveAtt & KDriveAttRemovable) || (driveInfo.iDriveAtt & KDriveAttLogicallyRemovable) ||
+                   (driveInfo.iType == EMediaHardDisk && driveStatus & DriveInfo::EDriveInternal) ) &&
+                   (driveInfo.iType != EMediaNotPresent) )
                 {
                 count++; // DEBUG INFO
                 
-                fs.DriveToChar( i, drive );
+                iFs.DriveToChar( i, drive );
                 
                 // set media id to MdE
-                TUint32 mediaId = FSUtil::MediaID( fs, i );
+                TUint32 mediaId = FSUtil::MediaID( iFs, i );
                 if ( mediaId != 0 )
                     {
                     iMdEClient->SetMediaL( mediaId, drive, ETrue );
@@ -342,7 +369,6 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
             }
         }
     
-    CleanupStack::PopAndDestroy( &fs ); 
-    
     WRITELOG1( "CMMCMonitorPlugin::StartMonitoringAllMMCs found %d MMCs", count );
     }
+

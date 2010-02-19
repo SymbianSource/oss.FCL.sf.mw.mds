@@ -22,7 +22,7 @@
 
 _LIT( KColon, ":" );
 
-const TInt KDefaultDelay = 4;
+const TInt KDefaultDelay = 3;
 const TInt KMillion = 1000000;
 
 const TUid KRepositoryUid = { 0x20007183 };
@@ -78,6 +78,8 @@ void CMmcScannerAO::ConstructL( TBool aAlreadyWaited )
 	    TTimeIntervalMicroSeconds32 delay( 5 ); 
 	    After( delay );
 	    }
+	
+    iHEM = CHarvesterEventManager::GetInstanceL();
 	}
 
 CMmcScannerAO::~CMmcScannerAO()
@@ -95,6 +97,11 @@ CMmcScannerAO::~CMmcScannerAO()
 	
     iHdArray.ResetAndDestroy();
 	iHdArray.Close();
+
+    if (iHEM)
+        {
+        iHEM->ReleaseInstance();
+        }
 	
 	iFs.Close();
 	}
@@ -136,6 +143,15 @@ void CMmcScannerAO::RunL()
 			
 			WRITELOG("CMmcScannerAO::RunL - build file list");
 			iMmcFileList->BuildFileListL( iFs, iDrive, iEntryArray );
+			
+            // send start event
+            const TInt entryCount = iEntryArray.Count();
+            if( entryCount > 0 )
+                {
+                iHEM->IncreaseItemCount( EHEObserverTypeMMC, entryCount );
+                iHEM->SendEventL( EHEObserverTypeMMC, EHEStateStarted, iHEM->ItemCount( EHEObserverTypeMMC ) );
+                }
+			
 			SetState( EProcessFiles );
 			break;
 			}

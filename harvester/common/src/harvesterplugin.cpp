@@ -24,10 +24,8 @@
 #include "harvesterlog.h"
 #include "harvestercommon.h"
 #include "harvesterblacklist.h"
-#include "harvestereventmanager.h"
+#include "harvesterpluginfactory.h"
 #include "mdsutils.h"
-
-const TInt KCacheItemCountForEventCaching = 1;
 
 // ---------------------------------------------------------------------------
 // NewL
@@ -52,7 +50,6 @@ void CHarvesterPlugin::ConstructL()
 	{
 	User::LeaveIfError( iFs.Connect() );
 	iState = EHarvesterIdle;
-	iHarvesterEventManager = CHarvesterEventManager::GetInstanceL();
 	CActiveScheduler::Add( this );
 	}
 
@@ -67,9 +64,9 @@ EXPORT_C CHarvesterPlugin::CHarvesterPlugin() :
 	iBlacklist( NULL ),
     iDtor_ID_Key( KNullUid ),
     iOriginPropertyDef( NULL ),
-    iTitlePropertyDef( NULL )
+    iTitlePropertyDef( NULL ),
+    iHarvesting( NULL )
 	{
-	
 	}
 
 // ---------------------------------------------------------------------------
@@ -90,11 +87,6 @@ EXPORT_C void CHarvesterPlugin::ListImplementationsL(
 EXPORT_C CHarvesterPlugin::~CHarvesterPlugin() // destruct - virtual
 	{
 	Cancel();
-
-    if (iHarvesterEventManager)
-        {
-        iHarvesterEventManager->ReleaseInstance();
-        }
 	
 	iFs.Close();
 	REComSession::DestroyedImplementation( iDtor_ID_Key );
@@ -148,26 +140,35 @@ EXPORT_C void CHarvesterPlugin::RunL()
             if( iQueue->Count() == 0 )
                 {
                 SetNextRequest( EHarvesterIdle );
-                iHarvesting = EFalse;                       
-                iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
-                iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
+                if( iHarvesting )
+                    {
+                    TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( EFalse ) );
+                    iHarvesting = EFalse;     
+                    }
                 iQueue->Compress();
                 }
             else
             	{
                 if ( !iHarvesting )
                     {
+                    TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( ETrue ) );
                     iHarvesting = ETrue;
-                    iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateStarted );
-                    // This next line is for caching the harvester started event for observers registering
-                    // after harvesting has already started
-                    iHarvesterEventManager->IncreaseItemCount( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
                     }
             
             	CHarvesterData* hd = (*iQueue)[0];
             	iQueue->Remove( 0 );
             	const TDesC& uri = hd->Uri();
             	TUint32 mediaId = hd->MdeObject().MediaId();
+            	
+            	if( hd->ObjectType() == EFastHarvest || hd->Origin() == MdeConstants::Object::ECamera )
+            	    {
+            	    iFastModeEnabled = ETrue;
+            	    }
+            	else if( iFastModeEnabled )
+            	    {
+                    iFastModeEnabled = EFalse;
+                    SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
+            	    }
             	
 				if( iBlacklist )
 					{
@@ -311,6 +312,24 @@ EXPORT_C void CHarvesterPlugin::SetBlacklist( CHarvesterBlacklist& aBlacklist )
 	{
 	iBlacklist = &aBlacklist;
 	}
+
+// ---------------------------------------------------------------------------
+// GetMimeType
+// ---------------------------------------------------------------------------
+//
+EXPORT_C void CHarvesterPlugin::GetMimeType( const TDesC& /*aUri*/, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    }
+
+// ---------------------------------------------------------------------------
+// SetHarvesterPluginFactory
+// ---------------------------------------------------------------------------
+//
+EXPORT_C void CHarvesterPlugin::SetHarvesterPluginFactory( CHarvesterPluginFactory& aFactory )
+    {
+    iFactory = &aFactory;
+    }
 
 // ---------------------------------------------------------------------------
 // E32Dll

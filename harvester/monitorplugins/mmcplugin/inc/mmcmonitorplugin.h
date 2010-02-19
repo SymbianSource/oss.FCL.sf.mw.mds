@@ -138,6 +138,8 @@ class CMMCMonitorPlugin : public CMonitorPlugin, public MMMCMonitorObserver
 		CMmcScannerAO* iMmcScanner;
 		
 		CMmcScannerAO* iHddScanner;
+		
+		RFs iFs;
 
 	};
 

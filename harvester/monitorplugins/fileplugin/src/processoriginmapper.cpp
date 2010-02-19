@@ -151,11 +151,6 @@ TOrigin CProcessOriginMapper::OriginL( const TUid& aProcessId )
         {
         origin = iProcessOriginMap[index].iOrigin;
         }
-    else
-        {
-        WRITELOG( "CProcessOriginMapper::OriginL - search for processId: not found !!" );
-        User::Leave( KErrNotFound );
-        }
 
     WRITELOG2( "CProcessOriginMapper::OriginL - processId: 0x%.8x, origin: %d", aProcessId.iUid, (TInt)origin );
     return origin;

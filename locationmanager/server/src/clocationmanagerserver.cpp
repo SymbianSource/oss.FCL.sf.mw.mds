@@ -98,6 +98,7 @@ CLocationManagerServer::CLocationManagerServer()
 			         iSessionReady( EFalse ),
                      iTagId( 0 ),
                      iLocManStopDelay( 0 ),
+                     iLocManStopRemapDelay( 0 ),
                      iCaptureSetting( RLocationTrail::EOff ),
                      iRemoveLocation( EFalse )
     {
@@ -133,7 +134,6 @@ void CLocationManagerServer::ConstructL()
     
     CRepository* repository = CRepository::NewLC( KRepositoryUid );
 	TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
-	CleanupStack::PopAndDestroy( repository );
 	
     LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay:%d", iLocManStopDelay);
     
@@ -142,6 +142,17 @@ void CLocationManagerServer::ConstructL()
         LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay err:%d", err);
         iLocManStopDelay = KLocationTrailShutdownDelay;
     	}
+
+    err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
+    CleanupStack::PopAndDestroy( repository );
+    
+    LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
+    
+    if ( err != KErrNone )
+        {
+        LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay err:%d", err);
+        iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
+        }
     
     LOG ("CLocationManagerServer::ConstructL() end");
     }
@@ -308,6 +319,7 @@ void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCapture
         {
         User::Leave( KErrAlreadyExists );
         }
+    
     if ( iTimer )
     	{
     	delete iTimer;
@@ -329,27 +341,35 @@ void CLocationManagerServer::StopGPSPositioningL()
     GetLocationTrailState( state );
     if( state == RLocationTrail::ETrailStarted || state == RLocationTrail::ETrailStarting )
     	{
-    	iLocationRecord->Stop();
+        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityStandard ) );
+        if ( error != KErrNone )
+            {
+            // If timer can't be created we stop the location trail immediately.
+            iLocationRecord->Stop();
+            StopTrackLogL();
+            return;
+            }
+        iLocationRecord->SetStateToStopping();
+        iTimer->Start( KLocationTrailRemappingCheckDelay * 1000000, 0, TCallBack( CheckForRemappingCallback, this ) );
     	}
     else if ( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
+        TInt delay( iLocManStopDelay );
         if ( iLocationRecord->RemappingNeeded() )
         	{
-        	TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityStandard ) );
-        	if ( error != KErrNone )
-        		{
-        		// If timer can't be created we stop the location trail immediately.
-        		iLocationRecord->Stop();
-        		StopTrackLogL();
-        		return;
-        		}
-        	iLocationRecord->SetStateToStopping();
-        	iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( PositioningStopTimeout, this ) );
+            delay = iLocManStopRemapDelay;
         	}
-        else 
+        
+        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityStandard ) );
+        if ( error != KErrNone )
         	{
+        	// If timer can't be created we stop the location trail immediately.
         	iLocationRecord->Stop();
+        	StopTrackLogL();
+        	return;
         	}
+        iLocationRecord->SetStateToStopping();
+        iTimer->Start( delay * 1000000, 0, TCallBack( PositioningStopTimeout, this ) );
         }
     
     // Always stop tracklog.
@@ -378,6 +398,32 @@ TInt CLocationManagerServer::PositioningStopTimeout( TAny* aAny )
 	
 	return KErrNone;
 	}
+
+// --------------------------------------------------------------------------
+// CLocationUtilityServer::PositioningStopTimeout
+// --------------------------------------------------------------------------
+//
+TInt CLocationManagerServer::CheckForRemappingCallback( TAny* aAny )
+    {
+    CLocationManagerServer* self = STATIC_CAST( CLocationManagerServer*, aAny );
+
+    self->iTimer->Cancel();
+    
+    TInt delay( self->iLocManStopDelay );
+    if ( self->iLocationRecord->RemappingNeeded() )
+        {
+        delay = self->iLocManStopRemapDelay;
+        self->iTimer->Start( delay * 1000000, 0, TCallBack( PositioningStopTimeout, self ) );
+        }
+    else
+        {
+        delete self->iTimer;
+        self->iTimer = NULL;
+        self->iLocationRecord->Stop();
+        }
+    
+    return KErrNone;
+    }
 
 // --------------------------------------------------------------------------
 // CLocationManagerServer::GetLocationTrailState
