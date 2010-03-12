@@ -122,6 +122,13 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
     	if ( presentState && medias[i].iMediaId != hdMediaId )
     		{
     		// scan MMC if card was in phone
+    	
+    	    if( iMmcScanner )
+    	        {
+    	        iMmcScanner->Cancel();
+    	        delete iMmcScanner;
+    	        iMmcScanner = NULL;
+    	        }
     		TRAP_IGNORE( iMmcScanner = CMmcScannerAO::NewL( medias[i].iMediaId, iMdEClient, iObserver,
     		    				aHarvesterPluginFactory, CActive::EPriorityHigh, alreadyWaited ) );
     		alreadyWaited = ETrue;

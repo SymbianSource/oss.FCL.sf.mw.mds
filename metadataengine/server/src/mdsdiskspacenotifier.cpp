@@ -57,7 +57,13 @@ void CMdSDiskSpaceNotifierAO::RunL()
 		switch( status )
 			{
 			case KErrNone:
-				iFileServerSession.Volume( volumeInfo, iDrive );
+			    {
+				const TInt error = iFileServerSession.Volume( volumeInfo, iDrive );
+				if( error != KErrNone )
+				    {
+				    StartNotifier();
+				    break;
+				    }
 				
 				// Check if free space is less than threshold level
 				if( volumeInfo.iFree < iThreshold )
@@ -78,6 +84,7 @@ void CMdSDiskSpaceNotifierAO::RunL()
 					}
 				StartNotifier();
 				break;
+			    }
 
 			case KErrArgument:
 				User::Leave( status );
@@ -89,8 +96,15 @@ void CMdSDiskSpaceNotifierAO::RunL()
 	else if ( iState == CMdSDiskSpaceNotifierAO::EIterate )
 		{
 		const TInt KMaxIterations = 10;
-		
-		iFileServerSession.Volume( volumeInfo, iDrive );
+        TInt error = iFileServerSession.Volume( volumeInfo, iDrive );
+        if( error != KErrNone )
+            {
+            iState = ENormal;
+            iIterationCount = 0;
+            StartNotifier();
+            return;
+            }
+
 		if ( volumeInfo.iFree < iThreshold )
 			{
 			iObserver.HandleDiskSpaceNotificationL( MMdSDiskSpaceNotifierObserver::ELess );
@@ -104,7 +118,14 @@ void CMdSDiskSpaceNotifierAO::RunL()
 				}
 			else
 				{
-				iFileServerSession.Volume( volumeInfo, iDrive );
+		        error = iFileServerSession.Volume( volumeInfo, iDrive );
+		        if( error != KErrNone )
+		            {
+		            iState = ENormal;
+		            iIterationCount = 0;
+		            StartNotifier();
+		            return;
+		            }
 				if ( volumeInfo.iFree >= iThreshold )
 					{
 					iDiskFull = EFalse;
@@ -155,8 +176,8 @@ void CMdSDiskSpaceNotifierAO::ConstructL()
 	User::LeaveIfError( iFileServerSession.Connect( KMessageSlotCount ) );
 	
 	TVolumeInfo volumeInfo;
-	iFileServerSession.Volume( volumeInfo, iDrive );	
-	if ( volumeInfo.iFree < iThreshold )
+	const TInt error = iFileServerSession.Volume( volumeInfo, iDrive );	
+	if ( (error != KErrNone) || volumeInfo.iFree < iThreshold )
 		{
 		iDiskFull = ETrue;
 		}

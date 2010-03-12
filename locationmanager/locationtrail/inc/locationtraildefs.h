@@ -28,7 +28,7 @@ const TInt KMaxAge         = 800000;   // 0.8 second
 
 const TInt KMaxTrailLength = 480000000; // 8 min.
 
-const TInt KIntervalSeconds = KUpdateInterval / 1000000; // 10 seconds
+const TInt KMaximumIntervalSeconds = KUpdateTimeOut / 1000000; // 20 seconds
 
 const TInt KCurrentLocTimeoutCount = 48; // 48 * 10 sec -> 8 min timeout.
 
@@ -45,6 +45,8 @@ const TInt KLocationDelta = 20;
 const TInt KRemappingTime = 480;
 
 const TInt KFirstInterval = 1000000; // 1 second
+
+const TInt KFirstTimeOut = 1500000; // 1.5 second
 
 //The name of the requestor
 _LIT( KRequestor,         "Location Trail" );

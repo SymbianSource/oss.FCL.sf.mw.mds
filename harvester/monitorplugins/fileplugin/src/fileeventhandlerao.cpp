@@ -108,6 +108,8 @@ CFileEventHandlerAO::~CFileEventHandlerAO()
     delete iFolderRenamer;
     
     delete iEventArray;
+    
+    iQueue.ResetAndDestroy();
     iUriArray.Close();
     }
 

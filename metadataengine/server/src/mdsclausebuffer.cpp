@@ -62,15 +62,11 @@ CMdsClauseBuffer::~CMdsClauseBuffer()
 //
 void CMdsClauseBuffer::ConstructL( TInt aInitialSize )
     {
-    if ( aInitialSize < 1 )
+    if ( aInitialSize < 1 || aInitialSize > 100000 )
     	{
     	aInitialSize = 1;
     	}
     iCurrentBufSize = aInitialSize;
-    if (aInitialSize > 100000 || aInitialSize < 0)
-    	{
-    	aInitialSize = 0;
-    	}
 
     iBuffer = HBufC::NewL( iCurrentBufSize );
     }
@@ -104,10 +100,10 @@ TBool CMdsClauseBuffer::ReserveSpaceL( TInt aRequired )
         return EFalse;
         }
 
-	iCurrentBufSize = aRequired;
-
     // realloc and copy
-    iBuffer = iBuffer->ReAllocL( iCurrentBufSize );
+    iBuffer = iBuffer->ReAllocL( aRequired );
+    
+	iCurrentBufSize = aRequired;
 
     return ETrue;
     }

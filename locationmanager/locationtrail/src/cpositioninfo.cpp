@@ -52,7 +52,7 @@ CPositionInfo::CPositionInfo( MPositionInfoObserver* aTrail )
     // Set update interval.
     iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds(KFirstInterval) );
     // Set time out level. 
-    iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds(KUpdateTimeOut) );
+    iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds(KFirstTimeOut) );
     // Positions which have time stamp below KMaxAge can be reused
     iUpdateOptions.SetMaxUpdateAge( TTimeIntervalMicroSeconds(KMaxAge) );
     // Disables location framework to send partial position data
@@ -72,7 +72,7 @@ void CPositionInfo::ConstructL()
 // CPositionInfo::~CPositionInfo
 // --------------------------------------------------------------------------
 //    
-CPositionInfo::~CPositionInfo()
+EXPORT_C CPositionInfo::~CPositionInfo()
     {
     Cancel();
     iPositioner.Close();
@@ -98,6 +98,8 @@ void CPositionInfo::StartL( RLocationTrail::TTrailCaptureSetting aCaptureSetting
 
     iTrailCaptureSetting = aCaptureSetting;
     iUpdateInterval = aUpdateInterval;
+    iFirstInterval = ETrue;
+    iPositionInfo = TPositionSatelliteInfo();
     
     if ( aCaptureSetting == RLocationTrail::ECaptureAll ) 
     	{
@@ -150,7 +152,7 @@ void CPositionInfo::Stop()
     Cancel();
     
     iFirstInterval = ETrue;
-    iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds(KFirstInterval) );
+    iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds( KFirstInterval ) );
     
     iPositioner.Close();
     iPosServer.Close();
@@ -166,6 +168,7 @@ void CPositionInfo::RunL()
     if ( iFirstInterval && iTrailCaptureSetting == RLocationTrail::ECaptureAll )
     	{
     	iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds( iUpdateInterval ) );
+    	iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds( KUpdateTimeOut ) );
     	User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );
     	iFirstInterval = EFalse;
     	}

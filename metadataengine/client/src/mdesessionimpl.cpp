@@ -68,7 +68,11 @@ void CMdESessionAsyncHandler::AddRequest( CMdCSerializationBuffer* aBuffer,
 			RMdESessionAsyncRequest::EAddRequest, 
 			aBuffer, aResultBuffer, aRequestStatus );
 
-	iRequests.Append(request);
+	const TInt error = iRequests.Append(request);
+    if( error != KErrNone )
+        {
+        return;
+        }
 
 	if( !IsActive() )
 		{
@@ -86,7 +90,11 @@ void CMdESessionAsyncHandler::UpdateRequest( CMdCSerializationBuffer * aBuffer,
 			RMdESessionAsyncRequest::EUpdateRequest,
 			aBuffer, aResultBuffer, aRequestStatus);
 
-	iRequests.Append(request);
+	const TInt error = iRequests.Append(request);
+    if( error != KErrNone )
+        {
+        return;
+        }
 
 	if( !IsActive() )
 		{
@@ -104,7 +112,11 @@ void CMdESessionAsyncHandler::RemoveRequest( CMdCSerializationBuffer* aBuffer,
 			RMdESessionAsyncRequest::ERemoveRequest, 
 			aBuffer, aResultBuffer, aRequestStatus);
 
-	iRequests.Append(request);
+	const TInt error = iRequests.Append(request);
+	if( error != KErrNone )
+	    {
+	    return;
+	    }
 
 	if( !IsActive() )
 		{
@@ -224,8 +236,6 @@ CMdESessionImpl::~CMdESessionImpl()
 	{
     // No session errors should be sent during deconstruction to avoid possible double deletion
     iSessionObserver = NULL;
-    
-	Close();
 
 	delete iSchemaBuffer;
 
@@ -253,8 +263,6 @@ void CMdESessionImpl::ConstructL()
 
 void CMdESessionImpl::Close()
 	{
-	iSchemaObserverArray.Reset();
-	iSchemaObserverArray.Close();
 	}
 
 TInt CMdESessionImpl::NamespaceDefCount() const
@@ -1669,7 +1677,7 @@ TItemId CMdESessionImpl::AddItemL( CMdEInstanceItem& aItem )
 	{
 	RPointerArray<CMdEInstanceItem> items;
 	CleanupClosePushL( items );
-	items.Append( &aItem );
+	items.AppendL( &aItem );
 	User::LeaveIfError( AddItemsL( items ) );
 	CleanupStack::PopAndDestroy( &items );
 	return aItem.Id();
@@ -1898,7 +1906,7 @@ TItemId CMdESessionImpl::UpdateRelationL( CMdERelation& aRelation )
     {
 	RPointerArray<CMdEInstanceItem> items;
 	CleanupClosePushL( items );
-	items.Append( &aRelation );
+	items.AppendL( &aRelation );
 	User::LeaveIfError( UpdateItemsL( items ) );
 	CleanupStack::PopAndDestroy( &items );
 	return aRelation.Id();
@@ -2269,7 +2277,7 @@ void CMdESessionImpl::AddObjectObserverL( MMdEObjectObserver& aObserver,
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
+    iNotifiers.AppendL( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }
@@ -2296,7 +2304,7 @@ void CMdESessionImpl::AddObjectPresentObserverL(
     		&aObserver, NULL, namespaceDef );
 
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
+    iNotifiers.AppendL( notifier );
 	}
 
 void CMdESessionImpl::AddRelationObserverL( MMdERelationObserver& aObserver,
@@ -2352,7 +2360,7 @@ void CMdESessionImpl::AddRelationObserverL( MMdERelationObserver& aObserver,
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
+    iNotifiers.AppendL( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }
@@ -2409,7 +2417,7 @@ void CMdESessionImpl::AddRelationItemObserverL(
 	notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 	
 	CleanupStack::Pop( notifier );
-	iNotifiers.Append( notifier );
+	iNotifiers.AppendL( notifier );
 	
     CleanupStack::PopAndDestroy( aCondition );
 	}
@@ -2438,7 +2446,7 @@ void CMdESessionImpl::AddRelationPresentObserverL(
     		&aObserver, NULL, namespaceDef );
 
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
+    iNotifiers.AppendL( notifier );
 	}
 
 void CMdESessionImpl::AddEventObserverL( MMdEEventObserver& aObserver,
@@ -2495,7 +2503,7 @@ void CMdESessionImpl::AddEventObserverL( MMdEEventObserver& aObserver,
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
+    iNotifiers.AppendL( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }

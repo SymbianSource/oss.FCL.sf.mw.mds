@@ -331,8 +331,8 @@ MDE_IMPLEMENT_ADD_RANGE_PROPERTY_CONDITION(Uint)
 MDE_IMPLEMENT_ADD_RANGE_PROPERTY_CONDITION(Real)
 MDE_IMPLEMENT_ADD_RANGE_PROPERTY_CONDITION(Time)
 
-EXPORT_C CMdETextPropertyCondition& 
-CMdELogicCondition::AddPropertyConditionL(const CMdEPropertyDef& aPropertyDef,
+EXPORT_C CMdETextPropertyCondition& CMdELogicCondition::AddPropertyConditionL(
+                                          const CMdEPropertyDef& aPropertyDef,
                                           TTextPropertyConditionCompareMethod aCompareMethod,
                                           const TDesC& aText)
     {

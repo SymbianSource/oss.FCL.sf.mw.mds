@@ -71,7 +71,7 @@ CMdEObjectDef::~CMdEObjectDef()
     iPropertyDefs.Close();
     }
 
-TDefId CMdEObjectDef::Id() const
+EXPORT_C TDefId CMdEObjectDef::Id() const
     {
     return iObjectDef.iDefId;
     }

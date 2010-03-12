@@ -741,7 +741,7 @@ void CMdSServerSession::CheckObjectL( const RMessage2& aMsg )
 				User::Leave( KErrArgument );
 				}
 		    RBuf uri;
-		    uri.Create( uriLength );
+		    uri.CreateL( uriLength );
 		    CleanupClosePushL( uri );
 		    aMsg.ReadL( ECheckObjectArgTypeValue, uri );
 		    buffer = iServer.Manipulate().CheckObjectL( resultBufferLength, uri, namespaceDefId );
@@ -1235,7 +1235,7 @@ void CMdSServerSession::ImportSchemaL( const RMessage2& aMsg )
     	}
 
     RBuf fileName;
-    fileName.Create( fileNameLength );
+    fileName.CreateL( fileNameLength );
     CleanupClosePushL( fileName );
     aMsg.ReadL( 0, fileName );
 
@@ -1259,7 +1259,7 @@ void CMdSServerSession::ImportMetadataL( const RMessage2& aMsg )
     	}
     
     RBuf fileName;
-    fileName.Create( fileNameLength );
+    fileName.CreateL( fileNameLength );
     CleanupClosePushL( fileName );
     aMsg.ReadL( 0, fileName );
 
@@ -1287,7 +1287,7 @@ void CMdSServerSession::ExportMetadataL( const RMessage2& aMsg )
     	}
 
     RBuf fileName;
-    fileName.Create( fileNameLength );
+    fileName.CreateL( fileNameLength );
     CleanupClosePushL( fileName );
     aMsg.ReadL( 0, fileName );
 
@@ -1374,7 +1374,7 @@ void CMdSServerSession::GetPresentMediasL(const RMessage2& aMessage)
 	const TInt32 KMediaInfoSize = sizeof( TMdEMediaInfo ) * KMaxDrives;
 
 	RBuf8 mediaInfoBuffer;
-	mediaInfoBuffer.Create( KMediaInfoSize );
+	mediaInfoBuffer.CreateL( KMediaInfoSize );
 	CleanupClosePushL( mediaInfoBuffer );
 
 	const TInt32 mediaCount = iServer.Manipulate().GetPresentMediasL( 
@@ -1495,12 +1495,12 @@ void CMdSServerSession::ChangePathL(const RMessage2& aMessage)
 		}
 
 	RBuf oldPath;
-	oldPath.Create( oldPathLength );
+	oldPath.CreateL( oldPathLength );
     CleanupClosePushL( oldPath );
     aMessage.ReadL( 0, oldPath );
 
     RBuf newPath;
-    newPath.Create( newPathLength );
+    newPath.CreateL( newPathLength );
     CleanupClosePushL( newPath );
     aMessage.ReadL( 1, newPath );
     

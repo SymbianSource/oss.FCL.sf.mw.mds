@@ -191,21 +191,18 @@ CMdSSqlObjectManipulate::CMdSSqlObjectManipulate( const CMdsSchema& aSchema,
 
 void CMdSSqlObjectManipulate::ConstructL( )
     {
-    
 	iGenerator = CMdSIdentifierGenerator::NewL();
 
 	iNamespaceDef = NULL;
 	
-	TLockBuffer lockBuffer;
-	lockBuffer.iLock = EFalse;
 	for (TInt i = 0; i < KMaxBuffers; ++i)
 		{
-	    CMdsClauseBuffer* buffer = CMdsClauseBuffer::NewLC( 1024 );
-		lockBuffer.iBuffer = buffer;
+	    TLockBuffer lockBuffer;
+	    lockBuffer.iLock = EFalse;
+	    lockBuffer.iBuffer = CMdsClauseBuffer::NewLC( 1024 );
 		iBuffers.AppendL( lockBuffer );
 		CleanupStack::Pop(); // buffer
 		}
-
     }
 
 TBool CMdSSqlObjectManipulate::GarbageCollectionL()
@@ -2057,7 +2054,11 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 		if (!dataRow.Column(1).IsNull())
 			{
 			dataRow.Column(1).Get( relationId );
-			aRelationIds.InsertInOrder( relationId, TLinearOrder<TItemId>( CompareTItemIds ) );
+			const TInt error( aRelationIds.InsertInOrder( relationId, TLinearOrder<TItemId>( CompareTItemIds ) ) );
+			if( error == KErrNoMemory )
+			    {
+			    User::Leave( error );
+			    }
 			}
 		else
 			{
@@ -3266,11 +3267,18 @@ CMdSSqlObjectManipulate::RClauseBuffer::RClauseBuffer( CMdSSqlObjectManipulate& 
 		{
 		if (!iBuffers[i].iLock)
 			{
-			iBuffers[i].iLock = ETrue;
-			iBuffer = iBuffers[i].iBuffer;
+		    iBuffers[i].iLock = ETrue;
+            CMdsClauseBuffer* oldBuffer( iBuffer );
+            iBuffer = iBuffers[i].iBuffer;
+            TRAPD( error, iBuffer->ReserveSpaceL(aSize) );
+            if( error != KErrNone )
+                {
+                iBuffer = oldBuffer;
+                iBuffers[i].iLock = EFalse;
+                continue;
+                }		
+            TRAP_IGNORE( iBuffer->BufferL().Zero() );			
 			iNr = i;
-			TRAP_IGNORE( iBuffer->ReserveSpaceL(aSize) );
-			TRAP_IGNORE( iBuffer->BufferL().Zero() );
 			return;
 			}
 		}

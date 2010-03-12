@@ -157,6 +157,9 @@ TBool CFileMonitorAO::StopMonitoring()
     	}
     
     Cancel();
+
+    delete iFileEventHandler;
+    iFileEventHandler = NULL;
     
     // remove mds fileserver plugin
     iEngine.Disable();

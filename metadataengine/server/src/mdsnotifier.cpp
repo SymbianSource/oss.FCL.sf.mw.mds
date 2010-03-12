@@ -76,6 +76,25 @@ void CMdSNotifier::ConstructL()
 CMdSNotifier::~CMdSNotifier()
     {
     delete iComparator;
+    
+    const TInt count = iEntries.Count();
+    
+    for ( TInt i = 0; i < count; ++i )
+        {
+        TEntry& e = iEntries[i];
+            
+        if ( e.iSerializedCondition )
+            {
+            delete e.iSerializedCondition;
+            e.iSerializedCondition = NULL;
+            }
+        if ( e.iDataBuffer )
+            {
+            delete e.iDataBuffer;
+            e.iDataBuffer = NULL;
+            }
+        }
+    
     iEntries.Close();
     }
 

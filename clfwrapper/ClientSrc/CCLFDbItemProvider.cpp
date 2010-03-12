@@ -93,8 +93,6 @@ CCLFDbItemProvider::~CCLFDbItemProvider()
 //
 void CCLFDbItemProvider::DoCancel()
     {
-    MG_DEBUG1( dr1, "[CLF]\t CCLFDbItemProvider::DoCancel" ); 
-
     if ( iObjectQuery )
         {
         iObjectQuery->Cancel();

@@ -54,6 +54,8 @@ _LIT( KTAGDaemonExe, "thumbagdaemon.exe" );
 _LIT(KVideo, "Video");
 _LIT(KInUse, "InUse");
 
+_LIT(KUndefinedMime, " ");
+
 _LIT( KExtensionMp4,   "mp4" );
 _LIT( KExtensionMpg4,  "mpg4" );
 _LIT( KExtensionMpeg4, "mpeg4" );
@@ -836,7 +838,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
             }
         else
             {
-            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KNullDesC );
+            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KUndefinedMime );
             }
 		
 	    TPtrC name;
@@ -1767,7 +1769,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
     
     CHarvesterData* hd = NULL;
     TRAP( err, hd = CHarvesterData::NewL( uri ) );
-    if ( err != KErrNone )
+    if ( err != KErrNone || !hd )
         {
         WRITELOG( "CHarvesterAO::HarvestFile - creating harvUri failed" );
         albumIds.Close();
@@ -1798,7 +1800,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         WRITELOG( "CHarvesterAO::HarvestFile - creating clientData failed" );
         }
 
-    if( iQueue && hd )
+    if( iQueue )
         {
         iQueue->Append( hd );
         
@@ -1810,6 +1812,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         }
     else
         {
+        delete hd;
         err = KErrUnknown;
         }
     
@@ -1943,7 +1946,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     
     CHarvesterData* hd = NULL;
     TRAP( err, hd = CHarvesterData::NewL( uri ) );
-    if ( err != KErrNone )
+    if ( err != KErrNone || !hd )
         {
         WRITELOG( "CHarvesterAO::HarvestFileWithUID - creating harvUri failed" );
         albumIds.Close();
@@ -1974,7 +1977,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
         WRITELOG( "CHarvesterAO::HarvestFileWithUID - creating clientData failed" );
         }
 
-    if( iQueue && hd )
+    if( iQueue )
     	{
     	iQueue->Append( hd );
 
@@ -1986,6 +1989,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     	}
     else
         {
+        delete hd;
         err = KErrUnknown;
         }
 
@@ -2204,13 +2208,21 @@ void CHarvesterAO::ContextSnapshotStatus( CHarvesterData* aHD )
     HarvestCompleted( aHD->ClientId(), aHD->Uri(), aHD->ErrorCode() );
 
     const TInt errorCode = aHD->ErrorCode();
-    if( errorCode != KErrNone )
+    if( errorCode != KErrNone && errorCode != KErrCompletion )
     	{
         WRITELOG1( "CHarvesterAO::ContextSnapshotStatus() - error occurred: %d", errorCode );    	
     	}
     else
     	{
-        WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - successfully completed" );
+        if( errorCode == KErrCompletion )
+            {
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - snapshot could not be completed" );
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - processing non-context data anyway" );   
+            }
+        else
+            {
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - successfully completed" );
+            }
         if( aHD->Origin() == MdeConstants::Object::ECamera )
         	{
             aHD->MdeObject().SetPlaceholder( EFalse );
@@ -2298,7 +2310,11 @@ void CHarvesterAO::BootPartialRestoreScanL()
 	{
 	// check if partial restore was done before last boot
 	TBool partialRestore = iRestoreWatcher->Register();
-		
+	
+#ifdef __WINSCW__
+	partialRestore = ETrue;
+#endif
+	
 	if ( !partialRestore )
 		{
 		return;

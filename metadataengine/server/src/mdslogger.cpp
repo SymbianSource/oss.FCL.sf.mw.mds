@@ -56,6 +56,10 @@ CMdSLogger::CMdSLogger()
 //
 CMdSLogger::~CMdSLogger()
     {
+    static CMdSLogger* singleton;
+    delete singleton;
+    singleton = NULL;
+    iValid = EFalse;
     iLog.CloseLog(); 
     iLog.Close();
     }

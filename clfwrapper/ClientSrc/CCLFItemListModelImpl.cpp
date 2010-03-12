@@ -443,17 +443,11 @@ void CCLFItemListModelImpl::RefreshL( TInt32 aRefreshType )
 void CCLFItemListModelImpl::CopyArrayL( const TArray<MCLFItem*>& aSource,
                                         RPointerArray<MCLFItem>& aDest )
     {
-    MG_DEBUG3( AI1, "CCLFItemListModelImpl::CopyArrayL start, aSource: 0x%08x, aDest: 0x%08x",
-               &aSource, &aDest );
-
     const TInt count( aSource.Count() );
     for( TInt i = 0 ; i < count ; ++i )
         {
-        MG_DEBUG3( AI2, "aSource[ %d ]: 0x%08x", i, aSource[ i ] );
         aDest.AppendL( aSource[i] );
         }
-
-    MG_DEBUG1( AI3, "CCLFItemListModelImpl::CopyArrayL end" );
     }
 
 // -----------------------------------------------------------------------------

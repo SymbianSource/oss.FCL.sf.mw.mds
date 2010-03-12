@@ -784,6 +784,10 @@ TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aReq
             {
             iPaths.Append( fn );
             }
+        else
+            {
+            err = KErrNoMemory;
+            }
         }
     else
         {
@@ -871,6 +875,10 @@ TInt CMdsFileServerPlugin::AddIgnorePath( const CFsPluginConnRequest& aRequest )
         if ( fn )
             {
             iIgnorePaths.Append( fn ); // ownership is transferred
+            }
+        else
+            {
+            err = KErrNoMemory;
             }
         }
     else

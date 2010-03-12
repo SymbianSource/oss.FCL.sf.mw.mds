@@ -192,6 +192,7 @@ CHarvesterImagePlugin::~CHarvesterImagePlugin()
    	
     delete iPropDefs;
     
+    iMimeTypeMappings.Close();
     iFbs.Disconnect();
 	}
 

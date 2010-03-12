@@ -85,5 +85,5 @@ LIBRARY     	mdccommon.lib
 
 DEBUGLIBRARY    flogger.lib
 
-
+OPTION ARMCC -O2 -OTime
 

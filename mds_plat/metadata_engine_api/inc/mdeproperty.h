@@ -69,7 +69,7 @@ public:
 	 * @param aObject owner object of property
 	 * @return new numeric property
 	 */
-	static CMdEProperty* CMdEProperty::NewL(const CMdEPropertyDef& aDef, const CMdEObject& aObject);
+	static CMdEProperty* NewL(const CMdEPropertyDef& aDef, const CMdEObject& aObject);
 
 	/**
 	 * Constructs a new property.
@@ -78,7 +78,7 @@ public:
 	 * @param aObject owner object of property
 	 * @return new numeric property
 	 */
-	static CMdEProperty* CMdEProperty::NewLC(const CMdEPropertyDef& aDef, const CMdEObject& aObject);
+	static CMdEProperty* NewLC(const CMdEPropertyDef& aDef, const CMdEObject& aObject);
 
 
 	/**

@@ -842,9 +842,8 @@ TInt CCLFServerProxy::UpdateItemsL( const TArray< TCLFItemId >& aItemIDArray )
     {
     CUpdateItemsHandler* handler = CUpdateIDsHandler::NewL( aItemIDArray );
 
-    CleanupStack::PushL( handler );
+    // Ownership tranferred
     StartHandlingL( handler );
-    CleanupStack::Pop( handler );
 
     return KErrNone;
     }
@@ -879,9 +878,8 @@ TInt CCLFServerProxy::UpdateItemsL( const TInt aSemanticId, const TDesC8& aOpaqu
             return KErrNone;
             }
 
-        CleanupStack::PushL( handler );
+        // Ownership tranferred
         StartHandlingL( handler );
-        CleanupStack::Pop( handler );
         }
     CleanupStack::PopAndDestroy( uriArray );
 
@@ -896,9 +894,8 @@ TInt CCLFServerProxy::UpdateAllItemsL()
     {
     CUpdateItemsHandler* handler = CUpdateFoldersHandler::NewL( iMdESession, 
                                                          *iUriArray, this, this, iFs, iHC, iExtensionArray );
-    CleanupStack::PushL( handler );
+    // Ownership tranferred
     StartHandlingL( handler );
-    CleanupStack::Pop( handler );
     
     return KErrNone;
     }
@@ -1002,6 +999,7 @@ void CCLFServerProxy::StartHandlingL( CUpdateItemsHandler* aHandler )
     {
     if ( aHandler )
         {
+        CleanupStack::PushL( aHandler );
         // Notify pending active objects about the event.
         NotifyUpdateEvent( ECLFProcessStartEvent );
 
@@ -1012,16 +1010,17 @@ void CCLFServerProxy::StartHandlingL( CUpdateItemsHandler* aHandler )
             {
             // Remove aHandler, because it is in clean up stack.
             iUpdateItemsHandlerArray.Remove( iUpdateItemsHandlerArray.Count() - 1 );
+            CleanupStack::PopAndDestroy( aHandler );
             User::LeaveIfError( err );
             }
         if ( aHandler->AllDone() )
             {
-            delete aHandler;
-            aHandler = NULL;
+            CleanupStack::PopAndDestroy( aHandler );
             iUpdateItemsHandlerArray.Remove( iUpdateItemsHandlerArray.Count() - 1 );
             }
         else
             {
+            CleanupStack::Pop( aHandler );
             aHandler->StartScheduler();
             }
         }

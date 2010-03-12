@@ -75,7 +75,8 @@ void CMdsRelationDef::StoreToDBL( const TDefId aNamespaceDefId )
     CleanupClosePushL( rowData );
 
 	rowData.AppendL( TColumn( aNamespaceDefId ) );
-	rowData.AppendL( TColumn( GetName().AllocL() ) );
+	rowData.AppendL( TColumn( GetName().AllocLC() ) );
+	CleanupStack::Pop(); //name
 	TDefId id =  MMdSIndexer::ExecuteAndGetIndexL( KMdsSqlClauseAddRelationDef, rowData );
 	if ( id != KNoDefId )
 		{

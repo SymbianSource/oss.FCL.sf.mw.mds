@@ -173,8 +173,6 @@ void MakeSortingItemsL( RArray<TCLFSortingItem>& aSortingItemArray,
                         const TArray<TCLFFieldId> aSortFields,
                         TCLFItemDataType aSortingDataType )
     {
-    MG_DEBUG1( MSI1, "MakeSortingItemsL start" );
-
     const TInt sortingFieldsCount( aSortFields.Count() );
     const TInt count( aItemArray.Count() );
     for( TInt i = 0 ; i < count ; ++i )
@@ -218,8 +216,6 @@ void MakeSortingItemsL( RArray<TCLFSortingItem>& aSortingItemArray,
             aUndefinedItemArray.AppendL( seItem );
             }
         }
-
-    MG_DEBUG1( MSI2, "MakeSortingItemsL end" );
     }
 
 // -----------------------------------------------------------------------------
@@ -390,8 +386,6 @@ void CCLFDefaultOperation::FilterItemsL( const TArray<MCLFItem*>& aItemList,
 void CCLFDefaultOperation::GroupItemsL( const TArray<MCLFItem*>& aSourceList,
                                         RPointerArray<MCLFItem>& aGroupedList )
     {
-    MG_DEBUG1( GI1, "CCLFDefaultOperation::GroupItemsL start" );
-
     iGroupedItemList.ResetAndDestroy();
     switch ( iGrouping )
         {
@@ -407,8 +401,6 @@ void CCLFDefaultOperation::GroupItemsL( const TArray<MCLFItem*>& aSourceList,
             break;
             }
         }
-
-    MG_DEBUG1( GI2, "CCLFDefaultOperation::GroupItemsL end" );
     }
 
 // -----------------------------------------------------------------------------
@@ -484,8 +476,6 @@ void CCLFDefaultOperation::DoMusicAlbumGroupingL(
                                     const TArray<MCLFItem*>& aSourceList,
                                     RPointerArray<MCLFItem>& aGroupedList )
     {
-    MG_DEBUG1( DMAG1, "CCLFDefaultOperation::DoMusicAlbumGroupingL start" );
-
     CDesCArray* tempAlbumNameArray =
                 new (ELeave) CDesCArraySeg( KCLFGroupedItemArrayGranularity );
     CleanupStack::PushL( tempAlbumNameArray );
@@ -498,10 +488,10 @@ void CCLFDefaultOperation::DoMusicAlbumGroupingL(
         if( item->GetField( ECLFFieldIdAlbum, albumName ) == KErrNone )
             {
             TInt pos( 0 );
-            if( tempAlbumNameArray->Find( albumName, pos ) )
+            if( tempAlbumNameArray->FindIsq( albumName, pos ) )
                 {
                 // not found
-                tempAlbumNameArray->AppendL( albumName );
+                tempAlbumNameArray->InsertIsqL( albumName );
 
                 // make new item
                 MCLFModifiableItem* newItem =
@@ -522,8 +512,6 @@ void CCLFDefaultOperation::DoMusicAlbumGroupingL(
             }
         }
     CleanupStack::PopAndDestroy( tempAlbumNameArray );
-
-    MG_DEBUG1( DMAG2, "CCLFDefaultOperation::DoMusicAlbumGroupingL end" );
     }
 
 //  End of File

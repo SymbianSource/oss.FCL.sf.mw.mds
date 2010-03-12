@@ -96,28 +96,46 @@ void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
     	}
     /**
      * Open database:
-     *   First we try to create new db. If this fails check if db already exists and
-     *   try to open it. Otherwise we cannot open it and we leave
+     *   First we try to open db. If this fails because db not creater yer, then
+     *   try to create it. Otherwise we cannot open it and we leave
      */
-    err = iMdeSqlDb.Create( *iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+    err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
     if ( err != KErrNone )
-    	{
-    	// it could fail because database exists
-    	if ( err == KErrAlreadyExists )
-    		{
-    		err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
-    		if ( err != KErrNone )
-    			{
-    			__LOG1( ELogDb, "Cannot open database %d", err );
-    			}
-    		}
-    	else 
-    		{
-    		__LOG1( ELogDb, "Unknown error while creating %d", err );
-    		}
-
-    	User::LeaveIfError( err );
-    	}
+        {
+        __LOG1( ELogDb, "Cannot open database %d", err );
+            
+        if( err == KErrNotFound )
+            {
+            __LOG1( ELogDb, "Cannot find database %d", err );
+            err = iMdeSqlDb.Create( *iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+            if( err != KErrNone )
+                {
+                __LOG1( ELogDb, "Unknown error while creating %d", err );
+                User::LeaveIfError( err );
+                }
+            }
+        else if( err == KErrCorrupt ||
+                err == KSqlErrCorrupt )
+            {
+            __LOGLB( ELogDb, "Warning: Database is corrupted, will delete and re-create it." );
+            err = DeleteAndReCreateDB( iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+        
+            if ( KErrNone == err  )
+                {
+                err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
+                if ( err != KErrNone )
+                    {
+                    __LOG1( ELogDb, "Cannot open database again after delete and re-create %d", err );
+                    User::LeaveIfError( err );
+                    }
+                } 
+            }
+        else 
+            {
+            __LOG1( ELogDb, "Unknown error while accessing database %d", err );
+            User::LeaveIfError( err );
+            }
+        }
     CleanupStack::PopAndDestroy( &sqlSecurityPolicy );
     }
 
@@ -333,6 +351,11 @@ void CMdSSqLiteConnection::CurrentRowL( const RMdsStatement& aQuery, RRowData& a
     	_LIT( KMdsNoProcessableRow, "Wrong row to process" );
     	TraceAndLeaveL( KMdsNoProcessableRow, KSqlErrNotFound );
     	}
+    }
+
+TItemId CMdSSqLiteConnection::LastInsertedRowId()
+    {
+    return iMdeSqlDb.LastInsertedRowId();
     }
 
 void CMdSSqLiteConnection::ColumnsL( const RSqlStatement& aStatement, RRowData& aRow )
@@ -578,5 +601,22 @@ void CMdSSqLiteConnection::EnableTransaction( TBool aEnable, RMdsStatement& aQue
         // save current find operation which will continue when diable transaction
         iNotFinishFindQuery = &aQuery;
         }
+    }
+
+
+TInt CMdSSqLiteConnection::DeleteAndReCreateDB( const HBufC* aDbFileName,
+                                                const RSqlSecurityPolicy& asqlSecurityPolicy,
+                                                const TDesC8* aKMdsSqlDbaConfig ) 
+    {    
+    TInt err = iMdeSqlDb.Delete( *aDbFileName );
+    if( err!= KErrNone )
+        {
+        __LOG1( ELogDb, "delete database err=%d.", err );
+        return err;
+        }
+
+    err = iMdeSqlDb.Create( *aDbFileName, asqlSecurityPolicy, aKMdsSqlDbaConfig );
+
+    return err;
     }
 

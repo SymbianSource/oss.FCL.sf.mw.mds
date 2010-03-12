@@ -100,7 +100,7 @@ CHarvesterExifUtil::CHarvesterExifUtil() :
 }
 
 
-CHarvesterExifUtil::~CHarvesterExifUtil()
+EXPORT_C CHarvesterExifUtil::~CHarvesterExifUtil()
 {
 }
 

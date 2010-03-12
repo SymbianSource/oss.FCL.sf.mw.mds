@@ -41,4 +41,16 @@ EXPORTS
 	_ZN15CLocationRecord18SetStateToStoppingEv @ 40 NONAME
 	_ZN15CLocationRecord17LocationSnapshotLERKj @ 41 NONAME
 	_ZN15CLocationRecord15RemappingNeededEv @ 42 NONAME
+	_ZN12CNetworkInfoD0Ev @ 43 NONAME
+	_ZN12CNetworkInfoD1Ev @ 44 NONAME
+	_ZN12CNetworkInfoD2Ev @ 45 NONAME
+	_ZN13CPositionInfoD0Ev @ 46 NONAME
+	_ZN13CPositionInfoD1Ev @ 47 NONAME
+	_ZN13CPositionInfoD2Ev @ 48 NONAME
+	_ZN15CLocationRecordD0Ev @ 49 NONAME
+	_ZN15CLocationRecordD1Ev @ 50 NONAME
+	_ZN15CLocationRecordD2Ev @ 51 NONAME
+	_ZN9CTrackLogD0Ev @ 52 NONAME
+	_ZN9CTrackLogD1Ev @ 53 NONAME
+	_ZN9CTrackLogD2Ev @ 54 NONAME
 

@@ -237,7 +237,7 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     User::LeaveIfError( fs.Connect() );
     CleanupClosePushL( fs );
     TVolumeInfo volumeInfo;
-    fs.Volume( volumeInfo, EDriveC );
+    User::LeaveIfError( fs.Volume( volumeInfo, EDriveC ) );
     MMdsPreferences::InsertL( KCMediaIdKey, MMdsPreferences::EPreferenceValueSet,
     		(TUint32) volumeInfo.iUniqueID );
 
@@ -246,12 +246,12 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     if( massStorageError == KErrNone )
         {
         TVolumeInfo massStorageVolumeInfo;
-        fs.Volume( massStorageVolumeInfo, drive );
+        User::LeaveIfError( fs.Volume( massStorageVolumeInfo, drive ) );
         const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
         massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
         if( massStorageError == KErrNone )
             {
-            fs.Volume( massStorageVolumeInfo, drive );
+            User::LeaveIfError( fs.Volume( massStorageVolumeInfo, drive ) );
             // Update mass storage media id if the mass storage is not memory card
             if( massStorageVolumeInfo.iUniqueID != massStorageMediaId && massStorageMediaId != 0 )
                 {

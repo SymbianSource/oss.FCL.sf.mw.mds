@@ -34,7 +34,6 @@ CImagePresentObserver::CImagePresentObserver() :
 		iSession( NULL ),
 		iMdEHarvesterSession( NULL ),
 		iComposer( NULL ),
-		iPendingPckWrapper( NULL ),
 		iNextRequest( ERequestIdle ),
 		iPendingCount( 0 ),
 		iPendingBuffer( NULL ),

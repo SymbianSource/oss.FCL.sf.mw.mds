@@ -658,6 +658,8 @@ private:
     RPointerArray<MMdEQueryObserver> iObservers;
     
     CDesCArray* iDistinctResults;
+    
+    TBool iDestroyed;
     };
 
     

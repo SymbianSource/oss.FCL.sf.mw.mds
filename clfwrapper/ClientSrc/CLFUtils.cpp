@@ -30,7 +30,6 @@
 //
 const TDesC& CLFUtils::MapClfType( const TInt aType )
     {
-    MG_DEBUG2( MCT, "[CLF]\t CCLFQueryAdapter::MapClfType %d", aType );
     const TDesC* ret = &KNullDesC;
 
     switch ( aType )
@@ -67,7 +66,6 @@ const TDesC& CLFUtils::MapClfType( const TInt aType )
         case ECLFMediaTypePresentations:
         default:
             {
-            MG_DEBUG1( MCT3, "[CLF]\t MapClfType reached default, returning KBaseObject" );   
             ret = &MdeConstants::Object::KBaseObject;
             break;
             }

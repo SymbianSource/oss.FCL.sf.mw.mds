@@ -60,7 +60,7 @@ public:
     static CHarvesterRequestActive* NewL( 
             RHarvesterClient& aClient, MHarvestObserver* aObserver,
             TInt aService, const TDesC& aUri, 
-            HBufC8* aAlbumIds, TBool& aAddLocation,
+            HBufC8* aAlbumIds, TBool aAddLocation,
             CHarvesterRequestQueue* aQueue );
 
     /**
@@ -104,7 +104,7 @@ private:
      */
     CHarvesterRequestActive( RHarvesterClient& aClient,
             MHarvestObserver* aObserver, TInt aService, const TDesC& aUri, 
-            HBufC8* aAlbumIds, TBool& aAddLocation,
+            HBufC8* aAlbumIds, TBool aAddLocation,
             CHarvesterRequestQueue* aQueue );
 
     /**

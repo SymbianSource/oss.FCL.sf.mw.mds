@@ -639,9 +639,6 @@ NONSHARABLE_CLASS(CMdESessionImpl) : public CMdESession
                 
 		/** Open observer. */
 		MMdESessionObserver* iSessionObserver;
-
-		/** Schema observers. */
-		RPointerArray<MMdESchemaObserver> iSchemaObserverArray;
 		
 		RChunk iSchemaChunk;
 		

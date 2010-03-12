@@ -112,6 +112,7 @@ CFolderRenamer::CFolderRenamer(CFileEventHandlerAO &aCFileEventHandlerAO) :
 CFolderRenamer::~CFolderRenamer()
 	{
 	Cancel();
+	iRenamedFolders.ResetAndDestroy();
 	}
 
 void CFolderRenamer::ConstructL()

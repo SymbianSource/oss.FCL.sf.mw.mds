@@ -34,7 +34,6 @@ end
 SYSTEMINCLUDE /epoc32/include/ecom
 SYSTEMINCLUDE /epoc32/include/libc
 SYSTEMINCLUDE /epoc32/include/connect
-SYSTEMINCLUDE /epoc32/include/3gplibrary
 
 USERINCLUDE   ../inc
 USERINCLUDE   ../../../common/inc

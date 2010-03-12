@@ -44,6 +44,7 @@ LIBRARY         bafl.lib
 
 BYTEPAIRCOMPRESSTARGET
 PAGED
+OPTION ARMCC -O3 -OSpace
 
 // End of File
 

@@ -159,6 +159,7 @@ CHarvesterVideoPlugin* CHarvesterVideoPlugin::NewL()
 CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	{
 	delete iPropDefs;
+	iMimeTypeMappings.Close();
 
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
@@ -658,7 +659,10 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
 	        	// Match MIME type for audio object with "audio" substring
 	        	else if( MdsUtils::Find( mime, KAudio() ) != KErrNotFound )
 	        		{
-	        		break;
+	        	    if( !aVHD.iVideoObject )
+	        	        {
+	        	        break;
+	        	        }
 	        		}
 	        	}
 	        }
@@ -668,6 +672,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         	aVHD.iMimeBuf = mime.Alloc();
         	}
         
+        helixMetadata->ResetL();
         CleanupStack::PopAndDestroy( helixMetadata );
         
         // don't destory mime type pointers just clean array
@@ -1055,6 +1060,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		aType.Copy( KVideo );
 		}
     
+	helixMetadata->ResetL();
     CleanupStack::PopAndDestroy( helixMetadata );
 	}
 

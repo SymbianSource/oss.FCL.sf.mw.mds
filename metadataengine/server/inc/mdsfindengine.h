@@ -137,13 +137,7 @@ class CMdSFindEngine : public CBase
         * Transfer result set to client
         * @aError error code or KErrNone
         */
-        void SetComplete( TInt aError );
-
-        /**
-        * Transfer results to client and completes find
-        * @aError error code or KErrNone
-        */
-        void FindComplete( TInt aError );
+        void SetComplete( TInt aError, TBool aSet );
 
 		const CMdCSerializationBuffer& ResultsL() const;
 

@@ -36,7 +36,7 @@ public:
      * location trail.
      */
     virtual void Position( const TPositionInfo& aPositionInfo, 
-                           const TInt aError ) = 0;
+                           const TInt aError ) __SOFTFP = 0;
     };
 
 /**

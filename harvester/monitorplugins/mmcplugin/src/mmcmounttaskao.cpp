@@ -72,6 +72,8 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 	iFs.Close();
 	
 	iMountDataQueue.ResetAndDestroy();
+	iEntryArray.ResetAndDestroy();
+	iHarvestEntryArray.ResetAndDestroy();
 	
 	delete iMdeSession;
   
