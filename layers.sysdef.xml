@@ -22,8 +22,6 @@
       	<unit unitID="imm.mds.harvester_framework_api.monitorplugin" mrp="" bldFile="sf/mw/mds/mds_plat/harvester_framework_api/tsrc/MonitorPluginTest/group"  name="harvester_framework_api.monitorplugin"  />
         <unit unitID="imm.mds.location_manager_api" mrp="" bldFile="sf/mw/mds/mds_plat/location_manager_api/tsrc/group"  name="location_manager_api"  />
         <unit unitID="imm.mds.metadata_engine_api" mrp="" bldFile="sf/mw/mds/mds_plat/metadata_engine_api/tsrc/group"  name="metadata_engine_api"  />
-        
-        <unit unitID="imm.mds.content_listing_framework" mrp="" bldFile="sf/mw/mds/mds_pub/content_listing_framework_api/tsrc/group"  name="content_listing_framework_api"  />    
       </module>
     </layer>
     

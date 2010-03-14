@@ -156,6 +156,7 @@ class CMdsFileServerPlugin : public CFsPlugin
         RFs iFsSession;
 
         RPointerArray<TDesC> iCreatedFiles;
+        RPointerArray<TDesC> iModifiedFiles;
         
         TUint32 iFormatOldMediaId;
         TInt iFormatDriveNumber;

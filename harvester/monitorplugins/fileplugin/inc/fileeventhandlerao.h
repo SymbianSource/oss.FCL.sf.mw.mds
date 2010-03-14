@@ -76,13 +76,6 @@ class CFileEventHandlerAO : public CActive, public MMoveTimerObserver
         void DoCancel();
         
         /**
-        * Sets a list of paths not monitor to.
-        *
-        * @param aList  Contains list of paths not monitor to.
-        */
-        void SetIgnoreListL( RPointerArray<TDesC>& aList );
-        
-        /**
          * Gets a reference to process / origin mapper, which
          * can be used to register and match which process ids
          * with a mde object's Origin value.
@@ -197,12 +190,6 @@ class CFileEventHandlerAO : public CActive, public MMoveTimerObserver
          */
         RFs iFs;
 
-        /**
-         * @var An ignore list. Contains paths not to monitor.
-         */
-        RPointerArray<TDesC> iIgnoreList;
-
-       
         /**
          * 
          */

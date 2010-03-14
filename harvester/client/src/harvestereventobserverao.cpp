@@ -135,6 +135,8 @@ void CHarvesterEventObserverAO::RemoveHarvesterEventObserverL(
 		Cancel();
 		iHarvesterEventQueue.Close();
 		}
+	
+	iObservers.Compress();
 	}
 
 void CHarvesterEventObserverAO::RunL()
@@ -144,7 +146,8 @@ void CHarvesterEventObserverAO::RunL()
 	THarvesterEventNotification received;
 	while( iHarvesterEventQueue.Receive( received ) != KErrUnderflow )
 		{
-		for(TInt i = iObservers.Count(); --i >= 0;)
+	    const TInt count( iObservers.Count() );
+		for(TInt i = count; --i >= 0;)
 			{
 			THarvesterEventObserver& observer = *(iObservers[i]);
 			if( observer.iObserverInfo.iObserverId == received.iObserverId )

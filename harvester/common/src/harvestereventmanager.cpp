@@ -407,8 +407,10 @@ EXPORT_C TInt CHarvesterEventManager::UnregisterEventObserver( const RMessage2& 
 					break;
 					}
 				}
+			iEventQueues.Compress();
 			}
 
+		iRegisteredObservers.Compress();
 		return KErrNone;
 		}
 	else

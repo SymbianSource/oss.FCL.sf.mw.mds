@@ -86,6 +86,7 @@ class CVideoHarvestData : public CBase
         HBufC* iGenre;
         HBufC* iPerformer; // Artist
         HBufC* iDescription;
+        HBufC* iTitle;
 
         HBufC* iMimeBuf;
         TUint32 iCodec;
@@ -101,6 +102,7 @@ class CVideoHarvestData : public CBase
             delete iGenre;
             delete iPerformer;
             delete iDescription;
+            delete iTitle;
 
         	delete iMimeBuf;
         	}
@@ -119,6 +121,7 @@ class CHarvesterVideoPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iSizePropertyDef;
 		CMdEPropertyDef* iTimeOffsetPropertyDef;
 		CMdEPropertyDef* iItemTypePropertyDef;
+		CMdEPropertyDef* iTitlePropertyDef;
 	
 		// Media property definitions
 		CMdEPropertyDef* iReleaseDatePropertyDef;
@@ -175,6 +178,10 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		*/
 		void HarvestL( CHarvesterData* aHD );
 				
+    protected: // from CHarvesterPlugin
+        
+        void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+		
 	private:
 		/**
 		* C++ constructor - not exported;

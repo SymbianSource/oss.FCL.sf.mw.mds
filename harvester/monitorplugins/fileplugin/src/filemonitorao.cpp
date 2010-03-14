@@ -69,11 +69,7 @@ CFileMonitorAO::~CFileMonitorAO()
     Cancel();
     
     StopMonitoring();
-    
-    iIgnoreList.ResetAndDestroy();
-    iIgnoreList.Close();
 
-    
     delete iMdeSession;
     }
 

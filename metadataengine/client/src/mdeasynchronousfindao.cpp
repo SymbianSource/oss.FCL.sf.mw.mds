@@ -312,6 +312,7 @@ void CMdEAsynchronousFindAO::DoNotifyResultsL( TInt aStatus )
 
         // get rid of local results list
         iResultList.Reset();
+        iResultList.Compress();
         }
     // Notify result ids
     else if ( ( aStatus == EAsyncFindSetReady ||

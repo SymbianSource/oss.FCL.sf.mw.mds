@@ -49,7 +49,7 @@ CHarvesterOomAO::CHarvesterOomAO( MHarvesterOomObserver& aObserver ) :
 //
 CHarvesterOomAO::~CHarvesterOomAO()
 	{
-	Cancel();
+    Cancel();
 	iOomMsgQueue.Close();
 	}
 

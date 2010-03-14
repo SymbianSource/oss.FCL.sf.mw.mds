@@ -10,4 +10,6 @@ EXPORTS
 	?SetQueue@CHarvesterPlugin@@UAEXAAV?$RPointerArray@VCHarvesterData@@@@@Z @ 9 NONAME ; void CHarvesterPlugin::SetQueue(class RPointerArray<class CHarvesterData> &)
 	?StartHarvest@CHarvesterPlugin@@UAEXXZ @ 10 NONAME ; void CHarvesterPlugin::StartHarvest(void)
 	?SetBlacklist@CHarvesterPlugin@@UAEXAAVCHarvesterBlacklist@@@Z @ 11 NONAME ; void CHarvesterPlugin::SetBlacklist(class CHarvesterBlacklist &)
+	?GetMimeType@CHarvesterPlugin@@UAEXABVTDesC16@@AAVTDes16@@@Z @ 12 NONAME ; void CHarvesterPlugin::GetMimeType(class TDesC16 const &, class TDes16 &)
+	?SetHarvesterPluginFactory@CHarvesterPlugin@@QAEXAAVCHarvesterPluginFactory@@@Z @ 13 NONAME ; void CHarvesterPlugin::SetHarvesterPluginFactory(class CHarvesterPluginFactory &)
 

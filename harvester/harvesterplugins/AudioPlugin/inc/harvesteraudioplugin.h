@@ -109,7 +109,11 @@ class CHarvesterAudioPlugin : public CHarvesterPlugin,
 	    
 	    void ThumbnailReady( TInt aError, MThumbnailData& aThumbnail,
 	        TThumbnailRequestId aId );
-		
+
+    protected: // from CHarvesterPlugin
+	    
+	    void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+	    
 	private:
 	     
 		/**

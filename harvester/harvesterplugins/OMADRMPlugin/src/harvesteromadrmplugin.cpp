@@ -266,16 +266,25 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iSizePropertyDef, &aVHD.iFileSize, aIsAdd );
     	}
+    
+    // Item Type
+    if(aVHD.iMimetype.Length() > 0)
+        {
+        TBool isAdd( EFalse );
+        CMdEProperty* prop = NULL;
+        TInt index = mdeObject.Property( *iPropDefs->iItemTypePropertyDef, prop );
+        if( index < 0 )
+            {
+            isAdd = ETrue;
+            }
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iItemTypePropertyDef, &aVHD.iMimetype, isAdd );
+        }
+    
     // DRM protection
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     		*iPropDefs->iDrmPropertyDef, &aVHD.iDrmProtected, aIsAdd );
     
-    // Item Type
-    if(aVHD.iMimetype.Length() > 0)
-    	{
-    	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iItemTypePropertyDef, &aVHD.iMimetype, aIsAdd );
-    	}
     // Title (is set from URI by default)
     if(aVHD.iTitle.Length() > 0)
     	{
@@ -357,3 +366,22 @@ void CHarvesterOMADRMPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType
 	WRITELOG1( "CHarvesterOMADRMPlugin::GetObjectType - ERROR: mimetype %S. No object type found", &mime );
 	aObjectType.Zero();
 	}
+
+// ---------------------------------------------------------------------------
+// CHarvesterOMADRMPlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterOMADRMPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    
+    ContentAccess::CContent* content = NULL;
+    
+    TRAPD( err, content = ContentAccess::CContent::NewL( aUri ) );
+    if (err == KErrNone) 
+        {
+        err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
+        delete content;
+        }
+    }
+

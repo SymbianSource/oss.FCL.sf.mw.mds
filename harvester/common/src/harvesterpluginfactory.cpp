@@ -22,18 +22,22 @@
 #include <harvesterplugin.h>
 #include <mdeobject.h>
 #include <harvesterdata.h>
-
+#include "harvestereventmanager.h"
 #include "harvesterpluginfactory.h"
 #include "harvesterplugininfo.h"
 #include "mdsutils.h"
 #include "harvesterlog.h"
+
+const TInt KCacheItemCountForEventCaching = 1;
 
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
 //
 CHarvesterPluginFactory::CHarvesterPluginFactory() :
-    iBlacklist( NULL )
+    iBlacklist( NULL ),
+    iHarvesting( NULL ),
+    iHarvesterEventManager( NULL )
 	{
 	WRITELOG( "CHarvesterPluginFactory::CHarvesterPluginFactory()" );
 	}
@@ -60,6 +64,12 @@ EXPORT_C CHarvesterPluginFactory* CHarvesterPluginFactory::NewL()
 CHarvesterPluginFactory::~CHarvesterPluginFactory()
 	{
 	WRITELOG( "CHarvesterPluginFactory::~CHarvesterPluginFactory()" );
+	
+    if (iHarvesterEventManager)
+        {
+        iHarvesterEventManager->ReleaseInstance();
+        }
+	
 	iHarvesterPluginInfoArray.ResetAndDestroy();
 	iHarvesterPluginInfoArray.Close();
 	REComSession::FinalClose();
@@ -72,6 +82,7 @@ CHarvesterPluginFactory::~CHarvesterPluginFactory()
 void CHarvesterPluginFactory::ConstructL()
 	{
 	WRITELOG( "CHarvesterPluginFactory::ConstructL()" );
+	iHarvesterEventManager = CHarvesterEventManager::GetInstanceL();
 	SetupHarvesterPluginInfoL();
 	}
 
@@ -107,6 +118,8 @@ EXPORT_C void CHarvesterPluginFactory::GetObjectDefL( CHarvesterData& aHD, TDes&
 				{
 				info->iPlugin = CHarvesterPlugin::NewL( info->iPluginUid );
 				info->iPlugin->SetQueue( info->iQueue );
+				info->iPlugin->SetHarvesterPluginFactory( *this );  
+				info->iPlugin->SetBlacklist( *iBlacklist );
 				}
 			info->iPlugin->GetObjectType( aHD.Uri(), aObjectDef );
 			if( aObjectDef.Length() > 0 )
@@ -127,10 +140,42 @@ EXPORT_C void CHarvesterPluginFactory::GetObjectDefL( CHarvesterData& aHD, TDes&
 // GetMimeType
 // ---------------------------------------------------------------------------
 //
-EXPORT_C void CHarvesterPluginFactory::GetMimeType(const TDesC& /*aUri*/, TDes& aMimeType)
+EXPORT_C void CHarvesterPluginFactory::GetMimeType(const TDesC& aUri, TDes& aMimeType)
 	{
-	_LIT( KJPGMimeType, "image/jpeg" );
-	aMimeType.Copy( KJPGMimeType );
+    TPtrC extPtr;
+    if( MdsUtils::GetExt( aUri, extPtr ) )
+        {
+        RPointerArray<CHarvesterPluginInfo> supportedPlugins;
+        TRAP_IGNORE( GetSupportedPluginsL( supportedPlugins, extPtr ) );
+        
+        const TInt sCount = supportedPlugins.Count();
+        for( TInt i = 0; i < sCount; i++ )
+            {
+            CHarvesterPluginInfo* info = supportedPlugins[i];
+            if ( !(info->iPlugin) )
+                {
+                TRAPD( error, info->iPlugin = CHarvesterPlugin::NewL( info->iPluginUid ) );
+                if( error != KErrNone )
+                    {
+                    aMimeType.Zero();
+                    return;
+                    }
+                info->iPlugin->SetQueue( info->iQueue );
+                info->iPlugin->SetHarvesterPluginFactory( *this );  
+                info->iPlugin->SetBlacklist( *iBlacklist );
+                }
+                info->iPlugin->GetMimeType( aUri, aMimeType );
+                if( aMimeType.Length() > 0 )
+                    {
+                    break;
+                    }
+            }
+        supportedPlugins.Close();
+        }
+    else
+        {
+        aMimeType.Zero();
+        }
 	}
 
 // ---------------------------------------------------------------------------
@@ -143,20 +188,31 @@ EXPORT_C TInt CHarvesterPluginFactory::HarvestL( CHarvesterData* aHD )
 	WRITELOG1("CHarvesterPluginFactory::HarvestL - aHD->Uri: %S", &aHD->Uri() );
 #endif
 	CHarvesterPluginInfo* hpi = aHD->HarvesterPluginInfo();
-		
+	
+	if( !hpi )
+	    {
+	    SetPluginInfo( aHD );
+	    hpi = aHD->HarvesterPluginInfo();
+	    }
+	
 	if ( hpi )
 		{
 		if ( ! hpi->iPlugin )
 	   		{
 	   		hpi->iPlugin = CHarvesterPlugin::NewL( hpi->iPluginUid );
 	   		hpi->iPlugin->SetQueue( hpi->iQueue );
+	   		hpi->iPlugin->SetHarvesterPluginFactory( *this );  
 	   		hpi->iPlugin->SetBlacklist( *iBlacklist );
 	   		}
 			
 		if( aHD->ObjectType() == EFastHarvest || aHD->Origin() == MdeConstants::Object::ECamera )
 		   	{
 		   	hpi->iQueue.Insert( aHD, 0 );
-		    	}
+		   	if( !hpi->iPlugin->IsActive() )
+		   	    {
+	            hpi->iPlugin->SetPriority( KHarvesterPriorityHarvestingPlugin + 2 );
+		   	    }
+		    }
 	    else
 			{
 			hpi->iQueue.AppendL( aHD );
@@ -270,7 +326,8 @@ void CHarvesterPluginFactory::AddNewPluginL( const TDesC8& aType,
     
     // Load plugin
     pluginInfo->iPlugin = CHarvesterPlugin::NewL( pluginInfo->iPluginUid );
-    pluginInfo->iPlugin->SetQueue( pluginInfo->iQueue );    
+    pluginInfo->iPlugin->SetQueue( pluginInfo->iQueue );
+    pluginInfo->iPlugin->SetHarvesterPluginFactory( *this );  
     
     iHarvesterPluginInfoArray.AppendL( pluginInfo );
     CleanupStack::Pop( pluginInfo );
@@ -279,7 +336,7 @@ void CHarvesterPluginFactory::AddNewPluginL( const TDesC8& aType,
 void CHarvesterPluginFactory::GetSupportedPluginsL(
 		RPointerArray<CHarvesterPluginInfo>& aSupportedPlugins, const TDesC& aExt )
 	{
-	TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
+	const TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
 	TInt extCount = 0;
 	for ( TInt i = pluginInfoCount; --i >= 0; )
         {
@@ -351,3 +408,53 @@ EXPORT_C TBool CHarvesterPluginFactory::IsContainerFileL( const TDesC& aURI )
 		}
 	return isContainerFile;
 	}
+
+void CHarvesterPluginFactory::SetPluginInfo( CHarvesterData* aHD )
+    {
+    TPtrC extPtr;
+    if( MdsUtils::GetExt( aHD->Uri(), extPtr ) )
+        {
+        RPointerArray<CHarvesterPluginInfo> supportedPlugins;
+        TRAP_IGNORE( GetSupportedPluginsL( supportedPlugins, extPtr ) );
+        
+        if( supportedPlugins.Count() > 0 )
+            {
+            CHarvesterPluginInfo* info = supportedPlugins[0];
+            aHD->SetHarvesterPluginInfo( info );
+            }
+
+        supportedPlugins.Close();
+        }
+    }
+
+EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarted )
+    {
+    const TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
+    TBool itemsLeft( EFalse );
+    for ( TInt i = pluginInfoCount; --i >= 0; )
+        {
+        CHarvesterPluginInfo* info = iHarvesterPluginInfoArray[i];
+        if( info && info->iQueue.Count() )
+            {
+            itemsLeft = ETrue;
+            break;
+            }
+        }
+    
+    if( !iHarvesting && itemsLeft && aStarted )
+        {
+        iHarvesting = ETrue;
+        iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateStarted );
+        // This next line is for caching the harvester started event for observers registering
+        // after harvesting has already started
+        iHarvesterEventManager->IncreaseItemCount( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
+        return;
+        }
+    else if( iHarvesting && !itemsLeft && !aStarted )
+        {
+        iHarvesting = EFalse;                       
+        iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
+        iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
+        }
+    }
+

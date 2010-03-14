@@ -25,6 +25,7 @@
 #include "mdsutils.h"
 #include "harvesterexifutil.h"
 #include "harvesterimageplugin.h"
+#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 
 using namespace MdeConstants;
@@ -254,6 +255,8 @@ void CHarvesterImagePlugin::ConstructL()
     
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TImageMetadataHandling>(
             KExtOtb(), KOtbMime(), EOtherHandling ), cmp ) );
+    
+    SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
 	}
 
 void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
@@ -327,6 +330,34 @@ void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
     // Delete image data.
     CleanupStack::PopAndDestroy( 2, fileData );
 	}
+
+// ---------------------------------------------------------------------------
+// CHarvesterImagePlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterImagePlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    
+    TPtrC ext;
+    if( !MdsUtils::GetExt( aUri, ext ) )
+        {
+        return;
+        }
+
+    TMimeTypeMapping<TImageMetadataHandling> finder(ext);
+    TLinearOrder< TMimeTypeMapping<TImageMetadataHandling> > cmp(
+            TMimeTypeMapping<TImageMetadataHandling>::CompareFunction);
+
+    const TInt pos = iMimeTypeMappings.FindInOrder( finder, cmp );
+
+    if ( pos == KErrNotFound )
+        {
+        return;
+        }
+
+    aMimeType = iMimeTypeMappings[pos].iMimeType;
+    }
 
 // ---------------------------------------------------------------------------
 // GatherData
@@ -417,8 +448,6 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         // Exif couldn't be found. Open the image with ICL decoder instead.
         WRITELOG( "CHarvesterImagePlugin::GatherData() - Exif could not be read. Using ICL." );
 
-        iDecoder->Reset();
-
         TPtr8 imageDataPtr = aFileData.iImageData->Des();
         TRAP( err, iDecoder->OpenL(imageDataPtr, aFileData.iMime8,
                 CImageDecoder::TOptions( CImageDecoder::EPreferFastDecode | CImageDecoder::EOptionIgnoreExifMetaData ) ) );
@@ -427,6 +456,7 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         if ( err != KErrNone )
             {
             WRITELOG1( "CHarvesterImagePlugin::GatherData() - ERROR: Decoder could not open image data! Code %d", err );
+            iDecoder->Reset();
             return KErrCompletion; // metadata item still can be created, thus KErrCompletion
             }
 
@@ -448,6 +478,7 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
 				if ( readStatus != KErrNone )
 					{
 					CleanupStack::PopAndDestroy( additionalData );
+					iDecoder->Reset();
 					return KErrCompletion;
 					}
 				
@@ -463,6 +494,7 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
             if ( err || !iDecoder->ValidDecoder() )
             	{
             	WRITELOG( "CHarvesterImagePlugin::GatherData() - ERROR: no valid decoder" );
+            	iDecoder->Reset();
             	return KErrCompletion; // metadata item still can be created, thus KErrCompletion
             	}
             }
@@ -475,6 +507,8 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         aFileData.iImageWidth = imageSize.iWidth;
         aFileData.iImageHeight = imageSize.iHeight;
         aFileData.iBitsPerPixel = info.iBitsPerPixel;
+        
+        iDecoder->Reset();
         }
 
     WRITELOG( "CHarvesterImagePlugin::GatherData() - end" );
@@ -504,7 +538,7 @@ void CHarvesterImagePlugin::DataFromImageFileL( CFileData& aFileData )
 	TLinearOrder< TMimeTypeMapping<TImageMetadataHandling> > cmp(
 			TMimeTypeMapping<TImageMetadataHandling>::CompareFunction);
 
-	TInt pos = iMimeTypeMappings.FindInOrder( finder, cmp );
+	const TInt pos = iMimeTypeMappings.FindInOrder( finder, cmp );
 
 	TImageMetadataHandling handler( EOtherHandling ); 
 
@@ -608,9 +642,9 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
 
     TTime localModifiedDate = aFileData.iModified + timeOffsetSeconds;
     
-    // Object - Creation date
     if( ! mdeObject.Placeholder() )
     	{
+        // Object - Creation date
 	    if ( aFileData.iExifSupported && aHd.iDateOriginal8 )
 	        {
 	        TTime originalTime = iExifUtil->ConvertExifDateTimeToSymbianTimeL(
@@ -621,12 +655,15 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
 	        {
 	        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCreationDatePropertyDef, &localModifiedDate, aIsAdd );
 	        }
-    	}
-
-    // Object - last aFileData.iModified date
-    if( ! mdeObject.Placeholder() )
-    	{
-    	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iLastModifiedDatePropertyDef, &aFileData.iModified, aIsAdd );
+	    
+	    // Object - last aFileData.iModified date
+	    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iLastModifiedDatePropertyDef, &aFileData.iModified, aIsAdd );
+	    
+	    // Object - Size
+	    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iSizePropertyDef, &aFileData.iFileSize, aIsAdd );
+	    
+	    // Item Type
+	    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iItemTypePropertyDef, &aFileData.iMime16, aIsAdd );
     	}
 
     if( aFileData.iJpeg )
@@ -635,15 +672,6 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
     	TInt16 timeOffsetMinutes = timeOffsetSeconds.Int() / 60;
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
     	}
-
-    // Object - Size
-    if( ! mdeObject.Placeholder() )
-    	{
-    	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iSizePropertyDef, &aFileData.iFileSize, aIsAdd );
-    	}
-    
-    // Item Type
-	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iItemTypePropertyDef, &aFileData.iMime16, aIsAdd );
     
     // MediaObject - Width
     if ( aFileData.iExifSupported )

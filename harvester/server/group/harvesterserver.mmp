@@ -71,6 +71,7 @@ LIBRARY		      harvesterdata.lib
 LIBRARY           harvestercommon.lib
 LIBRARY		      locationmanager.lib
 LIBRARY           platformenv.lib 
+LIBRARY           bafl.lib
 
 UNPAGED
 

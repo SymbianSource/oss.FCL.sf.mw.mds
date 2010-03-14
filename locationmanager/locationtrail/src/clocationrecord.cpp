@@ -85,7 +85,7 @@ void CLocationRecord::ConstructL()
     TRAP(err, ReadCenRepValueL(KIntervalKey, interval));
     LOG1("CLocationManagerServer::ConstructL, cenrep interval value:%d", interval);
     
-    if (interval == 0)
+    if (interval == 0 || err != KErrNone )
     	{
         LOG1("CLocationManagerServer::ConstructL, cenrep interval err:%d", err);
     	iInterval = KUpdateInterval;
@@ -93,20 +93,6 @@ void CLocationRecord::ConstructL()
     else 
     	{
     	iInterval = interval * KMillion;
-    	}
-    
-    TInt trailLength( 0 );
-    TRAP(err, ReadCenRepValueL(KTrailLengthKey, trailLength));
-    LOG1("CLocationManagerServer::ConstructL, cenrep trail length value:%d", trailLength);
-    
-    if ( err != KErrNone )
-    	{
-        LOG1("CLocationManagerServer::ConstructL, cenrep trail length err:%d", err);
-    	iBufferSize = KMaxTrailLength / iInterval;
-    	}
-    else
-    	{
-    	iBufferSize = trailLength * KMillion / iInterval;
     	}
 
     TRAP(err, ReadCenRepValueL(KLocationDeltaKey, iLocationDelta));
@@ -160,6 +146,10 @@ EXPORT_C void CLocationRecord::StartL( RLocationTrail::TTrailCaptureSetting aCap
     iTrailCaptureSetting = aCaptureSetting;
     if ( aCaptureSetting == RLocationTrail::ECaptureAll && !iPositionInfo->IsActive() )
         {
+        if( iState == RLocationTrail::ETrailStopped  )
+            {
+            iTrail.Reset();
+            }
         iPositionInfo->StartL( aCaptureSetting, iInterval );
         }
     else if ( aCaptureSetting == RLocationTrail::ECaptureNetworkInfo )

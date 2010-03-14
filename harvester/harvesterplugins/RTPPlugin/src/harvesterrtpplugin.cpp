@@ -153,6 +153,15 @@ void CHarvesterRtpPlugin::HarvestL( CHarvesterData* aHD )
     }
 
 // ---------------------------------------------------------------------------
+// CHarvesterAudioPlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterRtpPlugin::GetMimeType( const TDesC& /*aUri*/, TDes& aMimeType )
+    {
+    aMimeType = KRtpClipMimetype;
+    }
+
+// ---------------------------------------------------------------------------
 // Gather metadata
 // ---------------------------------------------------------------------------
 //
@@ -271,6 +280,9 @@ void CHarvesterRtpPlugin::HandleObjectPropertiesL(
     	// File size
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iSizePropertyDef, &aClipDetails.iFileSize, aIsAdd );
+        // Mime Type
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
     	}
 
     // Title (is set from URI by default)
@@ -279,10 +291,6 @@ void CHarvesterRtpPlugin::HandleObjectPropertiesL(
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
         		*iPropDefs->iTitlePropertyDef, &aClipDetails.iTitle, EFalse );
         }
-
-    // Mime Type
-    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    		*iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
 
     // Capture date
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
