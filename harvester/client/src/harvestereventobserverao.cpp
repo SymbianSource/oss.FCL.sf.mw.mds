@@ -179,7 +179,7 @@ TUint CHarvesterEventObserverAO::NextObserverId()
 
 	// Find smallest unused observer ID 
 	const TUint count = iObservers.Count();
-	for( TUint i = 0; i < count; i++ )
+	for( TInt i = count - 1; i >=0; i-- )
 		{
 		// Return first free observer ID 
 		if( iObservers[i]->iObserverInfo.iObserverId != i )

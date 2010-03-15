@@ -32,7 +32,7 @@
 *  CMdSOomPlugin
 * 
 */
-class CMdSOomPlugin : public COomMonitorPlugin
+class CMdSOomPlugin : public COomMonitorPluginV2
 	{
 public:
 	// Constructors and destructor
@@ -45,14 +45,14 @@ public:
 	
 
 	/**
-	 * From COomMonitorPlugin
+	 * From COomMonitorPlugin v2
 	 * FreeRam is called when the system RAM level becomes
 	 * low. This plugin is requested to help free some RAM.
 	 */
-	void FreeRam();
+	void FreeRam( TInt aBytesToFree );
 
 	/**
-	 * From COomMonitorPlugin
+	 * From COomMonitorPlugin v2
 	 * MemoryGood is called when the system RAM level becomes
 	 * good after being low.The plugin may take this opportunity
 	 * to start using RAM again.

@@ -72,8 +72,11 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 	iFs.Close();
 	
 	iMountDataQueue.ResetAndDestroy();
+	iMountDataQueue.Close();
 	iEntryArray.ResetAndDestroy();
+	iEntryArray.Close();
 	iHarvestEntryArray.ResetAndDestroy();
+	iHarvestEntryArray.Close();
 	
 	delete iMdeSession;
   
@@ -126,7 +129,6 @@ void CMMCMountTaskAO::StartUnmount(TMountData& aMountData)
 			{
 			Cancel();
 			Deinitialize();
-			iNextRequest = ERequestIdle;
 			}
 		}
 		
@@ -188,7 +190,6 @@ void CMMCMountTaskAO::RunL()
 				}
 			else
 				{
-			    SetPriority( KHarvesterCustomImportantPriority );
 				SetNextRequest( ERequestIdle );
 				iMountDataQueue.Compress();
 				}
@@ -349,7 +350,6 @@ void CMMCMountTaskAO::RunL()
 			WRITELOG( "CMMCMountTaskAO::RunL - ERequestCleanup" );
 			TBool present = (iMountData->iMountType == TMountData::EMount);
 			iMdeSession->SetMediaL( iMountData->iMediaID, iMountData->iDrivePath[0], present );
-			SetPriority( KHarvesterCustomImportantPriority );
 			Deinitialize();
 			SetNextRequest( ERequestStartTask );
 			}

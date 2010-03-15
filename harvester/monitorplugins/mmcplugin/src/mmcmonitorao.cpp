@@ -44,7 +44,7 @@ void CMMCMonitorAO::ConstructL()
 	
 	User::LeaveIfError( iFs.Connect() );
 	CActiveScheduler::Add( this );
-	for( TInt i=0; i<KMaxDrives; i++ )
+	for( TInt i = KMaxDrives - 1; i >=0; i-- )
 	    {
 	    iMediaIdList[i] = 0;
 	    }
@@ -110,27 +110,6 @@ TBool CMMCMonitorAO::StopMonitoring()
 	
 	Cancel();
 	return ETrue;
-	}
-
-TBool CMMCMonitorAO::Resume()
-	{
-	WRITELOG( "CMMCMonitorAO::Resume" ); // DEBUG INFO
-
-	iPreviousDriveList.Zero();
-	iPreviousDriveList.Copy( iDriveList );
-
-	BuildDriveList();
-	CompareDriveLists();
-	StartNotify();
-	
-	return ETrue;
-	}
-
-TBool CMMCMonitorAO::Pause()
-	{
-	WRITELOG( "CMMCMonitorAO::Pause" ); // DEBUG INFO
-	
-	return StopMonitoring();
 	}
 
 void CMMCMonitorAO::RunL()

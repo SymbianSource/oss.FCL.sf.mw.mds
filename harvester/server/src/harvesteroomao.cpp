@@ -77,7 +77,7 @@ void CHarvesterOomAO::RunL()
 	TInt oomStatus( 0 );
 	const TInt err = iOomMsgQueue.Receive( oomStatus );
 	
-	if( oomStatus == TMdsOomFreeRam )
+	if( oomStatus == EMdsOomFreeRam )
 		{
 		iObserver->MemoryLow();
 		}

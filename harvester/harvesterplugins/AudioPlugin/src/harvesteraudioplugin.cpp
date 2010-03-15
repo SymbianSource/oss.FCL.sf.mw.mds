@@ -42,13 +42,14 @@ void CHarvesterAudioPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
 	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 
-	// Image property definitions
+	// Common property definitions
 	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
 	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
 	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+    iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTimeOffsetProperty );
 
 	// Media property definitions
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
@@ -136,7 +137,7 @@ void CHarvesterAudioPlugin::ConstructL()
         TRAP_IGNORE( iTNM = CThumbnailManager::NewL( *this ) );
         }
     
-    SetPriority( KHarvesterPriorityHarvestingPlugin - 1);
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 2 );
 	}
 
 // ---------------------------------------------------------------------------
@@ -266,9 +267,9 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
         User::Leave( err ); // metadata cannot be gathered!
         }
     
-	TTime now;
-	now.HomeTime();
-    
+    TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
+    TTime localModifiedDate = entry.iModified + timeOffsetSeconds;
+	
 	if( !iPropDefs )
 		{
 		CMdEObjectDef& objectDef = mdeObject.Def();
@@ -276,7 +277,7 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
 		}
 	
 	CMdeObjectWrapper::HandleObjectPropertyL(
-                 mdeObject, *iPropDefs->iCreationDatePropertyDef, &now, aIsAdd );
+                 mdeObject, *iPropDefs->iCreationDatePropertyDef, &localModifiedDate, aIsAdd );
 
 	CMdeObjectWrapper::HandleObjectPropertyL(
              mdeObject, *iPropDefs->iLastModifiedDatePropertyDef, &entry.iModified, aIsAdd );
@@ -361,7 +362,12 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
 	    CMdEObjectDef& audioObjectDef = mdeObject.Def();
 		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( audioObjectDef );
 		}
-    
+ 
+    // Time offset
+    TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
+    TInt16 timeOffsetMinutes = timeOffsetSeconds.Int() / 60;
+    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
+	
     if ( song.Length() > 0
         && song.Length() < iPropDefs->iTitlePropertyDef->MaxTextLengthL() )
         {    

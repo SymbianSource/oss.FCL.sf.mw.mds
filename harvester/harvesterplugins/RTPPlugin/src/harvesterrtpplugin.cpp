@@ -23,6 +23,7 @@
 #include "harvesterlog.h"
 #include "mdeobject.h"
 #include "mdsutils.h"
+#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 #include "harvesterrtpmetadatareader.h"
 #include <mdenamespacedef.h>
@@ -86,6 +87,7 @@ CHarvesterRtpPlugin::CHarvesterRtpPlugin() : CHarvesterPlugin(), iPropDefs( NULL
 void CHarvesterRtpPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterRtpPlugin::ConstructL()" );
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
     }
 
 // ---------------------------------------------------------------------------

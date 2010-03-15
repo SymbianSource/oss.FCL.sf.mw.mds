@@ -149,8 +149,7 @@ TBool CLocationRemappingAO::CheckQueue()
 	// clear all "old" location id's from remap items
 	if( removeLocations.Count() < 0 )
 		{
-		index = iRemapItems.Count();
-		for( TInt i = 0; i < index; i++ )
+		for( TInt i = iRemapItems.Count() - 1; i >=0; i-- )
 			{
 			TInt err = removeLocations.Find( iRemapItems[i].iLocationId );
 			if ( err != KErrNotFound )

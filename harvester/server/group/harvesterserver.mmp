@@ -57,6 +57,7 @@ SOURCE 		restorewatcher.cpp
 SOURCE      harvesteroomao.cpp
 SOURCE      pauseobserverao.cpp
 SOURCE    harvestershutdownobserver.cpp
+SOURCE    harvesterdiskspaceobserver.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 

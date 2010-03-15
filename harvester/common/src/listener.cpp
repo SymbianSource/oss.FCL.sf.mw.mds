@@ -48,7 +48,7 @@ CListener* CListener::NewL( const TUid aPropertyCategory,
 CListener* CListener::NewLC( const TUid aPropertyCategory,
 		const TUint aKey )
     {
-    WRITELOG( "CHarvesterAO::NewLC() - begin" );
+    WRITELOG( "CListener::NewLC() - begin" );
     
     CListener* self = new ( ELeave ) CListener( aPropertyCategory, aKey );
     CleanupStack::PushL( self );

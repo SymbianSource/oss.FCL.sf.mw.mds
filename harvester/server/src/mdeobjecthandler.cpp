@@ -127,7 +127,7 @@ void CMdeObjectHandler::SetMetadataObjectL( CHarvesterData& aHD )
                		iMdeSession->NewRelationLC(
                 		albumRelationDef, albumId, objectId, 0 );
                 relationEventArray.Append( STATIC_CAST( CMdEInstanceItem*, relation ) );
-                CleanupStack::Pop();
+                CleanupStack::Pop(); //relation
                 }
             }
         }
@@ -141,7 +141,7 @@ void CMdeObjectHandler::SetMetadataObjectL( CHarvesterData& aHD )
             CMdEEvent* event = iMdeSession->NewEventLC( 
             		*eventDef, objectId, time );
             relationEventArray.Append( STATIC_CAST( CMdEInstanceItem*, event ) );
-            CleanupStack::Pop();
+            CleanupStack::Pop(); // event
             }
         }
 
@@ -186,6 +186,49 @@ CMdEObject* CMdeObjectHandler::GetMetadataObjectL( CHarvesterData& aHD, const TD
                 error = tempFile.Open( iFs, aHD.Uri(), EFileRead | EFileShareReadersOnly );
                 if( error != KErrNone )
                     {
+#ifdef _DEBUG
+                    if( error == KErrInUse || error || KErrLocked )
+                        {
+                        TPtrC fileName( aHD.Uri().Mid(2) );
+                        WRITELOG1( "CMdeObjectHandler :: Checking open file handles to %S", &fileName );
+
+                        CFileList* fileList = 0;
+                        TOpenFileScan fileScan( iFs );
+
+                        fileScan.NextL( fileList );   
+          
+                        while ( fileList )   
+                            {
+                            const TInt count( fileList->Count() ); 
+                            for (TInt i = 0; i < count; i++ )   
+                                {   
+                                if ( (*fileList)[i].iName == aHD.Uri().Mid(2) )
+                                    {
+                                    TFullName processName;
+                                    TFindThread find(_L("*"));
+                                    while( find.Next( processName ) == KErrNone )
+                                        {
+                                        RThread thread;
+                                        TInt err = thread.Open( processName );
+             
+                                        if ( err == KErrNone )
+                                            {
+                                            if ( thread.Id().Id() ==  fileScan.ThreadId() )
+                                                {
+                                                processName = thread.Name();
+                                                thread.Close();
+                                                WRITELOG1( "CMdeObjectHandler:: %S has a file handle open", &processName );
+                                                break;
+                                                }
+                                            thread.Close();
+                                            }
+                                        }
+                                    }
+                                }
+                            fileScan.NextL( fileList );   
+                            } 
+                        }
+#endif
                     WRITELOG( "CMdeObjectHandler::GetMetadataObjectL() - file handle is open! Returning." );
                     return NULL;
                     }

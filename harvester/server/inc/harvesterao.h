@@ -35,6 +35,7 @@
 #include "harvesteroomao.h"
 #include "backupsubscriber.h"
 #include "harvestermediaidutil.h"
+#include "harvesterdiskspaceobserver.h"
 
 
 // forward declarations
@@ -99,7 +100,8 @@ class CHarvesterAO : public CActive,
                      public MMdESessionObserver,
                      public MBackupRestoreObserver,
                      public MUnmountObserver,
-                     public MHarvesterOomObserver
+                     public MHarvesterOomObserver,
+                     public MMdSHarvesterDiskSpaceObserver
 	{
     public:
     
@@ -279,6 +281,9 @@ class CHarvesterAO : public CActive,
          * Backup&Restore has finished backup or restore.
          */
         void BackupRestoreReady();
+
+        // From MMdSHarvesterDiskSpaceObserver
+        void HandleDiskSpaceNotificationL( TDiskSpaceDirection aCrossDirection );
         
         /** */  	
         void HandleUnmount( TUint32 aMediaId );
@@ -546,6 +551,21 @@ class CHarvesterAO : public CActive,
         
         // Own.
         CDesCArray* iCameraExtensionArray;
+
+        /**
+        * Notifier for situations where free disk space runs out. Own
+        */
+        CMdSHarvesterDiskspaceObserverAO* iDiskFullNotifier;
+        
+        TBool iRamFull;
+        
+        TBool iDiskFull;
+        
+        TBool iManualPauseEnabled;
+        
+        TBool iFastHarvestNeeded;
+        
+        TBool iHarvestingPlaceholders;
 	};
 	
 #endif //__CHARVESTERAO_H__

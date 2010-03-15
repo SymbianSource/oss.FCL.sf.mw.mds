@@ -167,7 +167,7 @@ EXPORT_C void CHarvesterPlugin::RunL()
             	else if( iFastModeEnabled )
             	    {
                     iFastModeEnabled = EFalse;
-                    SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
+                    SetPriority( KHarvesterPriorityHarvestingPlugin );
             	    }
             	
 				if( iBlacklist )
@@ -220,7 +220,6 @@ EXPORT_C void CHarvesterPlugin::RunL()
 //
 EXPORT_C void CHarvesterPlugin::DoCancel()
     {
-    
     }
 
 // ---------------------------------------------------------------------------

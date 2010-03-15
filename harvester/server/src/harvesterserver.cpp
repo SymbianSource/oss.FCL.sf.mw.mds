@@ -157,7 +157,7 @@ CHarvesterServer* CHarvesterServer::NewLC()
     WRITELOG( "CHarvesterServer::NewLC() - begin" );
     
 	CHarvesterServer* self = new (ELeave) CHarvesterServer(
-			CActive::EPriorityStandard, KHarvesterServerPolicy, 
+			CActive::EPriorityUserInput, KHarvesterServerPolicy, 
 			ESharableSessions );
 	CleanupStack::PushL( self );
 	self->ConstructL();
@@ -196,8 +196,12 @@ void CHarvesterServer::ConstructL()
 	WRITELOG( "CHarvesterServer::ConstructL() - begin" );
 	StartL( KHarvesterServerName );
 	iHarvesterAO = CHarvesterAO::NewL();
-	iHarvesterAO->SetHarvesterStatusObserver( this );
 	
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
+	
+	iHarvesterAO->SetHarvesterStatusObserver( this );	
 	iPauseObserverAO = CPauseObserverAO::NewL( *this );
 	
     // create shutdown observer

@@ -25,7 +25,6 @@
 #include "harvestervideoplugin.h"
 #include "harvesterlog.h"
 #include "harvesterblacklist.h"
-#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 
 #include <mdenamespacedef.h>
@@ -267,7 +266,6 @@ void CHarvesterVideoPlugin::ConstructL()
                     KMimeTypeWmv(), KMimeTypeWmv() ) ), 
             cmp ) );
     
-    SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
     }
 
 
@@ -306,6 +304,47 @@ void CHarvesterVideoPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType 
         WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - File open error: %d", error );
         if( error == KErrInUse )
             {
+#ifdef _DEBUG
+            TPtrC fileName( aUri.Mid(2) );
+            WRITELOG1( "CHarvesterVideoPlugin :: Checking open file handles to %S", &fileName );
+
+            CFileList* fileList = 0;
+            TOpenFileScan fileScan( iFs );
+
+            TRAP_IGNORE( fileScan.NextL( fileList ) );   
+  
+            while ( fileList )   
+                {
+                const TInt count( fileList->Count() ); 
+                for (TInt i = 0; i < count; i++ )   
+                    {   
+                    if ( (*fileList)[i].iName == aUri.Mid(2) )
+                        {
+                        TFullName processName;
+                        TFindThread find(_L("*"));
+                        while( find.Next( processName ) == KErrNone )
+                            {
+                            RThread thread;
+                            TInt err = thread.Open( processName );
+     
+                            if ( err == KErrNone )
+                                {
+                                if ( thread.Id().Id() ==  fileScan.ThreadId() )
+                                    {
+                                    processName = thread.Name();
+                                    thread.Close();
+                                    WRITELOG1( "CHarvesterVideoPlugin:: %S has a file handle open", &processName );
+                                    break;
+                                    }
+                                thread.Close();
+                                }
+                            }
+                        }
+                    }
+                fileList = NULL;
+                TRAP_IGNORE( fileScan.NextL( fileList ) );   
+                } 
+#endif
             aObjectType.Copy( KInUse() );
             }
         return;
@@ -401,6 +440,46 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
          error == KErrLocked )
         {
         WRITELOG( "CHarvesterVideoPlugin - File is open!" );
+#ifdef _DEBUG
+            TPtrC fileName( uri.Mid(2) );
+            WRITELOG1( "CHarvesterVideoPlugin :: Checking open file handles to %S", &fileName );
+
+            CFileList* fileList = 0;
+            TOpenFileScan fileScan( iFs );
+
+            fileScan.NextL( fileList );   
+  
+            while ( fileList )   
+                {
+                const TInt count( fileList->Count() ); 
+                for (TInt i = 0; i < count; i++ )   
+                    {   
+                    if ( (*fileList)[i].iName == uri.Mid(2) )
+                        {
+                        TFullName processName;
+                        TFindThread find(_L("*"));
+                        while( find.Next( processName ) == KErrNone )
+                            {
+                            RThread thread;
+                            TInt err = thread.Open( processName );
+     
+                            if ( err == KErrNone )
+                                {
+                                if ( thread.Id().Id() ==  fileScan.ThreadId() )
+                                    {
+                                    processName = thread.Name();
+                                    thread.Close();
+                                    WRITELOG1( "CHarvesterVideoPlugin:: %S has a file handle open", &processName );
+                                    break;
+                                    }
+                                thread.Close();
+                                }
+                            }
+                        }
+                    }
+                fileScan.NextL( fileList );   
+                } 
+#endif
         CleanupStack::PopAndDestroy( &file );
         User::Leave( KErrInUse );
         }
@@ -420,16 +499,6 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         {
         CMdEProperty* prop = NULL;
         CMdEObjectDef& objectDef = aMetadataObject.Def();
-        CMdEPropertyDef& sizeDef = objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
-        aMetadataObject.Property( sizeDef, prop );
-        if( prop )
-            {
-            aVHD.iFileSize  = prop->Uint32ValueL();
-            }
-        else
-            {
-            dataExtracted = EFalse;
-            }
         CMdEPropertyDef& modifiedDef = objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
         aMetadataObject.Property( modifiedDef, prop );
         if( prop )
@@ -456,9 +525,9 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         
         aVHD.iModified = entry.iModified;
         aVHD.iFileSize = (TUint)entry.iSize;
+        
+        WRITELOG1( "CHarvesterVideoPlugin - File size: %d", aVHD.iFileSize );
         }
-    
-    WRITELOG1( "CHarvesterVideoPlugin - File size: %d", aVHD.iFileSize );
 
     // now the minimum information has been harvested
     // from now on the harvested data should always be stored

@@ -55,7 +55,6 @@ CHarvesterServerSession* CHarvesterServerSession::NewLC( CHarvesterServer& aServ
 void CHarvesterServerSession::ConstructL()
 	{
     WRITELOG( "CHarvesterServerSession::ConstructL()" );
-
 	}
 
 // ---------------------------------------------------------------------------

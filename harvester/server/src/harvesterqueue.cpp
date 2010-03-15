@@ -20,6 +20,7 @@
 #include "harvesterlog.h"
 #include "harvesterblacklist.h"
 #include "mdsutils.h"
+#include "harvestercommon.h"
 
 // ---------------------------------------------------------------------------
 // NewL
@@ -157,6 +158,10 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
     if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
     	{
     	err = iItemQueue.Insert( aItem, 0 );
+    	if( !iHarvesterAO->IsActive() )
+    	    {
+            iHarvesterAO->SetPriority( KHarvesterPriorityMonitorPlugin );
+    	    }
     	}
     else
     	{
@@ -188,7 +193,7 @@ TUint CHarvesterQueue::RemoveItems( TUint32 aMediaId )
     TUint32 mediaId( 0 );
     CHarvesterData* hd = NULL;
     
-    for(TInt i = iItemQueue.Count() - 1; i >=0; i--)
+    for( TInt i = iItemQueue.Count() - 1; i >=0; i-- )
         {
         hd = iItemQueue[i];
         err = iMediaIdUtil->GetMediaId( hd->Uri(), mediaId );
@@ -212,7 +217,10 @@ TUint CHarvesterQueue::RemoveItems( TUint32 aMediaId )
             WRITELOG1( "CHarvesterQueue::RemoveItems( ) GetMediaId err == %d", err);
             }
         }
-    iItemQueue.Compress();
+    if( removedCount > 0 )
+        {
+        iItemQueue.Compress();
+        }
 #ifdef _DEBUG
     WRITELOG2( "CHarvesterQueue::RemoveItems() iItemQueue.Count() = %d, removedCount = %d", iItemQueue.Count(), removedCount);
 #endif

@@ -403,6 +403,13 @@ void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
                 		)
                 		}
                		iRemapper->StartRemappingObjects( iNewItem.iLocationData );
+
+                    if( iObserver->WaitForPositioningStopTimeout() && !RemappingNeeded() )                                
+               		    {                                                
+                        iObserver->RemapedCompleted();
+                        return;
+               		    }
+               		
                 	}
                 if ( iState != RLocationTrail::ETrailStopping )
                 	{
@@ -1094,12 +1101,16 @@ TTime CLocationRecord::GetMdeObjectTimeL( TItemId aObjectId )
     CMdEProperty* property = NULL;
     
     object = iMdeSession->GetObjectL( aObjectId );
+    CleanupStack::PushL( object );
     object->Property( timeDef, property, 0 );
     if ( !property )
         {
         User::Leave( KErrNotFound );
         }
-    return property->TimeValueL();
+    
+    const TTime timeValue( property->TimeValueL() );
+    CleanupStack::PopAndDestroy( object );
+    return timeValue;
     }
 
 EXPORT_C TBool CLocationRecord::RemappingNeeded()

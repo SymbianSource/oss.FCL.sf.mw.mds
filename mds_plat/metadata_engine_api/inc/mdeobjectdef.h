@@ -96,7 +96,7 @@ public:
 	 */
 	virtual ~CMdEObjectDef();
 
-	TDefId Id() const;	
+	IMPORT_C TDefId Id() const;	
 	
 	/**
 	 * Returns the property definition with the specified id

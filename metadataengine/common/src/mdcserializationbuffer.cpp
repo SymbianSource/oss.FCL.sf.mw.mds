@@ -992,7 +992,7 @@ void CMdCSerializationBuffer::ConstructL( TInt32 aSize )
 #ifdef _DEBUG
     // for testing initilize to 0x99
     TUint8* ptr = (TUint8*)(iBuffer.Ptr());
-    for(TInt32 i = 0; i < aSize; i++)
+    for( TInt32 i = aSize - 1; i >=0; i-- )
     	{
     	ptr[i] = 0x99;
     	}

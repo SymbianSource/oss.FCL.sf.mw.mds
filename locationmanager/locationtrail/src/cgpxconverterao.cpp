@@ -275,8 +275,7 @@ void CGpxConverterAO::RunL()
 				distance = iBoundaries->distance;
 				}
 			
-			TInt count = iObservers.Count();
-			for( TInt i = 0; i < count; i++ )
+			for( TInt i = iObservers.Count() - 1; i >=0; i-- )
 				{
 				iObservers[i]->GpxFileCreated( iGpxPath, iTagId, distance, iStartTime, iEndTime );
 				}

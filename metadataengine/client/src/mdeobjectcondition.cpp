@@ -128,7 +128,7 @@ void CMdEObjectCondition::ConstructL( const RArray<TItemId>* aObjectIds,
 	    
 		for( TInt i = 0; i < objectIdCount; i++ )
 			{
-			iObjectIds->Append( (*aObjectIds)[i] );
+			iObjectIds->AppendL( (*aObjectIds)[i] );
 			}
 		}
 	else if ( aRange )

@@ -174,7 +174,7 @@ CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL(TDefId aId, CMdEObjectDef* aChil
             break;
             }
         
-        TInt compare( aId - iPropertyDefs[mid]->Id() );
+        const TInt compare( aId - iPropertyDefs[mid]->Id() );
         if( compare == 0 )
             {
             return iPropertyDefs[mid];

@@ -102,8 +102,7 @@ TInt CompareTimeAscending( const TCLFSortingItem& aFirst,
 void AppendItemsToArrayL( const TArray<MCLFItem*>& aSourceArray,
                           RPointerArray<MCLFItem>& aDestArray )
     {
-    const TInt count( aSourceArray.Count() );
-    for( TInt i = 0 ; i < count ; ++i )
+    for( TInt i = aSourceArray.Count() - 1; i >=0; i--)
         {
         aDestArray.AppendL( aSourceArray[ i ] );
         }

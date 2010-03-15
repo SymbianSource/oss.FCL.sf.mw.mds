@@ -25,7 +25,6 @@
 #include "mdsutils.h"
 #include "harvesterexifutil.h"
 #include "harvesterimageplugin.h"
-#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 
 using namespace MdeConstants;
@@ -257,7 +256,6 @@ void CHarvesterImagePlugin::ConstructL()
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TImageMetadataHandling>(
             KExtOtb(), KOtbMime(), EOtherHandling ), cmp ) );
     
-    SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
 	}
 
 void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
@@ -452,15 +450,59 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         TPtr8 imageDataPtr = aFileData.iImageData->Des();
         TRAP( err, iDecoder->OpenL(imageDataPtr, aFileData.iMime8,
                 CImageDecoder::TOptions( CImageDecoder::EPreferFastDecode | CImageDecoder::EOptionIgnoreExifMetaData ) ) );
-        WRITELOG( "CHarvesterImagePlugin::GatherData() - Image decoder has opened the file." );
 
         if ( err != KErrNone )
             {
             WRITELOG1( "CHarvesterImagePlugin::GatherData() - ERROR: Decoder could not open image data! Code %d", err );
+#ifdef _DEBUG
+            if( err == KErrInUse || err == KErrLocked )
+                {
+                TPtrC fileName( uri.Mid(2) );
+                WRITELOG1( "CHarvesterImagePlugin :: Checking open file handles to %S", &fileName );
+
+                CFileList* fileList = 0;
+                TOpenFileScan fileScan( iFs );
+
+                fileScan.NextL( fileList );   
+  
+                while ( fileList )   
+                    {
+                    const TInt count( fileList->Count() );
+                    for (TInt i = 0; i < count; i++ )   
+                        {   
+                        if ( (*fileList)[i].iName == uri.Mid(2) )
+                            {
+                            TFullName processName;
+                            TFindThread find(_L("*"));
+                            while( find.Next( processName ) == KErrNone )
+                                {
+                                RThread thread;
+                                TInt err = thread.Open( processName );
+     
+                                if ( err == KErrNone )
+                                    {
+                                    if ( thread.Id().Id() ==  fileScan.ThreadId() )
+                                        {
+                                        processName = thread.Name();
+                                        thread.Close();
+                                        WRITELOG1( "CHarvesterImagePlugin:: %S has a file handle open", &processName );
+                                        break;
+                                        }
+                                    thread.Close();
+                                    }
+                                }
+                            }
+                        }
+                    fileScan.NextL( fileList );   
+                    } 
+                }
+#endif
             iDecoder->Reset();
             return KErrCompletion; // metadata item still can be created, thus KErrCompletion
             }
 
+        WRITELOG( "CHarvesterImagePlugin::GatherData() - Image decoder has opened the file." );
+        
         if ( !iDecoder->ValidDecoder() )
         	{
         	// read all remaining data from file

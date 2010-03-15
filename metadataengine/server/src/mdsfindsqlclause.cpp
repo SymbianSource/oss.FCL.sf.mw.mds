@@ -266,7 +266,7 @@ void CMdSFindSqlClause::CreateL(
 			{
 			TDefId objectDefId;
 			iSerializedBuffer->ReceiveL( objectDefId );			
-			iSourceObjectDefs->Append( objectDefId );
+			iSourceObjectDefs->AppendL( objectDefId );
 			}
 		}
 	else

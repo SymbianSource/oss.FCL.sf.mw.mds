@@ -52,8 +52,7 @@ inline TUint32 FSUtil::GetPreviousMediaIDL( const CMdEHarvesterSession* aMdeSess
 	sess->GetPresentMediasL( presentMedias );
 
     TUint32 mediaid = 0;
-    TInt count = presentMedias.Count();
-    for( TInt i=0;i<count;i++ )
+    for( TInt i = presentMedias.Count() - 1; i >=0; i-- )
     	{
     	TMdEMediaInfo info = presentMedias[i];
     	if( info.iDrive == aDrive )

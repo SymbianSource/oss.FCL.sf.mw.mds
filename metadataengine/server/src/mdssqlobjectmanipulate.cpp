@@ -39,11 +39,12 @@
 #include "mdsgetimeiao.h"
 
 #include <e32math.h>
+#include <mdeobject.h>
 
 /** logging instance */
 __USES_LOGGER
 
-const TInt KMaxBuffers = 3;
+const TInt KMaxBuffers = 5;
 
 _LIT( KMemoryCard, "MC" );
 
@@ -181,6 +182,7 @@ CMdSSqlObjectManipulate::~CMdSSqlObjectManipulate()
 	iBuffers.Close();
 
 	delete iGenerator;
+	delete iUri;
     }
 
 CMdSSqlObjectManipulate::CMdSSqlObjectManipulate( const CMdsSchema& aSchema, 
@@ -657,21 +659,27 @@ void CMdSSqlObjectManipulate::SetFilesToNotPresentL(TUint32 aMediaId, TBool aSta
 void CMdSSqlObjectManipulate::SetRelationsToNotPresentL(
 		TUint32 aMediaId, RArray<TItemId>& aRelationIds)
 	{
-	_LIT( KSearchPresentRelations, "SELECT DISTINCT A.RelationId FROM Relations%u AS A LEFT JOIN object%u AS B On A.LeftObjectId = B.ObjectId OR A.RightObjectId = B.ObjectId WHERE NOT A.Flags&%u AND NOT A.Flags&%u AND B.MediaId=%u" );
+	_LIT( KSearchPresentRelations, "SELECT A.RelationId FROM Relations%u AS A, Object%u AS B WHERE A.LeftObjectId = B.ObjectId AND B.MediaId=%u AND NOT A.Flags&%u AND NOT A.Flags&%u UNION SELECT A.RelationId FROM Relations%u AS A, Object%u AS B WHERE A.RightObjectId = B.ObjectId AND B.MediaId=%u AND NOT A.Flags&%u AND NOT A.Flags&%u" );
 	_LIT( KSetRelationsToPresent, "UPDATE Relations%u SET Flags=Flags|? WHERE NOT Flags&? AND RelationId IN (%S);" );
 
 	// RelationIDs query sql statement
 	RClauseBuffer commonClauseOne(*this, 
 			KSearchPresentRelations.iTypeLength + 
-			KMaxUintValueLength  );
+			2*KMaxUintValueLength  );
     CleanupClosePushL( commonClauseOne );
 	CMdsClauseBuffer& clauseBufferOne = commonClauseOne.BufferL();
 	clauseBufferOne.BufferL().Format( KSearchPresentRelations, 
                 KDefaultNamespaceDefId,
                 KDefaultNamespaceDefId,
+                aMediaId,
                 EMdERelationFlagDeleted,
                 EMdERelationFlagNotPresent,
-                aMediaId );
+                KDefaultNamespaceDefId,
+                KDefaultNamespaceDefId,
+                aMediaId,
+                EMdERelationFlagDeleted,
+                EMdERelationFlagNotPresent
+                );
 	
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
     	
@@ -1415,8 +1423,6 @@ TItemId CMdSSqlObjectManipulate::AddObjectL( CMdSSqLiteConnection& aConnection,
 	if(objName != iLastAddedObjName)
 	    {
         iLastAddedObjName = objName;
-        aMdsBaseObjStatement.Close();
-        aMdsBaseObjStatement = RMdsStatement();
 	    aMdsObjStatement.Close();
         aMdsObjStatement = RMdsStatement();
         }
@@ -2130,7 +2136,8 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 
 void CMdSSqlObjectManipulate::RemoveObjectsByIdL( 
 		CMdCSerializationBuffer& aBuffer, TInt aCount, RArray<TItemId>& aIdArray, 
-		RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds )
+		RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds,
+		TBool aUrisRequired, RPointerArray<HBufC>& aRemovedItemUriArray )
 	{
 	if ( !iNamespaceDef )
 		{
@@ -2156,15 +2163,28 @@ void CMdSSqlObjectManipulate::RemoveObjectsByIdL(
 			objectIds.AppendL( objectId );
 			}
 		}
+    
+    CollectRemovedItemsL( objectIds, aIdArray, aRelationIds, aEventIds );
 
-	CollectRemovedItemsL( objectIds, aIdArray, aRelationIds, aEventIds );
-
+    if( aUrisRequired )
+         {
+         const TInt count( aIdArray.Count() );
+         for( TInt i( 0 ); i < count; i++ )
+             {
+             TUint32 flags;
+             SearchObjectUriByIdL( aIdArray[i], flags );
+             aRemovedItemUriArray.AppendL( iUri );
+             iUri = NULL;
+             }
+         }
+    
     CleanupStack::PopAndDestroy( &objectIds );
 	}
 
 void CMdSSqlObjectManipulate::RemoveObjectsByUriL( 
 		CMdCSerializationBuffer& aBuffer, TInt aCount, RArray<TItemId>& aIdArray,
-        RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds )
+        RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds, 
+        TBool aUrisRequired, RPointerArray<HBufC>& aRemovedItemUriArray )
 	{
 	if ( !iNamespaceDef )
 		{
@@ -2190,6 +2210,13 @@ void CMdSSqlObjectManipulate::RemoveObjectsByUriL(
 				}
 			
 			objectIds.AppendL( objectId );
+			
+			if( aUrisRequired )
+			    {
+			    // Only objects have uris, so if the are removed by uri, it can be assumed
+			    // that only objects are removed.
+			    aRemovedItemUriArray.AppendL( uri.AllocL() );
+			    }
 			}
 		}
 
@@ -2247,6 +2274,57 @@ TItemId CMdSSqlObjectManipulate::SearchObjectByUriL( const TDesC16& aUri,
 	CleanupStack::PopAndDestroy( &commonClauseOne );
 	return objectId;
 	}
+
+HBufC*& CMdSSqlObjectManipulate::SearchObjectUriByIdL( const TItemId aId, 
+        TUint32& aFlags )
+    {
+    _LIT( KMdsSearchObjectUribyId, "SELECT URI,Flags FROM Object%u WHERE NOT Flags&? AND ObjectId=? LIMIT 1;" );
+
+    if ( !iNamespaceDef )
+        {
+        User::Leave( KErrMdEUnknownNamespaceDef );
+        }
+
+    RClauseBuffer commonClauseOne(*this, KMdsSearchObjectUribyId.iTypeLength + KMaxUintValueLength );
+    CleanupClosePushL( commonClauseOne );
+    CMdsClauseBuffer& searchUriClause = commonClauseOne.BufferL();
+
+    searchUriClause.BufferL().Format( KMdsSearchObjectUribyId, iNamespaceDef->GetId() );
+
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+
+    TPtrC16 uri;
+    aFlags = 0;
+
+    RRowData varSearch;
+    CleanupClosePushL( varSearch );
+    varSearch.AppendL( TColumn( EMdEObjectFlagNotPresent ) );
+    varSearch.AppendL( TColumn( aId ) );
+
+    RMdsStatement getQuery;
+    CleanupClosePushL( getQuery );
+
+    __LOGQUERY_16( _L("Search object URI by ID:"), 
+            searchUriClause.ConstBufferL(), varSearch);
+    TRAPD( err, connection.ExecuteQueryL( 
+            searchUriClause.ConstBufferL(), getQuery, varSearch ) );
+
+    varSearch.Free();
+    varSearch.Reset();
+    varSearch.AppendL( TColumn( uri ) );
+    varSearch.AppendL( TColumn( aFlags ) );
+    if ( err == KErrNone && connection.NextRowL( getQuery, varSearch ) )
+        {
+        varSearch.Column(0).Get( uri );
+        varSearch.Column(1).Get( aFlags );
+        iUri = uri.AllocL();
+        }
+
+    CleanupStack::PopAndDestroy( 2, &varSearch ); // getQuery, varSearch
+    CleanupStack::PopAndDestroy( &commonClauseOne );
+    
+    return iUri;
+    }
 
 TItemId CMdSSqlObjectManipulate::UpdateObjectL( 
 		CMdSSqLiteConnection& aConnection, CMdCSerializationBuffer& aBuffer )
@@ -2455,10 +2533,8 @@ TItemId CMdSSqlObjectManipulate::UpdateObjectL(
 		objectRow.AppendL( TColumn( object.iId ) );
 		}
 
-	TInt queryResult = 0, err;
-    RMdSTransaction transaction( aConnection );
-    CleanupClosePushL( transaction );
-    User::LeaveIfError( transaction.Error() );
+	TInt queryResult( 0 );
+	TInt err( KErrNone );
 
 	if ( KUpdateModObject || KBaseObjectPropertyMod )
 		{
@@ -2508,9 +2584,6 @@ TItemId CMdSSqlObjectManipulate::UpdateObjectL(
 			UpdateFreeTextL( aBuffer, object.iFreeTexts.iPtr.iCount, object.iId );
 			}
 		}
-
-    transaction.CommitL();
-    CleanupStack::PopAndDestroy( &transaction );
 
     CleanupStack::PopAndDestroy( uriBuf );
     CleanupStack::PopAndDestroy( &commonClauseTwo );

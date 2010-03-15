@@ -89,20 +89,35 @@ void CWatchdog::ConstructL()
     PRINT(_L("CWatchdog::ConstructL() - create observer"));
     iShutdownObserver = CWDShutdownObserver::NewL( *this );        
     iSelfShutdownObserver = CWDSelfShutdownObserver::NewL( *this ); 
-    
-    RProcess process;
-    process.SetPriority( EPriorityBackground );
-    process.Close();
     }
 
 void CWatchdog::Start()
-    {
-    
+    {  
     PRINT(_L("CWatchdog::Start()"));
 
-    // Create the server process
+    // Double check that harvester server is not already running
+    TFullName name;
     TInt res( KErrNone );
+        
+    // find Harvester Server
+    TFindProcess findProcess( KHarvesterServerProcess );
+    if ( findProcess.Next(name) == KErrNone )
+        {                
+        PRINT(_L("CWatchdog::Start() - server already running, start listening"));
+        
+        iProcess.Close();
+        res = iProcess.Open(name);
+        if ( res != KErrNone )
+            {
+            PRINT(_L("CWatchdog::Start() - error in starting listening "));
+            return;
+            }
+        iState = EWaitingRendezvous;   
+        SetActive();
+        return;
+        }        
     
+    // Create the server process
     // KNullDesC param causes server's E32Main() to be run
     res = iProcess.Create( KHarvesterServerExe, KNullDesC );
     if ( res != KErrNone )
@@ -189,8 +204,7 @@ void CWatchdog::RunL()
               }
             
           default:
-              break;
-              
+              break; 
           
     	}
     

@@ -49,11 +49,11 @@ void CMdSOomPlugin::ConstructL()
 	}
 
 
-void CMdSOomPlugin::FreeRam()
+void CMdSOomPlugin::FreeRam( TInt /*aBytesToFree*/ )
 	{
 	WRITELOG("CMdSOomPlugin::FreeRam() - start");
 	
-	iOomMsgQueue.Send( TMdsOomFreeRam );
+	iOomMsgQueue.Send( EMdsOomFreeRam );
 	
 	WRITELOG("CMdSOomPlugin::FreeRam() - end");
 	}
@@ -62,7 +62,7 @@ void CMdSOomPlugin::MemoryGood()
 	{
 	WRITELOG("CMdSOomPlugin::MemoryGood - start");
 	
-	iOomMsgQueue.Send( TMdsOomMemoryGood );	
+	iOomMsgQueue.Send( EMdsOomMemoryGood );	
 	
 	WRITELOG("CMdSOomPlugin::MemoryGood - end ");
 	}

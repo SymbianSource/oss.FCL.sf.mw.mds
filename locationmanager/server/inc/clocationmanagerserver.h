@@ -310,6 +310,18 @@ public: // from MLocationTrailObserver.
      */
     void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP;
     
+    /**
+     * Callback method to notify observer that during waiting for positioning stop timeout remap is done.
+     */
+    void RemapedCompleted();
+    
+    /**
+     * Returns if in ETrialStopping state server waits for positioning stop timeout
+     * @returns <code>ETrue</code> if server is waiting for positioning stop timeout
+     *          <code>EFalse</code>, otherwise.
+     */
+    TBool WaitForPositioningStopTimeout();
+    
 public: // from MMdeObjectObserver
 	/**
 	 * Called to notify the observer that new objects has been
@@ -466,7 +478,12 @@ private:
     TInt iLocManStopRemapDelay;
     
     RLocationTrail::TTrailCaptureSetting iCaptureSetting;
-    TBool iRemoveLocation;    
+    TBool iRemoveLocation;   
+    
+    /**
+     * A flag for state of waiting for position stop timeout.
+     */
+    TBool iWaitForPositioningStopTimeout;
     };
 
 

@@ -61,6 +61,18 @@ public:
                                   const TInt aError ) __SOFTFP = 0;
     
     virtual void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP = 0;
+    
+    /**
+     * Callback method to notify observer that during waiting for positioning stop timeout remap is done.
+     */
+    virtual void RemapedCompleted() = 0;
+    
+    /**
+     * Returns if in ETrialStopping state server waits for positioning stop timeout
+     * @returns <code>ETrue</code> if server is waiting for positioning stop timeout
+     *          <code>EFalse</code>, otherwise.
+     */
+    virtual TBool WaitForPositioningStopTimeout() = 0;
     };
 
 /**

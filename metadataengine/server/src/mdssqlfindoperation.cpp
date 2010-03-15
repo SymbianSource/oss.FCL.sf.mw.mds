@@ -1405,9 +1405,7 @@ void CMdSSqlFindOperation::ConsumeRows()
     {
 	if( EQueryResultModeId != iResultMode )
 		{    
-	    const TInt KRowCount = iResultRows.Count();
-
-	    for( TInt i = 0; i < KRowCount; i++ )
+	    for( TInt i = iResultRows.Count() - 1; i >=0; i-- )
 	    	{
 	    	iResultRows[i]->Close();
 	    	}

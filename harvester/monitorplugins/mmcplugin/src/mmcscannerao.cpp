@@ -31,7 +31,7 @@ const TUint32 KScanDelayKey = 0x00000001;
 CMmcScannerAO::CMmcScannerAO( TUint32 aMediaId, 
 		CMdEHarvesterSession* aMdEClient, MMonitorPluginObserver* aObserver, 
 		CHarvesterPluginFactory* aHarvesterPluginFactory, const TInt aPriority ) : 
-		CTimer( aPriority ), iState( EUninitialized ), iMmcFileList( NULL )   
+		CActive( aPriority ), iState( EUninitialized ), iMmcFileList( NULL )   
 	{
 	iMediaId = aMediaId;
 	iMdEClient = aMdEClient;
@@ -41,45 +41,39 @@ CMmcScannerAO::CMmcScannerAO( TUint32 aMediaId,
 
 CMmcScannerAO* CMmcScannerAO::NewL( TUint32 aMediaId, CMdEHarvesterSession* aMdEClient,
 		MMonitorPluginObserver* aObserver, CHarvesterPluginFactory* aHarvesterPluginFactory, 
-		const TInt aPriority, TBool aAlreadyWaited )
+		const TInt aPriority )
 	{
 	CMmcScannerAO* self = new ( ELeave ) CMmcScannerAO( aMediaId, aMdEClient, aObserver, 
 			aHarvesterPluginFactory, aPriority );
 	
 	CleanupStack::PushL( self );
-	self->ConstructL( aAlreadyWaited );
+	self->ConstructL( );
 	CleanupStack::Pop( self );
 	return self;
 	}
 
-void CMmcScannerAO::ConstructL( TBool aAlreadyWaited )
+void CMmcScannerAO::ConstructL()
 	{
-	CTimer::ConstructL();
-	CActiveScheduler::Add( this ); // Add to scheduler
+    CActiveScheduler::Add( this ); // Add to scheduler
+	iTimer.CreateLocal();
 	iState = EUninitialized;
 	User::LeaveIfError( iFs.Connect() );
 	iMmcFileList = CMmcFileList::NewL();
 	
-	if( !aAlreadyWaited )
-	    {
-        TInt tmpDelay( KDefaultDelay );
-        TTimeIntervalMicroSeconds32 delay( tmpDelay * KMillion ); 
-        CRepository* repo = CRepository::NewLC( KRepositoryUid );
-        const TInt err = repo->Get( KScanDelayKey, tmpDelay );
-        if ( err == KErrNone )
-            {
-            delay = tmpDelay * KMillion;
-            }
-        CleanupStack::PopAndDestroy( repo );
-        After( delay );
-	    }
-	else
-	    {
-	    TTimeIntervalMicroSeconds32 delay( 5 ); 
-	    After( delay );
-	    }
+    TInt tmpDelay( KDefaultDelay );
+    TTimeIntervalMicroSeconds32 delay( tmpDelay * KMillion ); 
+    CRepository* repo = CRepository::NewLC( KRepositoryUid );
+    const TInt err = repo->Get( KScanDelayKey, tmpDelay );
+    if ( err == KErrNone )
+        {
+        delay = tmpDelay * KMillion;
+        }
+    CleanupStack::PopAndDestroy( repo );
 	
     iHEM = CHarvesterEventManager::GetInstanceL();
+    
+    iTimer.After( iStatus, delay );
+    SetActive();
 	}
 
 CMmcScannerAO::~CMmcScannerAO()
@@ -207,10 +201,16 @@ void CMmcScannerAO::RunL()
 		case( EDone ):
 			{
 			iFs.Close();
+			iTimer.Close();
 		    iHdArray.Reset();
 		    iHdArray.Compress();
 			iEntryArray.Compress();
 			iHarvestEntryArray.Compress();
+		    if (iHEM)
+		        {
+		        iHEM->ReleaseInstance();
+		        iHEM = NULL;
+		        }
 			break;
 			}
 		
@@ -282,3 +282,10 @@ void CMmcScannerAO::SetState( TCMmcScannerAOState aState )
 		SetActive();
 		}
 	}
+
+void CMmcScannerAO::DoCancel()
+    {
+    iTimer.Cancel();
+    iTimer.Close();
+    }
+

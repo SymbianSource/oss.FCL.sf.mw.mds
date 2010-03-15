@@ -21,6 +21,7 @@
 #include "mdsutils.h"
 #include "harvesterdata.h"
 #include "harvesterlog.h"
+#include "harvestercommon.h"
 #include "harvesterwmvplugin.h"
 #include <mdenamespacedef.h>
 #include <mdeobjectdef.h>
@@ -77,6 +78,7 @@ CHarvesterWMVPlugin* CHarvesterWMVPlugin::NewL()
 CHarvesterWMVPlugin::~CHarvesterWMVPlugin()
     {
     WRITELOG( "CHarvesterWMVPlugin::~CHarvesterWMVPlugin()" );
+    delete iPropDefs;
     }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +156,7 @@ CHarvesterWMVPlugin::CHarvesterWMVPlugin() : CHarvesterPlugin(), iPropDefs( NULL
 void CHarvesterWMVPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterWMVPlugin::ConstructL()" );
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
     }
 
 // ---------------------------------------------------------------------------

@@ -88,7 +88,7 @@ CImageComposerAO::~CImageComposerAO() // destruct
 // ---------------------------------------------------------------------------
 //
 CImageComposerAO::CImageComposerAO() : // first-phase C++ constructor
-		CActive( KHarvesterPriorityComposerPlugin + 1 ) // To match image harvester plugin
+		CActive( KHarvesterPriorityComposerPlugin )
     {
     WRITELOG( "CImageComposerAO::CImageComposerAO()" );
     }
@@ -871,6 +871,7 @@ void CImageComposerAO::DoWriteExifL( CMdEObject* aMdEObject, CMdEObject* aLocati
         if ( !cellIdProperty && !countryCodeProperty && !networkCodeProperty
             && !locationAreaCodeProperty && !speedProperty && !directionProperty && !qualityProperty )
             {
+            // Ignore return value - if operation does not succeed, there is no much that can be done here
             iSession->RemoveObjectL( aLocationObject->Id(), iDefaultNamespace );
             }
         }

@@ -215,25 +215,32 @@ class CMdSSqlObjectManipulate: public CBase
 		 * @param aBuffer id's to remove
 		 * @param aCount id's count
 		 * @param aIdArray result id's
-		 * @param aUserLevel not used - delete
-		 * @param aLockList list of locked objects
+         * @param aRelationIds result relation id's
+         * @param aEventIds result event id's
+         * @param aUrisRequired determines if uris are to be fetched
+         * @param aRemovedItemUriArray result uris
 		 */
 		void RemoveObjectsByIdL( CMdCSerializationBuffer& aBuffer, TInt aCount,
 				RArray<TItemId>& aIdArray, RArray<TItemId>& aRelationIds, 
-				RArray<TItemId>& aEventIds );
+				RArray<TItemId>& aEventIds,
+				TBool aUrisRequired, 
+				RPointerArray<HBufC>& aRemovedItemUriArray);
 
 		/**
 		 * Remove object using it's URI's
 		 *
 		 * @param aBuffer URI's to remove
 		 * @param aCount URI's count
-		 * @param aIdArray result id's
-		 * @param aUserLevel not used - delete
-		 * @param aLockList list of locked objects
-		 */
+		 * @param aIdArray result object id's
+         * @param aRelationIds result relation id's
+         * @param aEventIds result event id's
+         * @param aRemovedItemUriArray result uris
+         */
 		void RemoveObjectsByUriL( CMdCSerializationBuffer& aBuffer, TInt aCount,
 				RArray<TItemId>& aIdArray, RArray<TItemId>& aRelationIds, 
-				RArray<TItemId>& aEventIds );
+				RArray<TItemId>& aEventIds,
+				TBool aUrisRequired,
+				RPointerArray<HBufC>& aRemovedItemUriArray );
 
 		/**
 		 * search for object uri
@@ -244,6 +251,15 @@ class CMdSSqlObjectManipulate: public CBase
 		 */
 		TItemId SearchObjectByUriL( const TDesC16& aUri, TUint32& aFlags );
 
+        /**
+         * search for object uri
+         *
+         * @param aId object id to search uri for
+         * @param aFlags return found object flags
+         * @return reference to object uri
+         */
+		HBufC*& SearchObjectUriByIdL( const TItemId aId, TUint32& aFlags );
+		
 		/**
 		 * update freetext (add and remove)
 		 */
@@ -529,7 +545,6 @@ class CMdSSqlObjectManipulate: public CBase
         
         /**
          * common usage buffers (initial size = 1024)
-         * NOT THREAD SAFE!
          */
         RArray<TLockBuffer> iBuffers;
 
@@ -550,11 +565,13 @@ class CMdSSqlObjectManipulate: public CBase
 
 	    CMdSObjectLockList& iLockList;
 	    
+	    // Last handled uri.
+	    HBufC* iUri;
+	
 	    TBuf<256> iLastAddedObjName;
 	    
 	private:
 		class RClauseBuffer
-					// NOT THREAD SAFE !!!!!
 			{
 			public:
 				RClauseBuffer(CMdSSqlObjectManipulate& aSOM, TInt aSize = 1024);

@@ -21,6 +21,7 @@
 #include "mdsutils.h"
 #include "harvesteromadrmplugin.h"
 #include "harvesterlog.h"
+#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 #include <harvesterdata.h>
 
@@ -109,6 +110,7 @@ CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()
 void CHarvesterOMADRMPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterOMADRMPlugin::ConstructL()" );
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
 	}
 
 void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHD )

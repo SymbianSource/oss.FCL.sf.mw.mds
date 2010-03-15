@@ -65,4 +65,5 @@ EXPORTS
 	?UnregisterEventObserver@CHarvesterEventManager@@QAEHABVRMessage2@@@Z @ 64 NONAME ; int CHarvesterEventManager::UnregisterEventObserver(class RMessage2 const &)
 	?HandleObjectPropertyL@CMdeObjectWrapper@@SAXAAVCMdEObject@@AAVCMdEPropertyDef@@PAXH@Z @ 65 NONAME ; void CMdeObjectWrapper::HandleObjectPropertyL(class CMdEObject &, class CMdEPropertyDef &, void *, int)
 	?SendHarvestingStatusEventL@CHarvesterPluginFactory@@QAEXH@Z @ 66 NONAME ; void CHarvesterPluginFactory::SendHarvestingStatusEventL(int)
+	?PauseHarvester@CHarvesterPluginFactory@@QAEXH@Z @ 67 NONAME ; void CHarvesterPluginFactory::PauseHarvester(int)
 

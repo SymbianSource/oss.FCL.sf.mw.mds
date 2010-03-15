@@ -112,7 +112,6 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
     
 	TUint32 hdMediaId( 0 );
     hdMediaId = iMountTask->GetInternalDriveMediaId();
-    TBool alreadyWaited( EFalse );
     
     const TInt count( medias.Count() );
     for ( TInt i = 0; i < count; i++ )
@@ -130,8 +129,7 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
     	        iMmcScanner = NULL;
     	        }
     		TRAP_IGNORE( iMmcScanner = CMmcScannerAO::NewL( medias[i].iMediaId, iMdEClient, iObserver,
-    		    				aHarvesterPluginFactory, CActive::EPriorityHigh, alreadyWaited ) );
-    		alreadyWaited = ETrue;
+    		    				aHarvesterPluginFactory, CActive::EPriorityUserInput ) );
     		}
     	}
  
@@ -157,7 +155,7 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
 			medias.Append( hdInfo );
 			
 			TRAP_IGNORE( iHddScanner = CMmcScannerAO::NewL( hdMediaId, iMdEClient, iObserver,
-			    				aHarvesterPluginFactory, KHarvesterCustomImportantPriority, alreadyWaited ));
+			    				aHarvesterPluginFactory, KHarvesterCustomImportantPriority ));
 			}
 		}
 
@@ -251,10 +249,6 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EMounted" );
             mountData->iMountType = TMountData::EMount;
-            if( !iMountTask->IsActive() )
-                {
-                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
-                }
             iMountTask->StartMount( *mountData );
             }
         break;
@@ -269,10 +263,6 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             	{
 	            WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EDismounted" );
 	            mountData->iMountType = TMountData::EUnmount;
-	            if( !iMountTask->IsActive() )
-	                {
-	                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
-	                }
 	            iMountTask->StartUnmount( *mountData );
             	}
             }
@@ -282,18 +272,16 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EFormatted" );
             mountData->iMountType = TMountData::EFormat;
-            if( !iMountTask->IsActive() )
-                {
-                iMountTask->SetPriority( KHarvesterPriorityMonitorPlugin );
-                }
             iMountTask->StartUnmount( *mountData );
             }
         break;
         
         default:
             {
+#ifdef _DEBUG
             _LIT( KLogPanic, "unknown state" );
             User::Panic( KLogPanic, KErrArgument );
+#endif
             }
         break;
         }

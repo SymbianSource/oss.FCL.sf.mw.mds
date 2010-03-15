@@ -100,7 +100,8 @@ CLocationManagerServer::CLocationManagerServer()
                      iLocManStopDelay( 0 ),
                      iLocManStopRemapDelay( 0 ),
                      iCaptureSetting( RLocationTrail::EOff ),
-                     iRemoveLocation( EFalse )
+                     iRemoveLocation( EFalse ),
+                     iWaitForPositioningStopTimeout ( EFalse )
     {
     }
 
@@ -307,6 +308,8 @@ void CLocationManagerServer::RemoveSession()
 void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCaptureSetting aCaptureSetting )
     {
     LOG( "CLocationManagerServer::StartGPSPositioningL" );
+    iWaitForPositioningStopTimeout = EFalse;
+    
     if ( aCaptureSetting == RLocationTrail::EOff )
     	{
     	return;
@@ -338,6 +341,7 @@ void CLocationManagerServer::StopGPSPositioningL()
     {
     LOG( "CLocationManagerServer::StopGPSPositioningL()" );
     iCaptureSetting = RLocationTrail::EOff;
+    iWaitForPositioningStopTimeout = EFalse;
     
     RLocationTrail::TTrailState state;
     GetLocationTrailState( state );
@@ -345,7 +349,7 @@ void CLocationManagerServer::StopGPSPositioningL()
     
     if( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
-        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityHigh ) );
+        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );
         
         if ( error != KErrNone )
             {
@@ -369,8 +373,9 @@ void CLocationManagerServer::StopGPSPositioningL()
 //
 void CLocationManagerServer::StopRecording()
 	{
-    LOG( "CLocationManagerServer::StopRecording()" );
-	iLocationRecord->Stop();
+    LOG( "CLocationManagerServer::StopRecording()" );    
+    iWaitForPositioningStopTimeout = EFalse;
+    iLocationRecord->Stop();		
 	delete iTimer;
 	iTimer = NULL;
 	}
@@ -402,6 +407,7 @@ TInt CLocationManagerServer::CheckForRemappingCallback( TAny* aAny )
     if ( self->iLocationRecord->RemappingNeeded() )
         {     
         self->iTimer->Start( self->iLocManStopRemapDelay * 1000000, 0, TCallBack( PositioningStopTimeout, self ) );
+        self->iWaitForPositioningStopTimeout = ETrue;
         }
     else
         {        
@@ -773,8 +779,7 @@ void CLocationManagerServer::CopyLocationObjectL( TItemId aSource,
     if( iTargetObjectIds.Count() <= 0 )
     	{
     	TInt err = 0;
-	    const TInt count = aTargets.Count();
-	    for( TInt i = 0 ; i < count ; i++ )
+	    for( TInt i = aTargets.Count() - 1; i >=0; i-- )
 	    	{
 	    	TRAP( err, iMdeSession->CheckObjectL( obj, aTargets[i], &namespaceDef ) );
 	    	if ( err == KErrNone )
@@ -881,8 +886,7 @@ void CLocationManagerServer::CopyLocationL( CMdEQuery& aQuery )
     CMdERelationDef& containsRelDef = aQuery.NamespaceDef().GetRelationDefL( 
     		Relations::KContainsLocation );
     
-    const TInt count = iTargetObjectIds.Count();
-    for( TInt i=0;i<count;i++ )
+    for( TInt i = iTargetObjectIds.Count() - 1; i >=0; i-- )
     	{
         CMdERelation* relationObject = iMdeSession->NewRelationLC( containsRelDef, iTargetObjectIds[i],
         		rightId, 0 );
@@ -891,6 +895,7 @@ void CLocationManagerServer::CopyLocationL( CMdEQuery& aQuery )
         
         CleanupStack::PopAndDestroy( relationObject );
     	}
+    
     CleanupStack::PopAndDestroy( sourceLocation );
     
     for ( TInt i = iCopyReqs.Count() - 1; i >= 0; --i  )
@@ -967,9 +972,9 @@ void CLocationManagerServer::InitCopyLocationByURIL( const RMessage2& aMessage )
 		    targetUris.ReserveL( uriCount );
 
 		    // deserialize URIs
-		    for( TInt i = 0; i < uriCount; i++ )
+		    for( TInt i = uriCount- 1; i >=0; i-- )
 		    	{
-		    	targetUris.Append( uriBuffer->ReceivePtr16L() );
+		    	targetUris.AppendL( uriBuffer->ReceivePtr16L() );
 		    	}
 		    
 	        LOG1("CLocationManagerSession::CopyLocationDataByUriL ID count:%d", targetUris.Count());
@@ -1271,4 +1276,17 @@ void CLocationManagerServer::AddGpxObserver( MGpxConversionObserver* aObserver )
 	{
 	iTrackLog->AddGpxObserver( aObserver );
 	}
+
+void CLocationManagerServer::RemapedCompleted()
+    {
+    LOG( "CLocationManagerServer::RemapedCompleted()" );
+    StopRecording();
+    }
+
+TBool CLocationManagerServer::WaitForPositioningStopTimeout()
+    {
+    LOG( "CLocationManagerServer::WaitForPositioningStopTimeout()" );
+    return iWaitForPositioningStopTimeout;
+    }
+
 // End of file 

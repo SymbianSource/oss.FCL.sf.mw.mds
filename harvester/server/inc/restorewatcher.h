@@ -139,6 +139,9 @@ private:
 	
 	/*iFileName - File used for restore flag.*/
 	TFileName iFileName;
+	
+	/*iFs - File server session, own.*/
+	RFs iFs;
 	};
 
 #endif  // RESTOREWATCHER_H

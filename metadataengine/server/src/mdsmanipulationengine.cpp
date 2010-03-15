@@ -32,6 +32,9 @@
 #include "mdeinternalerror.h"
 #include "mdeerror.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 __USES_LOGGER
 
 // ---------------------------------------------------------------------------
@@ -326,8 +329,12 @@ void CMdSManipulationEngine::RemoveL( CMdCSerializationBuffer& aBuffer,
 	CleanupClosePushL( removedRelations );
 	RArray<TItemId> removedEvents;
 	CleanupClosePushL( removedEvents );
+	RPointerArray<HBufC> removedItemUriArray;
+	CleanupResetAndDestroyPushL( removedItemUriArray );
 
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+    
+    const TBool uriNotify = iNotifier.CheckForNotifier(EObjectNotifyRemoveWithUri);
 
     // Remove objects by id or URI.
     if (itemIds.iObjectIds.iPtr.iCount + itemIds.iObjectUris.iPtr.iCount > 0)
@@ -340,13 +347,19 @@ void CMdSManipulationEngine::RemoveL( CMdCSerializationBuffer& aBuffer,
 			{
 			aBuffer.PositionL( itemIds.iObjectUris.iPtr.iOffset );
 			iManipulate->RemoveObjectsByUriL( aBuffer, itemIds.iObjectUris.iPtr.iCount,
-					idArray, removedRelations, removedEvents );
+					idArray, removedRelations, removedEvents, uriNotify, removedItemUriArray );
 			}
 		else
 			{
+		    // pause garbage collector so it does not remove the objects
+			// before uris are read
+		    if( iGarbageCollector && uriNotify )
+		        {
+		        iGarbageCollector->Pause();
+		        }
 			aBuffer.PositionL( itemIds.iObjectIds.iPtr.iOffset );
 			iManipulate->RemoveObjectsByIdL( aBuffer, itemIds.iObjectIds.iPtr.iCount,
-					idArray, removedRelations, removedEvents );
+					idArray, removedRelations, removedEvents, uriNotify, removedItemUriArray );
 			}
 
 	    transaction.CommitL();
@@ -445,13 +458,15 @@ void CMdSManipulationEngine::RemoveL( CMdCSerializationBuffer& aBuffer,
 	aResultBuffer.PositionL( KNoOffset );
 	resultIds.SerializeL( aResultBuffer );
 
-	// notify about items removed
-	const TBool notify = iNotifier.CheckForNotifier(EObjectNotifyRemove|EEventNotifyRemove|ERelationNotifyRemove);
-	if (notify)
-		{
-		iNotifier.NotifyRemovedL( aResultBuffer, EFalse );
-		}
-
+	TBool notify = iNotifier.CheckForNotifier(EObjectNotifyRemove|EEventNotifyRemove|ERelationNotifyRemove);
+	
+	// notify about items removed 
+	if( uriNotify || notify )
+	    {
+	    iNotifier.NotifyRemovedL( aResultBuffer, EFalse, removedItemUriArray, this );
+		notify = ETrue;
+	    }
+	
 	// notify about additional items removed
 	const TInt KRemovedItemsCount = removedRelations.Count() + removedEvents.Count();
     if ( notify && KRemovedItemsCount > 0 )
@@ -505,7 +520,14 @@ void CMdSManipulationEngine::RemoveL( CMdCSerializationBuffer& aBuffer,
 
 		buffer->PositionL( KNoOffset );
 		additResultIds.SerializeL( *buffer );
-		iNotifier.NotifyRemovedL( *buffer, EFalse );
+		const TBool notifyEnabled = iNotifier.CheckForNotifier(EEventNotifyRemove|ERelationNotifyRemove);
+		if (notifyEnabled)
+		    {
+	        RPointerArray<HBufC> nullArray; // For when uris are not available or needed
+	        CleanupResetAndDestroyPushL( nullArray );
+		    iNotifier.NotifyRemovedL( *buffer, EFalse, nullArray, this );
+		    CleanupStack::PopAndDestroy( &nullArray );
+		    }
 		CleanupStack::PopAndDestroy( buffer );
     	}
 
@@ -532,8 +554,8 @@ void CMdSManipulationEngine::RemoveL( CMdCSerializationBuffer& aBuffer,
 		iGarbageCollector->Start( KGarbageCollectionDelay );
 		}
 
-	// removedEvents, removedRelations, idArray
-    CleanupStack::PopAndDestroy( 3, &idArray );
+	// removedItemUriArray, removedEvents, removedRelations, idArray
+    CleanupStack::PopAndDestroy( 4, &idArray );
     }
 
 void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer, 
@@ -611,6 +633,14 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 		resultIds.iRelationIds.iPtr.iOffset = aResultBuffer.Position();
 		resultIds.iRelationIds.iPtr.iCount = items.iRelations.iPtr.iCount;
 
+        RMdSTransaction transaction( connection );
+        CleanupClosePushL(transaction);
+        const TInt beginError( transaction.Error() );
+        if( beginError != KErrNone )
+            {
+            CleanupStack::PopAndDestroy( &transaction );
+            }
+		
 		for ( TInt i = 0; i < items.iRelations.iPtr.iCount; ++i )
 			{
 			aBuffer.PositionL( items.iRelations.iPtr.iOffset + i * sizeof(TMdCRelation) );
@@ -630,6 +660,11 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 					}
 				}
 			}
+        if( beginError == KErrNone )
+            {
+            transaction.CommitL();
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 		}
 	else
 		{
@@ -879,7 +914,7 @@ void CMdSManipulationEngine::RemoveFilesNotPresentL(TUint32 aMediaId, TBool aSta
 		
 		if( objectIds.Count() > 0 )
 			{
-			iNotifier.NotifyRemovedL( objectIds );
+			iNotifier.NotifyRemovedL( objectIds, this );
 			}
 		
 		CleanupStack::PopAndDestroy( &objectIds );
@@ -963,7 +998,7 @@ void CMdSManipulationEngine::ChangePathL(const TDesC& aOldPath, const TDesC& aNe
 
 	iManipulate->ChangePathL( aOldPath, aNewPath, objectIds );
 
-	iNotifier.NotifyModifiedL( objectIds );
+	iNotifier.NotifyModifiedL( objectIds, this );
 	
 	CleanupStack::PopAndDestroy( &objectIds );
 	
@@ -1059,3 +1094,17 @@ TInt CMdSManipulationEngine::GetPendingL( TDefId aObjectDefId,
 	{
 	return iManipulate->GetPendingL( aObjectDefId, aBufferSize, aObjectIds );
 	}
+
+void CMdSManipulationEngine::GetObjectUrisByIdsL( const RArray<TItemId>& aObjectIds, 
+                                                                                   RPointerArray<HBufC>& aUriArray )
+    {
+    const TInt count( aObjectIds.Count() );
+    for( TInt i( 0 ); i < count; i++ )
+        {
+        TUint32 flags;
+        HBufC* uri = iManipulate->SearchObjectUriByIdL( aObjectIds[i], flags );
+        aUriArray.AppendL( uri );
+        uri = NULL;
+        }
+    }
+

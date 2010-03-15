@@ -24,7 +24,7 @@
 CMdsGetImeiAO* CMdsGetImeiAO::NewL()
 	{
 	CMdsGetImeiAO *self = CMdsGetImeiAO::NewLC();
-	CleanupStack::Pop();
+	CleanupStack::Pop(); //self
 	return self;
 	}
 

@@ -28,7 +28,7 @@
 // FORWARD DECLARATION
 class MMonitorPluginObserver;
 
-class CMmcScannerAO : public CTimer 
+class CMmcScannerAO : public CActive 
 	{
 public:
 	// Cancel and destroy
@@ -37,7 +37,7 @@ public:
 	// Two-phased constructor.
 	static CMmcScannerAO* NewL( TUint32 aMediaId, CMdEHarvesterSession* aMdEClient,
 			MMonitorPluginObserver* aObserver, CHarvesterPluginFactory* aHarvesterPluginFactory,
-			const TInt aPriority, TBool aAlreadyWaited );
+			const TInt aPriority );
 
 public:
 
@@ -48,7 +48,7 @@ private:
 			const TInt aPriority );
 
 	// Second-phase constructor
-	void ConstructL( TBool aAlreadyWaited );
+	void ConstructL();
 
 private:
 	enum TCMmcScannerAOState
@@ -75,6 +75,11 @@ private:
 	
 	void SetState( TCMmcScannerAOState aState );		
 
+    /**
+    * From CActive
+    */
+    void DoCancel();
+	
 private:
 	TInt iState; // State of the active object
 	
@@ -101,6 +106,8 @@ private:
 	RPointerArray<CHarvesterData> iHdArray;
 	
     CHarvesterEventManager* iHEM;
+    
+    RTimer iTimer;
 	};
 
 #endif // CMMCSCANNERAO_H

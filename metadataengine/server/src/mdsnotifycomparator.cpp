@@ -62,7 +62,13 @@ TBool CMdSNotifyComparator::MatchL(
     CMdCSerializationBuffer& aSerializedItems,
     CMdCSerializationBuffer& aSerializedItemIds,
     RArray<TItemId>& aMatchingItemIdArray,
-    TBool aAllowConfidential)
+    RArray<TItemId>& aAllItemsIdArray,
+    RPointerArray<HBufC>& aMatchingItemUriArray,
+    RPointerArray<HBufC>& aAllItemsUriArray,
+    TBool aAllowConfidential,
+    TBool uriNotify,
+    TBool& aAllMatched,
+    TBool& aAllItemsFetched )
     {
     const TMdCItems& items = TMdCItems::GetFromBufferL( aSerializedItems );
 
@@ -74,14 +80,17 @@ TBool CMdSNotifyComparator::MatchL(
     	return EFalse;
     	}
 
+    aAllMatched = EFalse;
+    
     if( ( items.iObjects.iPtr.iCount > 0 ) && 
     	( itemIds.iObjectIds.iPtr.iCount > 0 ) && 
-    	( aType & ( EObjectNotifyAdd | EObjectNotifyModify ) ) )
+    	( aType & ( EObjectNotifyAdd | EObjectNotifyModify | EObjectNotifyAddWithUri | EObjectNotifyModifyWithUri ) ) )
     	{
     	// object ID count and object item count should match
 		__ASSERT_DEBUG( items.iObjects.iPtr.iCount == itemIds.iObjectIds.iPtr.iCount, MMdCCommon::Panic( KErrCorrupt ) );
 
     	aSerializedItemIds.PositionL( itemIds.iObjectIds.iPtr.iOffset );
+    	TBool allItemsFetched( aAllItemsFetched );
     	for( TUint32 i = 0; i < itemIds.iObjectIds.iPtr.iCount; i++ )
     		{
     		TItemId objectId;
@@ -140,13 +149,48 @@ TBool CMdSNotifyComparator::MatchL(
 
 	    	    if ( succeed )    
 	                {
+	                if( uriNotify )
+	                    {
+	                    // set correct position to item buffer
+	                    aSerializedItems.PositionL( items.iObjects.iPtr.iOffset + 
+	                               i * sizeof(TMdCObject) );
+	                    
+	                   const TMdCObject& object = TMdCObject::GetFromBufferL( aSerializedItems );
+
+	                    aSerializedItems.PositionL( object.iUri.iPtr.iOffset );
+	                    HBufC* uriBuf = aSerializedItems.ReceiveDes16L();
+	                    aMatchingItemUriArray.AppendL( uriBuf );
+	                    }
 	                aMatchingItemIdArray.AppendL( objectId );
 	                }
     			}
     		else
     			{
-    			aMatchingItemIdArray.AppendL( objectId );
-    			}
+                aAllMatched = ETrue;		
+                if( uriNotify && (!aAllItemsFetched || !allItemsFetched) )
+                    {
+                    // set correct position to item buffer
+                    aSerializedItems.PositionL( items.iObjects.iPtr.iOffset + 
+                               i * sizeof(TMdCObject) );
+                    
+                   const TMdCObject& object = TMdCObject::GetFromBufferL( aSerializedItems );
+
+                    aSerializedItems.PositionL( object.iUri.iPtr.iOffset );
+                    HBufC* uriBuf = aSerializedItems.ReceiveDes16L();
+                    aAllItemsUriArray.AppendL( uriBuf );
+                    aAllItemsIdArray.AppendL( objectId );
+                    allItemsFetched = ETrue;
+                    }
+                else if( !aAllItemsFetched || !allItemsFetched )
+                    {
+                    aAllItemsIdArray.AppendL( objectId );
+                    allItemsFetched = ETrue;
+                    }
+                }
+    		}
+    	if( allItemsFetched )
+    	    {
+    	    aAllItemsFetched = ETrue;
     		}
     	}
     else if( ( items.iEvents.iPtr.iCount > 0 ) && 
@@ -215,7 +259,7 @@ TBool CMdSNotifyComparator::MatchL(
     		}
     	}
 
-    if( aMatchingItemIdArray.Count() > 0 )
+    if( aMatchingItemIdArray.Count() > 0 || ( aAllItemsIdArray.Count() > 0 && aAllMatched ))
     	{
     	return ETrue;
     	}

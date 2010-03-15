@@ -284,7 +284,7 @@ void CCLFItemListModelImpl::SetWantedMimeTypesL( const MDesCArray& aMimeTypes )
             }
         CDesCArray* array = new (ELeave) CDesCArrayFlat( mimeTypeCount );
         CleanupStack::PushL( array );
-        for( TInt i = 0 ; i < mimeTypeCount ; ++i )
+        for( TInt i = mimeTypeCount - 1; i >=0; i--)
             {
             array->AppendL( aMimeTypes.MdcaPoint( i ) );
             }
@@ -335,7 +335,7 @@ void CCLFItemListModelImpl::SetWantedMediaTypesL(
         CArrayFix<TInt>* array =
                         new ( ELeave ) CArrayFixFlat<TInt>( count );
         CleanupStack::PushL( array );
-        for( TInt i = 0 ; i < count ; ++i )
+        for(TInt i = count - 1; i >=0; i--)
             {
             array->AppendL( aMediaTypes[i] );
             }
@@ -363,7 +363,7 @@ void CCLFItemListModelImpl::SetWantedMediaTypesL( TResourceReader& aResource )
         CArrayFix<TInt>* array =
                 new ( ELeave ) CArrayFixFlat<TInt>( numMediaTypes );
         CleanupStack::PushL( array );
-        for( TInt i = 0 ; i < numMediaTypes ; ++i )
+        for( TInt i = numMediaTypes - 1; i >=0; i--)
             {
             array->AppendL( aResource.ReadInt32() );
             }
@@ -443,8 +443,7 @@ void CCLFItemListModelImpl::RefreshL( TInt32 aRefreshType )
 void CCLFItemListModelImpl::CopyArrayL( const TArray<MCLFItem*>& aSource,
                                         RPointerArray<MCLFItem>& aDest )
     {
-    const TInt count( aSource.Count() );
-    for( TInt i = 0 ; i < count ; ++i )
+    for( TInt i = aSource.Count() - 1; i >=0; i--)
         {
         aDest.AppendL( aSource[i] );
         }
@@ -532,7 +531,7 @@ void CCLFItemListModelImpl::NewChangedItemsL()
         const TInt count( iItemArray.Count() );
         RArray<TCLFItemId> idArray( count == 0 ? 1 : count );
         CleanupClosePushL( idArray );
-        for( TInt i = 0 ; i < count ; ++i )
+        for( TInt i = count - 1; i >=0; i--)
             {
             idArray.AppendL( iItemArray[i]->ItemId() );
             }

@@ -222,6 +222,27 @@ public:
 						TObserverNotificationType aType,
 						const RArray<TItemId>& aObjectIdArray) = 0;
     };
+
+class MMdEObjectObserverWithUri
+    {
+public:
+
+    /**
+     * Called to notify the observer that new objects has been
+     * added/modified/removed in the metadata engine database.
+     * 
+     * @param aSession session
+     * @param aType defines if object was added/modified/remove
+     * @param aObjectIdArray IDs of added object
+     * @param aUriArray Uris of added object
+     * @see CMdESession::AddObjectObserverL
+     * @see CMdELogicCondition
+     */
+    virtual void HandleUriObjectNotification(CMdESession& aSession, 
+                        TObserverNotificationType aType,
+                        const RArray<TItemId>& aObjectIdArray,
+                        const RPointerArray<HBufC>& aObjectUriArray) = 0;
+    };
     
 /**
  * Observer interface for modifications of the objects in the metadata engine 
@@ -1712,6 +1733,45 @@ public:
 	virtual void SetObjectToPresentByGuidL( 
 			const TInt64& aGuidHigh, const TInt64& aGuidLow ) = 0;
 	
+    /**
+      * Adds a new object observer to the session. No duplicate observers are 
+      * allowed.
+      *
+      * The following restrictions are placed on the condition nodes:
+      * - Only CMdEObjectCondition and CMdEPropertyCondition nodes can be
+      *   used. CMdERangePropertyConditions are not allowed.
+      * - No nested logic conditions are allowed.
+      * 
+      * Be adviced, this version with the URI in the callback is much less
+      * efficient than using version without the URI
+      *
+      * @param aObserver   Observer.
+      * @param aCondition  Condition that the objects, about which the observer
+      *                    wants to receive notifications, must fulfill or NULL,
+      *                    to receive notifications of all objects.
+      *                    Ownership of the condition is transferred to the
+      *                    session.
+      * @param aNotificationType what event type (add, modify, remove) should
+      *                          be notified to client
+      * @param aNamespaceDef specified namespace (if namespace is NULL, the 
+      *                      default namespace is used)
+      * @param aUriRequired determines if uri is required in the callback
+      * 
+      * @leave KErrAlreadyExists if the same observer has already been added
+      */
+     virtual void AddObjectObserverWithUriL( MMdEObjectObserverWithUri& aObserver,
+             CMdELogicCondition* aCondition = NULL, 
+             TUint32 aNotificationType = ENotifyAdd | ENotifyModify | ENotifyRemove,
+             CMdENamespaceDef* aNamespaceDef = NULL ) = 0;
+
+     /**
+      * Removes the specified object observer from the session.
+      *
+      * @param aObserver  observer
+      */
+     virtual void RemoveObjectObserverWithUriL( MMdEObjectObserverWithUri& aObserver, 
+                             CMdENamespaceDef* aNamespaceDef = NULL ) = 0;
+     
 protected:
 
 	/* Constructors. */
