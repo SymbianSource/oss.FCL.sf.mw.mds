@@ -59,8 +59,9 @@ void CMdEObjectDef::ConstructL(CMdCSerializationBuffer& aSchemaBuffer)
         {
 		aSchemaBuffer.PositionL( propertyOffset + i * sizeof(TMdCPropertyDef) );
 		const TMdCPropertyDef& propertyDef = TMdCPropertyDef::GetFromBufferL(aSchemaBuffer);
-		CMdEPropertyDef* propertyDefImpl = CMdEPropertyDef::NewL( propertyDef, aSchemaBuffer, *this );
-		iPropertyDefs.InsertInOrder( propertyDefImpl, TLinearOrder<CMdEPropertyDef>(CMdEObjectDef::CompareProperties) );
+		
+		CMdEPropertyDef* defImpl = CMdEPropertyDef::NewL( propertyDef, aSchemaBuffer, *this );
+		iPropertyDefs.InsertInOrder(defImpl, TLinearOrder<CMdEPropertyDef>(CMdEObjectDef::CompareProperties)); 
         }
     }
 
@@ -70,7 +71,7 @@ CMdEObjectDef::~CMdEObjectDef()
     iPropertyDefs.Close();
     }
 
-TDefId CMdEObjectDef::Id() const
+EXPORT_C TDefId CMdEObjectDef::Id() const
     {
     return iObjectDef.iDefId;
     }
@@ -157,11 +158,48 @@ CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL( const TDesC& aName, CMdEObjectD
 
 CMdEPropertyDef* CMdEObjectDef::GetPropertyDefL(TDefId aId, CMdEObjectDef* aChild)
     {
-    const TInt i = iPropertyDefs.FindInOrder(aId, CMdEObjectDef::CompareProperties );
+    const TInt count = iPropertyDefs.Count();
+
+    TInt low( 0 );
+    TInt high( count );
+    TBool linearSearchRequired( EFalse );
     
-    if (i >= 0 && i < iPropertyDefs.Count() && iPropertyDefs[i] )
+    while( low < high )
         {
-        return iPropertyDefs[i];
+        TInt mid( (low+high)>>1 );
+        
+        if( !iPropertyDefs[mid] )
+            {
+            linearSearchRequired = ETrue;
+            break;
+            }
+        
+        TInt compare( aId - iPropertyDefs[mid]->Id() );
+        if( compare == 0 )
+            {
+            return iPropertyDefs[mid];
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }
+  
+    if( linearSearchRequired )
+        {
+        for ( TInt i = 0; i < count; ++i )
+            {
+            CMdEPropertyDef* propDef = iPropertyDefs[i];
+        
+            if( propDef && propDef->Id() == aId )
+                {
+                return propDef;
+                }
+            }
         }
 
     CMdEObjectDef* parent = ParentL();
@@ -189,13 +227,8 @@ CMdEPropertyDef* CMdEObjectDef::PropertyDefL(TInt aIndex, CMdEObjectDef* /*aChil
 	return iPropertyDefs[aIndex];
 	}
 
-TInt CMdEObjectDef::CompareProperties( const CMdEPropertyDef& aFirst, const CMdEPropertyDef& aSecond )
+TInt CMdEObjectDef::CompareProperties(const CMdEPropertyDef& aFirst, const CMdEPropertyDef& aSecond)
     {
     return aFirst.Id() - aSecond.Id();
-    }
-
-TInt CMdEObjectDef::CompareProperties( const TDefId* aFirst, const CMdEPropertyDef& aSecond )
-    {
-    return *aFirst - aSecond.Id();
     }
 

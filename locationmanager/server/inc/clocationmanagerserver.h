@@ -201,7 +201,7 @@ public:
     						 TLocationData& aLocationData,
                              /*TLocality& aPosition, 
                              CTelephony::TNetworkInfoV1& aNetworkInfo,*/
-                             TLocTrailState& aState );
+                             TLocTrailState& aState ) __SOFTFP;
 
     /**
      * Get current location.
@@ -232,7 +232,7 @@ public:
      * @param aCurrLocReq 
      * @return None.
      */     
-    void GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo );
+    void GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP;
     
     /**
      * Create a location context object in DB and create relationships to objects
@@ -241,7 +241,7 @@ public:
      * @param aObjectId
      */
 	void CreateLocationObjectL( const TLocationData& aLocationData, 
-    						   	   const TUint& aObjectId );
+    						   	   const TUint& aObjectId ) __SOFTFP;
 	
     /**
      * Create a location context object in DB and create relationships to objects
@@ -270,7 +270,7 @@ public:
 	
 	void IsTrackLogRecording( TBool &aRec );
 	
-	TInt GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality);
+	TInt GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality) __SOFTFP;
 	
 	TInt DeleteTrackLogL(const TDesC& aUri);
 	
@@ -290,7 +290,7 @@ public: // from MLocationTrailObserver.
      * @param None.
      * @return None.
      */
-    void LocationTrailStateChange();
+    void LocationTrailStateChange() __SOFTFP;
     
     /**
      * Callback method to return current location.
@@ -301,14 +301,14 @@ public: // from MLocationTrailObserver.
      * @return None.
      */
     void CurrentLocation( const TPositionSatelliteInfo& aSatelliteInfo,
-    		const CTelephony::TNetworkInfoV1& aNetworkInfo, const TInt aError );
+    		const CTelephony::TNetworkInfoV1& aNetworkInfo, const TInt aError ) __SOFTFP;
     
     /**
      * Callback method to notify observer of changes in GPS signal quality.
      * @param aSatelliteInfo, includes position and satellite info
      * @return None.
      */
-    void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo );
+    void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP;
     
 public: // from MMdeObjectObserver
 	/**
@@ -326,7 +326,7 @@ public: // from MMdeObjectObserver
 public: // from MGpxConversionObserver
 
 	void GpxFileCreated( const TDesC& aFileName, TItemId aTagId, TReal32 aLength,
-			TTime aStart, TTime aEnd );
+			TTime aStart, TTime aEnd ) __SOFTFP;
 
 private:    
     /**
@@ -385,6 +385,13 @@ private:
      * @return Error code
      */
     static TInt PositioningStopTimeout( TAny* aAny );
+    
+    /**
+     * Callback function to check if files were added to remapping queue with delay
+     * @param aAny, a pointer to CLocationRecord object
+     * @return Error code
+     */
+    static TInt CheckForRemappingCallback( TAny* aAny );
     
     /**
      * Stops location trail and deletes the positioning stop timer.
@@ -456,6 +463,7 @@ private:
     RArray<TItemId> iTargetObjectIds;
     TItemId iTagId;
     TInt iLocManStopDelay;
+    TInt iLocManStopRemapDelay;
     
     RLocationTrail::TTrailCaptureSetting iCaptureSetting;
     TBool iRemoveLocation;    

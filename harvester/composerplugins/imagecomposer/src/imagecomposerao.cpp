@@ -240,6 +240,7 @@ void CImageComposerAO::RunL()
             {
             if( iItemQueue.Count() <= 0 )
             	{
+                iItemQueue.Compress();
             	SetNextRequest( ERequestReady );
             	}
             else
@@ -294,6 +295,7 @@ void CImageComposerAO::RunL()
             
         case ERequestReady:
             {
+            iForceObjectIds.Compress();
             }
             break;
             
@@ -358,10 +360,6 @@ void CImageComposerAO::GetObjectFromMdeL(TItemId& aMdEObjectId)
     	objectId = iItemQueue[0];
     	aMdEObjectId = objectId;
     	iItemQueue.Remove( 0 );
-    	}
-    else
-    	{
-    	iItemQueue.Compress();
     	}
     
     // get object from db (NULL if not found)

@@ -65,7 +65,7 @@ CTrackLog::CTrackLog() :
 	{
 	}
 
-CTrackLog::~CTrackLog()
+EXPORT_C CTrackLog::~CTrackLog()
 	{
 	delete iGpxConverter;
 	iFs.Close();
@@ -137,7 +137,7 @@ EXPORT_C void CTrackLog::CancelRecording()
 	}
 
 void CTrackLog::LocationAdded( const TLocationTrailItem& aTrailItem, 
-							   const TPositionSatelliteInfo& aSatellites )
+							   const TPositionSatelliteInfo& aSatellites ) __SOFTFP
 	{
 	LOG("CTrackLog::LocationAdded start");
 

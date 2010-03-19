@@ -34,14 +34,6 @@
 
 __USES_LOGGER
 
-// ======== LOCAL FUNCTIONS ========
-
-static void TransactionCleanupL(void* aConn)
-   {
-   CMdSSqLiteConnection* conn = (CMdSSqLiteConnection*)aConn;
-   conn->TransactionRollbackL();
-   }
-
 // ---------------------------------------------------------------------------
 // NewL
 // ---------------------------------------------------------------------------
@@ -156,63 +148,39 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
         RMdsStatement objStmt;
         CleanupClosePushL(objStmt);
 		
-		if( KObjectCount > 1 )
-		    {
-	        RMdSTransaction transaction( connection );
-	        CleanupClosePushL(transaction);
-	        const TInt beginError( transaction.Error() );
-	        if( beginError != KErrNone )
-	            {
-	            CleanupStack::PopAndDestroy( &transaction );
-	            }
-	    
-		    for ( TInt i = 0; i < KObjectCount; ++i )
-			    {
-			    aBuffer.PositionL( items.iObjects.iPtr.iOffset + i * sizeof(TMdCObject) );
-			    TItemId id = KNoId;
-			    TRAPD( err, id = iManipulate->AddObjectL( connection, aBuffer, 
-			            baseObjStmt, objStmt, aServerSession ) );
-			    if (err == KErrNone)
-				    {
-				    aResultBuffer.InsertL( id );
-				    }
-			    else
-				    {
-				    aResultBuffer.InsertL( KNoId );
-				    if(resultIds.iErrorCode == KErrNone)
-					    {
-					    resultIds.iErrorCode = err;
-					    }
-				    }
-			    }
-		    if( beginError == KErrNone )
-		        {
-	            transaction.CommitL();
-	            CleanupStack::PopAndDestroy( &transaction );
-		        }
-		    }
-		else
-		    {
-            for ( TInt i = 0; i < KObjectCount; ++i )
+        RMdSTransaction transaction( connection );
+        CleanupClosePushL(transaction);
+        const TInt beginError( transaction.Error() );
+        if( beginError != KErrNone )
+            {
+            CleanupStack::PopAndDestroy( &transaction );
+            }
+    
+        for ( TInt i = 0; i < KObjectCount; ++i )
+            {
+            aBuffer.PositionL( items.iObjects.iPtr.iOffset + i * sizeof(TMdCObject) );
+            TItemId id = KNoId;
+            TRAPD( err, id = iManipulate->AddObjectL( connection, aBuffer, 
+                    baseObjStmt, objStmt, aServerSession ) );
+            if (err == KErrNone)
                 {
-                aBuffer.PositionL( items.iObjects.iPtr.iOffset + i * sizeof(TMdCObject) );
-                TItemId id = KNoId;
-                TRAPD( err, id = iManipulate->AddObjectL( connection, aBuffer, 
-                        baseObjStmt, objStmt, aServerSession ) );
-                if (err == KErrNone)
+                aResultBuffer.InsertL( id );
+                }
+            else
+                {
+                aResultBuffer.InsertL( KNoId );
+                if(resultIds.iErrorCode == KErrNone)
                     {
-                    aResultBuffer.InsertL( id );
-                    }
-                else
-                    {
-                    aResultBuffer.InsertL( KNoId );
-                    if(resultIds.iErrorCode == KErrNone)
-                        {
-                        resultIds.iErrorCode = err;
-                        }
+                    resultIds.iErrorCode = err;
                     }
                 }
-		    }
+            }
+        if( beginError == KErrNone )
+            {
+            transaction.CommitL();
+            CleanupStack::PopAndDestroy( &transaction );
+            }
+
         CleanupStack::PopAndDestroy(&objStmt);
         CleanupStack::PopAndDestroy(&baseObjStmt);
 		}
@@ -229,12 +197,13 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
 		resultIds.iEventIds.iPtr.iOffset = aResultBuffer.Position();
 		resultIds.iEventIds.iPtr.iCount = KEventCount;
 	    
-	    if( KEventCount > 1 )
-	        {
-	        //More than 1 event, transaction will be used.
-	        connection.TransactionBeginL();
-	        CleanupStack::PushL(TCleanupItem(&TransactionCleanupL, &connection));
-	        }
+        RMdSTransaction transaction( connection );
+        CleanupClosePushL(transaction);
+        const TInt beginError( transaction.Error() );
+        if( beginError != KErrNone )
+            {
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 
 		for ( TInt i = 0; i < KEventCount; ++i )
 			{
@@ -257,11 +226,11 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
 				}
 			}
 
-		if( KEventCount > 1 )
-		    {
-		    connection.TransactionCommitL();
-		    CleanupStack::Pop();  //TransactionCleanup()
-	        }
+        if( beginError == KErrNone )
+            {
+            transaction.CommitL();
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 		}
 	else
 		{
@@ -276,12 +245,13 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
 		resultIds.iRelationIds.iPtr.iOffset = aResultBuffer.Position();
 		resultIds.iRelationIds.iPtr.iCount = KRelationCount;
 	    
-	    if( KRelationCount > 1 )
-	        {
-	        //More than 1 relation, transaction will be used.
-	        connection.TransactionBeginL();
-	        CleanupStack::PushL(TCleanupItem(&TransactionCleanupL, &connection));
-	        }
+        RMdSTransaction transaction( connection );
+        CleanupClosePushL(transaction);
+        const TInt beginError( transaction.Error() );
+        if( beginError != KErrNone )
+            {
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 
 	    for ( TInt i = 0; i < KRelationCount; ++i )
 			{
@@ -304,11 +274,11 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
 				}
 			}
 
-	    if( KRelationCount > 1 )
-	        {
-	        connection.TransactionCommitL();
-	        CleanupStack::Pop();   //TransactionCleanup()
-	        }
+        if( beginError == KErrNone )
+            {
+            transaction.CommitL();
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 		}
 	else
 		{
@@ -596,6 +566,14 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 		resultIds.iObjectIds.iPtr.iOffset = aResultBuffer.Position();
 		resultIds.iObjectIds.iPtr.iCount = items.iObjects.iPtr.iCount;
 
+        RMdSTransaction transaction( connection );
+        CleanupClosePushL(transaction);
+        const TInt beginError( transaction.Error() );
+        if( beginError != KErrNone )
+            {
+            CleanupStack::PopAndDestroy( &transaction );
+            }
+		
 		for ( TInt i = 0; i < items.iObjects.iPtr.iCount; ++i )
 			{
 			aBuffer.PositionL( items.iObjects.iPtr.iOffset + i * sizeof(TMdCObject) );
@@ -615,6 +593,11 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 					}
 				}
 			}
+        if( beginError == KErrNone )
+            {
+            transaction.CommitL();
+            CleanupStack::PopAndDestroy( &transaction );
+            }
 		}
 	else
 		{

@@ -125,8 +125,6 @@ private:
 	 */
 	CComposerImagePlugin* iComposer;	
 	
-	TGetPendingPgckWrapper* iPendingPckWrapper;
-	
 	RArray<TItemId> iPresentObjectIds;
 	RArray<TItemId> iPendingObjectIds;
 	RArray<TItemId> iComposeObjectIds;

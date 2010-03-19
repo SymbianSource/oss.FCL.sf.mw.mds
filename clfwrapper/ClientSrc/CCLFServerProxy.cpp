@@ -32,7 +32,7 @@
 // CONSTANTS
 const TInt KCLFDefaultBufferLength( 64 );
 const TInt KCLFDefaultArrayGranularity( 4 );
-const TInt KCLFExtensionArrayGranularity( 49 );
+const TInt KCLFExtensionArrayGranularity( 50 );
 
 _LIT( KCLFDriveLetterFormatString, ":\\" );
 const TInt KCLFDriveC( 'C' );
@@ -92,6 +92,7 @@ _LIT( KExtensionRam,   "ram" );
 _LIT( KExtensionRv,    "rv" );
 _LIT( KExtensionWmv,    "wmv" );
 _LIT( KExtensionAvi,    "avi" );
+_LIT( KExtensionDivx,    "divx" );
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -733,16 +734,10 @@ void CUpdateFoldersHandler::HarvestingComplete( TDesC& aURI, const TInt aError )
 //
 TBool CUpdateFoldersHandler::IsSupportedType( const TDesC& aExtension )
     {
-    TCollationMethod m = *Mem::CollationMethodByIndex( 0 );
-    m.iFlags = ( TCollationMethod::EIgnoreNone | TCollationMethod::EFoldCase );   
-    
-    for( TInt i( 0 ); i < iExtensionArray->Count(); i++ )
+    TInt pos( 0 );
+    if ( iExtensionArray->FindIsq( aExtension, pos ) == 0 ) // found
         {
-        const TDesC& ext = iExtensionArray->MdcaPoint( i );
-        if ( ext.CompareC( aExtension, 3, &m ) == 0 )
-            {
-            return ETrue;
-            }
+        return ETrue;
         }
     return EFalse;
     }
@@ -847,9 +842,8 @@ TInt CCLFServerProxy::UpdateItemsL( const TArray< TCLFItemId >& aItemIDArray )
     {
     CUpdateItemsHandler* handler = CUpdateIDsHandler::NewL( aItemIDArray );
 
-    CleanupStack::PushL( handler );
+    // Ownership tranferred
     StartHandlingL( handler );
-    CleanupStack::Pop( handler );
 
     return KErrNone;
     }
@@ -884,9 +878,8 @@ TInt CCLFServerProxy::UpdateItemsL( const TInt aSemanticId, const TDesC8& aOpaqu
             return KErrNone;
             }
 
-        CleanupStack::PushL( handler );
+        // Ownership tranferred
         StartHandlingL( handler );
-        CleanupStack::Pop( handler );
         }
     CleanupStack::PopAndDestroy( uriArray );
 
@@ -901,9 +894,8 @@ TInt CCLFServerProxy::UpdateAllItemsL()
     {
     CUpdateItemsHandler* handler = CUpdateFoldersHandler::NewL( iMdESession, 
                                                          *iUriArray, this, this, iFs, iHC, iExtensionArray );
-    CleanupStack::PushL( handler );
+    // Ownership tranferred
     StartHandlingL( handler );
-    CleanupStack::Pop( handler );
     
     return KErrNone;
     }
@@ -1007,6 +999,7 @@ void CCLFServerProxy::StartHandlingL( CUpdateItemsHandler* aHandler )
     {
     if ( aHandler )
         {
+        CleanupStack::PushL( aHandler );
         // Notify pending active objects about the event.
         NotifyUpdateEvent( ECLFProcessStartEvent );
 
@@ -1017,16 +1010,17 @@ void CCLFServerProxy::StartHandlingL( CUpdateItemsHandler* aHandler )
             {
             // Remove aHandler, because it is in clean up stack.
             iUpdateItemsHandlerArray.Remove( iUpdateItemsHandlerArray.Count() - 1 );
+            CleanupStack::PopAndDestroy( aHandler );
             User::LeaveIfError( err );
             }
         if ( aHandler->AllDone() )
             {
-            delete aHandler;
-            aHandler = NULL;
+            CleanupStack::PopAndDestroy( aHandler );
             iUpdateItemsHandlerArray.Remove( iUpdateItemsHandlerArray.Count() - 1 );
             }
         else
             {
+            CleanupStack::Pop( aHandler );
             aHandler->StartScheduler();
             }
         }
@@ -1238,58 +1232,59 @@ void CCLFServerProxy::CancelGetEvent( TCLFServerOpCodes aOpcode )
 void CCLFServerProxy::PopulateSupportedExtensionL()
     {
     iExtensionArray = new ( ELeave ) CDesCArraySeg( KCLFExtensionArrayGranularity );
-    iExtensionArray->AppendL( KExtensionMp3 );
-    iExtensionArray->AppendL( KExtensionAac );
-    iExtensionArray->AppendL( KExtensionAmr );
-    iExtensionArray->AppendL( KExtensionAwb );
-    iExtensionArray->AppendL( KExtensionMid );
-    iExtensionArray->AppendL( KExtensionMidi );
-    iExtensionArray->AppendL( KExtensionSpMid );
-    iExtensionArray->AppendL( KExtensionRng );
-    iExtensionArray->AppendL( KExtensionMxmf );
-    iExtensionArray->AppendL( KExtensionWav );
-    iExtensionArray->AppendL( KExtensionAu );
-    iExtensionArray->AppendL( KExtensionNrt );
-    iExtensionArray->AppendL( KExtensionWma );
-    iExtensionArray->AppendL( KExtensionRa );
+    iExtensionArray->InsertIsqL( KExtensionMp3 );
+    iExtensionArray->InsertIsqL( KExtensionAac );
+    iExtensionArray->InsertIsqL( KExtensionAmr );
+    iExtensionArray->InsertIsqL( KExtensionAwb );
+    iExtensionArray->InsertIsqL( KExtensionMid );
+    iExtensionArray->InsertIsqL( KExtensionMidi );
+    iExtensionArray->InsertIsqL( KExtensionSpMid );
+    iExtensionArray->InsertIsqL( KExtensionRng );
+    iExtensionArray->InsertIsqL( KExtensionMxmf );
+    iExtensionArray->InsertIsqL( KExtensionWav );
+    iExtensionArray->InsertIsqL( KExtensionAu );
+    iExtensionArray->InsertIsqL( KExtensionNrt );
+    iExtensionArray->InsertIsqL( KExtensionWma );
+    iExtensionArray->InsertIsqL( KExtensionRa );
     
-    iExtensionArray->AppendL( KExtJpg );
-    iExtensionArray->AppendL( KExtJpeg );
-    iExtensionArray->AppendL( KExtJp2 );
-    iExtensionArray->AppendL( KExtJ2k );
-    iExtensionArray->AppendL( KExtJpx );
-    iExtensionArray->AppendL( KExtJpf );
-    iExtensionArray->AppendL( KExtMbm );
-    iExtensionArray->AppendL( KExtPng );
-    iExtensionArray->AppendL( KExtGif );
-    iExtensionArray->AppendL( KExtBmp );
-    iExtensionArray->AppendL( KExtTif );
-    iExtensionArray->AppendL( KExtTiff );
-    iExtensionArray->AppendL( KExtOta );
-    iExtensionArray->AppendL( KExtWbmp );
-    iExtensionArray->AppendL( KExtWmf );
-    iExtensionArray->AppendL( KExtOtb );
+    iExtensionArray->InsertIsqL( KExtJpg );
+    iExtensionArray->InsertIsqL( KExtJpeg );
+    iExtensionArray->InsertIsqL( KExtJp2 );
+    iExtensionArray->InsertIsqL( KExtJ2k );
+    iExtensionArray->InsertIsqL( KExtJpx );
+    iExtensionArray->InsertIsqL( KExtJpf );
+    iExtensionArray->InsertIsqL( KExtMbm );
+    iExtensionArray->InsertIsqL( KExtPng );
+    iExtensionArray->InsertIsqL( KExtGif );
+    iExtensionArray->InsertIsqL( KExtBmp );
+    iExtensionArray->InsertIsqL( KExtTif );
+    iExtensionArray->InsertIsqL( KExtTiff );
+    iExtensionArray->InsertIsqL( KExtOta );
+    iExtensionArray->InsertIsqL( KExtWbmp );
+    iExtensionArray->InsertIsqL( KExtWmf );
+    iExtensionArray->InsertIsqL( KExtOtb );
     
-    iExtensionArray->AppendL( KExtOma1 );
-    iExtensionArray->AppendL( KExtOma2 );
-    iExtensionArray->AppendL( KExtOma3 );
-    iExtensionArray->AppendL( KExtOma4 );
-    iExtensionArray->AppendL( KExtOma5 );
+    iExtensionArray->InsertIsqL( KExtOma1 );
+    iExtensionArray->InsertIsqL( KExtOma2 );
+    iExtensionArray->InsertIsqL( KExtOma3 );
+    iExtensionArray->InsertIsqL( KExtOma4 );
+    iExtensionArray->InsertIsqL( KExtOma5 );
     
-    iExtensionArray->AppendL( KExtensionMp4 );
-    iExtensionArray->AppendL( KExtensionMpg4 );
-    iExtensionArray->AppendL( KExtensionMpeg4 );
-    iExtensionArray->AppendL( KExtensionM4v );
-    iExtensionArray->AppendL( KExtensionM4a );
-    iExtensionArray->AppendL( KExtension3gp );
-    iExtensionArray->AppendL( KExtension3gpp );
-    iExtensionArray->AppendL( KExtension3g2 );
-    iExtensionArray->AppendL( KExtensionRm );
-    iExtensionArray->AppendL( KExtensionRmvb );
-    iExtensionArray->AppendL( KExtensionRam );
-    iExtensionArray->AppendL( KExtensionRv );
-    iExtensionArray->AppendL( KExtensionWmv );
-    iExtensionArray->AppendL( KExtensionAvi );
+    iExtensionArray->InsertIsqL( KExtensionMp4 );
+    iExtensionArray->InsertIsqL( KExtensionMpg4 );
+    iExtensionArray->InsertIsqL( KExtensionMpeg4 );
+    iExtensionArray->InsertIsqL( KExtensionM4v );
+    iExtensionArray->InsertIsqL( KExtensionM4a );
+    iExtensionArray->InsertIsqL( KExtension3gp );
+    iExtensionArray->InsertIsqL( KExtension3gpp );
+    iExtensionArray->InsertIsqL( KExtension3g2 );
+    iExtensionArray->InsertIsqL( KExtensionRm );
+    iExtensionArray->InsertIsqL( KExtensionRmvb );
+    iExtensionArray->InsertIsqL( KExtensionRam );
+    iExtensionArray->InsertIsqL( KExtensionRv );
+    iExtensionArray->InsertIsqL( KExtensionWmv );
+    iExtensionArray->InsertIsqL( KExtensionAvi );
+    iExtensionArray->InsertIsqL( KExtensionDivx );
     }
 
 //  End of File

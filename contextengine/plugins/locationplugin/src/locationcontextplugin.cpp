@@ -149,6 +149,11 @@ void CLocationContextPlugin::ContextSnapshot( MContextPluginObserver& aObserver,
     
     ret = iManipulator.LocationSnapshot( aHD.MdeObject().Id() );
     
+    if( ret != KErrNone )
+        {
+        ret = KErrCompletion;
+        }
+    
     aHD.SetErrorCode( ret );
     aObserver.PluginSnapshotStatus( &aHD );
     }

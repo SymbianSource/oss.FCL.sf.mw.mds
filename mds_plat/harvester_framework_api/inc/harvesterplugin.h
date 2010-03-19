@@ -25,7 +25,7 @@ class CMdESession;
 class CHarvesterBlacklist;
 class CHarvesterData;
 class CMdEPropertyDef;
-class CHarvesterEventManager;
+class CHarvesterPluginFactory;
 
 // Uid for this interface
 const TUid KCHarvesterPluginInterfaceUid = { 0x200009F8 };
@@ -195,6 +195,18 @@ protected:
 	  * Constuctor 
 	  */
 	 IMPORT_C CHarvesterPlugin();
+
+public:
+
+    /** 
+     * Method for getting the mime type for given uri
+     */
+    IMPORT_C virtual void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+    
+    /** 
+     * Method for adding reference to harvester plugin factory
+     */
+    IMPORT_C void SetHarvesterPluginFactory( CHarvesterPluginFactory& aFactory );
          
 private:
     
@@ -233,7 +245,12 @@ protected:
 	 * Pointer to blacklisting functionality
 	 */
 	CHarvesterBlacklist* iBlacklist;
-	
+
+    // Not own
+    CHarvesterPluginFactory* iFactory;
+    
+    TBool iFastModeEnabled;
+    
 private:
 	
 	/* Identification on cleanup */ 
@@ -244,7 +261,6 @@ private:
 	
     TBool iHarvesting;
 	
-	CHarvesterEventManager* iHarvesterEventManager;
     };
 
 #endif // __CHARVESTERPLUGIN_H__

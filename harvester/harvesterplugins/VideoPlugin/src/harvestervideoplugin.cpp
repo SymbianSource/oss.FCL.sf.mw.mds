@@ -47,6 +47,8 @@ _LIT( KMimeTypeRa,        "audio/vnd.rn-realaudio" );
 _LIT( KMimeTypeAvi,        "video/avi");
 _LIT( KMimeTypeVideoMatroska, "video/x-matroska");
 _LIT( KMimeTypeAudioMatroska, "audio/x-matroska");
+_LIT( KMimeTypeWmv, "video/x-ms-wmv");
+_LIT( KMimeTypeDivx, "video/x-hx-divx");
 
 _LIT( KExtensionMp4,   "mp4" );
 _LIT( KExtensionMpg4,  "mpg4" );
@@ -62,6 +64,8 @@ _LIT( KExtensionRv,    "rv" );
 _LIT( KExtensionAvi,    "avi" );
 _LIT( KExtensionMkv,    "mkv" );
 _LIT( KExtensionRa,     "ra" );
+_LIT( KExtensionWmv,     "wmv" );
+_LIT( KExtensionDivx,     "divx" );
 
 _LIT(KVideo, "Video");
 _LIT(KAudio, "Audio");
@@ -91,6 +95,7 @@ void CHarvesterVideoPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
 	iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
+	iTitlePropertyDef = &objectDef.GetPropertyDefL( Object::KTitleProperty );
 
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
 	iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
@@ -153,6 +158,7 @@ CHarvesterVideoPlugin* CHarvesterVideoPlugin::NewL()
 CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	{
 	delete iPropDefs;
+	iMimeTypeMappings.Close();
 
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
@@ -239,12 +245,27 @@ void CHarvesterVideoPlugin::ConstructL()
                     KMimeTypeAvi(), KMimeTypeAvi() ) ), 
             cmp ) );
     
+    // Divx
+    User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
+            KExtensionDivx(), KMimeTypeDivx(), 
+            TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
+                    KMimeTypeDivx(), KMimeTypeDivx() ) ), 
+            cmp ) );
+    
     // Matroska
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
             KExtensionMkv(), KNullDesC(), 
             TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
                     KMimeTypeVideoMatroska(), KMimeTypeAudioMatroska() ) ), 
             cmp ) );
+    
+    // Wmv
+    User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
+            KExtensionWmv(), KMimeTypeWmv(), 
+            TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
+                    KMimeTypeWmv(), KMimeTypeWmv() ) ), 
+            cmp ) );
+    
     }
 
 
@@ -340,6 +361,25 @@ void CHarvesterVideoPlugin::HarvestL( CHarvesterData* aHD )
 
     CleanupStack::PopAndDestroy( fileData );
 	}
+
+// ---------------------------------------------------------------------------
+// CHarvesterVideoPlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterVideoPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    
+    const THarvestingHandling* mapping = FindHandler( aUri );
+
+    // no matching extension found
+    if( !mapping )
+        {
+        return;
+        }
+
+    aMimeType = mapping->iMimeType;
+    }
 
 // ---------------------------------------------------------------------------
 // GatherDataL
@@ -461,6 +501,11 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         		helixMetadata->GetMetaDataAt( i, metaid, buf );
         		switch (metaid)
         			{
+                    case HXMetaDataKeys::EHXTitle:
+                        {
+                        aVHD.iTitle = buf->Alloc();
+                        break;
+                        }
         			case HXMetaDataKeys::EHXVideoBitRate:
 	        			{
         				WRITELOG( "CHarvesterVideoPlugin - found videobitrate" );
@@ -612,7 +657,10 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
 	        	// Match MIME type for audio object with "audio" substring
 	        	else if( MdsUtils::Find( mime, KAudio() ) != KErrNotFound )
 	        		{
-	        		break;
+	        	    if( !aVHD.iVideoObject )
+	        	        {
+	        	        break;
+	        	        }
 	        		}
 	        	}
 	        }
@@ -622,6 +670,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         	aVHD.iMimeBuf = mime.Alloc();
         	}
         
+        helixMetadata->ResetL();
         CleanupStack::PopAndDestroy( helixMetadata );
         
         // don't destory mime type pointers just clean array
@@ -759,6 +808,19 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iSizePropertyDef, &aVHD.iFileSize, aIsAdd );
     	}
 
+    // Item Type
+    if( aVHD.iMimeBuf )
+        {
+        TBool isAdd( EFalse );
+        CMdEProperty* prop = NULL;
+        TInt index = mdeObject.Property( *iPropDefs->iItemTypePropertyDef, prop );
+        if( index < 0 )
+            {
+            isAdd = ETrue;
+            }
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iItemTypePropertyDef, aVHD.iMimeBuf, isAdd );
+        }
+    
     // Release date
 	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iReleaseDatePropertyDef, &localModifiedDate, aIsAdd );
 
@@ -768,12 +830,6 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
 	// Time offset
 	TInt16 timeOffsetMinutes = timeOffsetSeconds.Int() / 60;
 	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
-
-    // Item Type
-	if( aVHD.iMimeBuf )
-		{
-		CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iItemTypePropertyDef, aVHD.iMimeBuf, aIsAdd );
-		}
 
     // Duration
 	if( aVHD.iDuration != 0.0f )
@@ -861,6 +917,12 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     if( aVHD.iCodec != 0 )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iAudioFourCCDef, &aVHD.iCodec, aIsAdd );
+        }
+    
+    // Title
+    if( aVHD.iTitle )
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTitlePropertyDef, aVHD.iTitle, EFalse );
         }
     }
 
@@ -996,6 +1058,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		aType.Copy( KVideo );
 		}
     
+	helixMetadata->ResetL();
     CleanupStack::PopAndDestroy( helixMetadata );
 	}
 

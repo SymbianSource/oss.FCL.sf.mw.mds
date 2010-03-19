@@ -285,7 +285,8 @@ void CMdsPropertyDef::StoreToDBL( TDefId aObjectDefId )
 #endif
     		User::Leave( KErrMdEUnknownPropertyType );
 		}
-	rowData.AppendL( TColumn( GetName().AllocL() ) );
+	rowData.AppendL( TColumn( GetName().AllocLC() ) );
+	CleanupStack::Pop(); //name
 
 	TDefId id;
 	id =  MMdSIndexer::ExecuteAndGetIndexL( KMdsSqlClauseAddPropertyDef, rowData );

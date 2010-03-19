@@ -570,6 +570,7 @@ void CMdsImportExport::ImportSchemaPropertyDefL( TLex8& aParser )
 		    
 		    // Text properties may have an extra flag: index flag.
 		    TBool indexed( EFalse );
+		    // Ignore error code as the flag might not exist and indexing is not mandatory
 		    ImportNum( indexed, aParser );
     		// Add this property to the previously defined object.
     		iLastObjectDef->AddPropertyL( name, type, minVal32, maxVal32, readOnly, mandatory, indexed );
@@ -876,7 +877,7 @@ TBool CMdsImportExport::ImportCheckVersionInfoL()
 	// DB version
     MMdsPreferences::GetL( KMdsDBVersionName, MMdsPreferences::EPreferenceBothGet,
     						  majorVersion, &minorVersion );
-	if ( majorVersion != KMdSServMajorVersionNumber && (TInt)minorVersion != KMdSServMinorVersionNumber )
+	if ( majorVersion != KMdSServMajorVersionNumber || (TInt64)minorVersion != KMdSServMinorVersionNumber )
 		{
 		return EFalse;
 		}
@@ -1165,6 +1166,7 @@ void CMdsImportExport::ImportMetadataFileObjectL( TLex8& aParser, CMdSSqlObjectM
 			// check if uri exists
 			if ( !BaflUtils::FileExists( iFs, textValue ) )
 				{
+			    iLastObjectDef = NULL;
 				_LIT( KError, "uri is not real" );
 				LogError( KError );
 				User::Leave( KErrNotFound );
@@ -1720,7 +1722,7 @@ void CMdsImportExport::ExportMetadataL( CMdsSchema& aSchemaNew, const TDesC16& a
 			const CMdsObjectDef* objectDef = namespaceDefRestrict->GetObjectByIdL( objectDefId );
 			if (objectDef)
 				{
-				objectDefToExport.Append( objectDef );
+				objectDefToExport.AppendL( objectDef );
 				}
 			}
 		}
@@ -1741,7 +1743,7 @@ void CMdsImportExport::ExportMetadataL( CMdsSchema& aSchemaNew, const TDesC16& a
 			const CMdsEventDef* eventDef = namespaceDefRestrict->GetEventByIdL( eventDefId );
 			if (eventDef)
 				{
-				eventDefToExport.Append( eventDef );
+				eventDefToExport.AppendL( eventDef );
 				}
 			}
 		}
@@ -1762,7 +1764,7 @@ void CMdsImportExport::ExportMetadataL( CMdsSchema& aSchemaNew, const TDesC16& a
 			const CMdsRelationDef* relationDef = namespaceDefRestrict->GetRelationByIdL( relationDefId );
 			if ( relationDef )
 				{
-				relationDefToExport.Append( relationDef );
+				relationDefToExport.AppendL( relationDef );
 				}
 			}
 		}
@@ -1775,7 +1777,7 @@ void CMdsImportExport::ExportMetadataL( CMdsSchema& aSchemaNew, const TDesC16& a
 	RRowData freeTextRow;
 	CleanupClosePushL( freeTextRow );
 
-	TInt j;
+	TInt j( 0 );
 	
 	const TInt namespaceCount = aSchemaNew.iNamespaceDefs.Count();
 	
@@ -2408,11 +2410,12 @@ TInt CMdsImportExport::ImportMediaId( TUint32& aValue, TLex8& aParser, TChar& aD
 //
 TInt CMdsImportExport::ImportInt64( Int64& aValue, TLex8& aParser )
     {
+    TInt error( KErrNone );
     // due to symbian int64 parser error
     // for now we will use ImportNum version
-    ImportNum( aValue, aParser );
+    error = ImportNum( aValue, aParser );
 
-    return KErrNone;
+    return error;
     }
 
 // ------------------------------------------------

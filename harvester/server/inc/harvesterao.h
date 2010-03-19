@@ -20,6 +20,7 @@
 
 #include <e32cmn.h>
 #include <e32base.h>
+#include <badesca.h>
 
 #include "contextengine.h"
 #include "mdeharvestersession.h"
@@ -59,6 +60,8 @@ class CHarvesterAoPropertyDefs : public CBase
 		CMdEPropertyDef* iLastModifiedDatePropertyDef;
 		CMdEPropertyDef* iSizePropertyDef;
 		CMdEPropertyDef* iOriginPropertyDef;
+		CMdEPropertyDef* iItemTypePropertyDef;
+		CMdEPropertyDef* iTitlePropertyDef;
 		
 		// Media property definitions
 		CMdEPropertyDef* iPreinstalledPropertyDef;
@@ -292,6 +295,10 @@ class CHarvesterAO : public CActive,
          */
         void MemoryGood();
 		
+    private:
+        
+        TBool CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef );
+        
 	private:
 		
 	struct THarvestFileRequest
@@ -536,6 +543,9 @@ class CHarvesterAO : public CActive,
         CHarvesterAoPropertyDefs* iPropDefs;
         
         TBool iMassMemoryIdChecked;
+        
+        // Own.
+        CDesCArray* iCameraExtensionArray;
 	};
 	
 #endif //__CHARVESTERAO_H__

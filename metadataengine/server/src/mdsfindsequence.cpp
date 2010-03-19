@@ -284,7 +284,7 @@ void CMdSFindSequence::RunL()
         CMdSFindEngine* obs = iObserver;
         if ( obs )
         	{
-        	obs->SetComplete( KErrNone );
+        	obs->SetComplete( KErrNone, ETrue );
         	}
         }
     else if ( result == KErrCancel )
@@ -297,7 +297,7 @@ void CMdSFindSequence::RunL()
         CMdSFindEngine* obs = iObserver;
         if ( obs )
         	{
-        	obs->FindComplete( result );
+        	obs->SetComplete( result, EFalse );
         	}
         }
     }
@@ -311,7 +311,7 @@ TInt CMdSFindSequence::RunError( TInt aError )
     // Cleanup if RunL() leaves
     CMdSFindEngine* obs = iObserver;
     CleanUp();
-    obs->FindComplete( aError );
+    obs->SetComplete( aError, EFalse );
     return KErrNone;
     }
 
@@ -507,7 +507,7 @@ void CMdSFindSequence::PostProcessL( CMdCSerializationBuffer& aSerializedResultB
 
 		RArray<TMdCObject> objectArray;
 		CleanupClosePushL( objectArray );
-		objectArray.Reserve( items.iObjects.iPtr.iCount );
+		objectArray.ReserveL( items.iObjects.iPtr.iCount );
 		// store objects in array in correct order
 		for( TInt i = 0; i < items.iObjects.iPtr.iCount; ++i )
 			{

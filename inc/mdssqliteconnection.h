@@ -76,6 +76,16 @@ NONSHARABLE_CLASS(CMdSSqLiteConnection): public CBase
         */        
         void ConstructL();
 
+        /**
+        * Delete and re-create database.
+        * @param aDbFileName Database filename and path
+        * @param asqlSecurityPolicy sql policy
+        * @param aKMdsSqlDbaConfig database connection configure
+        */    
+        TInt DeleteAndReCreateDB( const HBufC* aDbFileName,
+                                  const RSqlSecurityPolicy& asqlSecurityPolicy,
+                                  const TDesC8* aKMdsSqlDbaConfig );
+        
     public: // Methods from CMdSSqLiteConnection
 
 		/**
@@ -128,6 +138,11 @@ NONSHARABLE_CLASS(CMdSSqLiteConnection): public CBase
          * @return true if there are more rows available
          */
         void CurrentRowL( const RMdsStatement& aQuery, RRowData& aRow );
+
+        /**
+         * Returns id of the last inserted row
+         */
+        TItemId LastInsertedRowId();
 
         /**
          * terminates a running query or execution loop

@@ -28,19 +28,25 @@ const TInt KMaxAge         = 800000;   // 0.8 second
 
 const TInt KMaxTrailLength = 480000000; // 8 min.
 
-const TInt KIntervalSeconds = KUpdateInterval / 1000000; // 10 seconds
+const TInt KMaximumIntervalSeconds = KUpdateTimeOut / 1000000; // 20 seconds
 
 const TInt KCurrentLocTimeoutCount = 48; // 48 * 10 sec -> 8 min timeout.
 
 const TInt KTrackLogBufSize = 10;
 
-const TInt KLocationTrailShutdownDelay = 180;
+const TInt KLocationTrailShutdownDelay = 60;
 
-const TInt KLocationDelta = 30;
+const TInt KLocationTrailRemappingCheckDelay = 15;
 
-const TInt KRemappingTime = 600;
+const TInt KLocationTrailRemapShutdownDelay = 360;
+
+const TInt KLocationDelta = 20;
+
+const TInt KRemappingTime = 480;
 
 const TInt KFirstInterval = 1000000; // 1 second
+
+const TInt KFirstTimeOut = 1500000; // 1.5 second
 
 //The name of the requestor
 _LIT( KRequestor,         "Location Trail" );
@@ -115,6 +121,12 @@ const TUint32 KLocationDeltaKey = 0x00000005;
  * Central repository.
  */
 const TUint32 KRemappingTimeKey = 0x00000006;
+
+/**
+ * Key for reading location trail timeout value from 
+ * Central repository if items are still to be remapped.
+ */
+const TUint32 KLocationTrailRemapShutdownTimer = 0x00000007;
 
 #endif // __LOCATIONTRAILDEFS_H__
 

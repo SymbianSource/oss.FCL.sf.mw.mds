@@ -209,7 +209,7 @@ TInt CCLFItemImpl::GetMediaTypeL( CMdEObjectDef& aObjectDef, TInt32& aValue ) co
     TInt32 error = KErrNotFound;
 
     aValue = ECLFMediaTypeUnknown; // Default to this.
-    for ( TInt i = 0; i < sizeof( clfmediatypes ) / sizeof( TInt ); ++i )
+    for ( TUint i = 0; i < sizeof( clfmediatypes ) / sizeof( TInt ); ++i )
         {
         if ( name.Compare( *mdemediatypes[ i ] ) == 0 )
             {
@@ -258,7 +258,7 @@ void CCLFItemImpl::DetermineIfMusicL( CMdEObjectDef& aObjectDef, TInt32& aValue 
         {
         // Get the actual data
         CMdEProperty* prop = NULL;
-        const TInt index = iMdEObject.Property( *propertyDef, prop );
+        iMdEObject.Property( *propertyDef, prop );
         if ( prop )
             {
             const TInt num = sizeof ( clfwrappermusictypes ) / sizeof( TDesC* );

@@ -45,7 +45,7 @@ file=ABI_DIR\BUILD_DIR\harvesterdata.dll		    SHARED_LIB_DIR\harvesterdata.dll
 file=ABI_DIR\BUILD_DIR\mdsfileserverplugin.pxt			SHARED_LIB_DIR\mdsfileserverplugin.pxt
 ECOM_PLUGIN(HarvesterImagePlugin.dll,HarvesterImagePlugin.rsc)
 ECOM_PLUGIN(HarvesterVideoPlugin.dll,HarvesterVideoPlugin.rsc)
-ECOM_PLUGIN(HarvesterMessagePlugin.dll,HarvesterMessagePlugin.rsc)
+//ECOM_PLUGIN(HarvesterMessagePlugin.dll,HarvesterMessagePlugin.rsc)
 ECOM_PLUGIN(harvesteromadrmplugin.dll,harvesteromadrmplugin.rsc)
 ECOM_PLUGIN(harvesterwmvplugin.dll,harvesterwmvplugin.rsc)
 ECOM_PLUGIN(harvesterrtpplugin.dll,harvesterrtpplugin.rsc)
@@ -58,7 +58,7 @@ file=ABI_DIR\BUILD_DIR\blacklistclient.dll		        SHARED_LIB_DIR\blacklistclie
 file=ABI_DIR\BUILD_DIR\MonitorPluginInterface.dll		SHARED_LIB_DIR\MonitorPluginInterface.dll
 ECOM_PLUGIN(MMCMonitorPlugin.dll,MMCMonitorPlugin.rsc)
 ECOM_PLUGIN(FileMonitorPlugin.dll,FileMonitorPlugin.rsc)
-ECOM_PLUGIN(MessageMonitorPlugin.dll,MessageMonitorPlugin.rsc)
+//ECOM_PLUGIN(MessageMonitorPlugin.dll,MessageMonitorPlugin.rsc)
 ECOM_PLUGIN(mdsoomplugin.dll,mdsoomplugin.rsc)
 
 file=ABI_DIR\BUILD_DIR\ContextPluginInterface.dll		SHARED_LIB_DIR\ContextPluginInterface.dll

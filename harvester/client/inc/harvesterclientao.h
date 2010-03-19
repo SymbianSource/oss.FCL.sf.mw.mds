@@ -24,7 +24,6 @@
 #include <badesca.h>
 
 #include "harvesterclient.h"
-#include "clientharvestitem.h"
 
 class RHarvesterClient;
 class MHarvestObserver;

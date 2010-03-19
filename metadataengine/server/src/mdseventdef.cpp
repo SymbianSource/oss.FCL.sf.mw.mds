@@ -74,7 +74,8 @@ void CMdsEventDef::StoreToDBL( const TInt aNamespaceDefId )
     CleanupClosePushL( rowData );
 	rowData.AppendL( TColumn( aNamespaceDefId ) );
 	rowData.AppendL( TColumn( iPriority ) );
-	rowData.AppendL( TColumn( GetName().AllocL() ) );
+	rowData.AppendL( TColumn( GetName().AllocLC() ) );
+	CleanupStack::Pop(); // name
 
 	TDefId id = MMdSIndexer::ExecuteAndGetIndexL(KMdsSqlClauseAddEventDef, rowData );
 

@@ -69,11 +69,7 @@ CFileMonitorAO::~CFileMonitorAO()
     Cancel();
     
     StopMonitoring();
-    
-    iIgnoreList.ResetAndDestroy();
-    iIgnoreList.Close();
 
-    
     delete iMdeSession;
     }
 
@@ -161,6 +157,9 @@ TBool CFileMonitorAO::StopMonitoring()
     	}
     
     Cancel();
+
+    delete iFileEventHandler;
+    iFileEventHandler = NULL;
     
     // remove mds fileserver plugin
     iEngine.Disable();

@@ -191,21 +191,18 @@ CMdSSqlObjectManipulate::CMdSSqlObjectManipulate( const CMdsSchema& aSchema,
 
 void CMdSSqlObjectManipulate::ConstructL( )
     {
-    
 	iGenerator = CMdSIdentifierGenerator::NewL();
 
 	iNamespaceDef = NULL;
 	
-	TLockBuffer lockBuffer;
-	lockBuffer.iLock = EFalse;
 	for (TInt i = 0; i < KMaxBuffers; ++i)
 		{
-	    CMdsClauseBuffer* buffer = CMdsClauseBuffer::NewLC( 1024 );
-		lockBuffer.iBuffer = buffer;
+	    TLockBuffer lockBuffer;
+	    lockBuffer.iLock = EFalse;
+	    lockBuffer.iBuffer = CMdsClauseBuffer::NewLC( 1024 );
 		iBuffers.AppendL( lockBuffer );
 		CleanupStack::Pop(); // buffer
 		}
-
     }
 
 TBool CMdSSqlObjectManipulate::GarbageCollectionL()
@@ -2057,7 +2054,11 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 		if (!dataRow.Column(1).IsNull())
 			{
 			dataRow.Column(1).Get( relationId );
-			aRelationIds.InsertInOrder( relationId, TLinearOrder<TItemId>( CompareTItemIds ) );
+			const TInt error( aRelationIds.InsertInOrder( relationId, TLinearOrder<TItemId>( CompareTItemIds ) ) );
+			if( error == KErrNoMemory )
+			    {
+			    User::Leave( error );
+			    }
 			}
 		else
 			{
@@ -2092,6 +2093,35 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 
 		__LOGQUERY_16( _L("Remove objects:"), buffer.ConstBufferL(), dataRow);
 		connection.ExecuteL( buffer.ConstBufferL(), dataRow );
+		
+#ifdef MDS_PLAYLIST_HARVESTING_ENABLED
+		_LIT( KSetPlaylistItemsRemoved, "UPDATE Object%u SET Flags=Flags|? WHERE ObjectId IN (SELECT ObjectId FROM AudioPlaylistItem%u WHERE AudioObjectID IN(?" );
+		_LIT( KPlaylistCollectEnd,    "));" );
+
+		buffer.ReserveSpaceL( KSetPlaylistItemsRemoved().Length() + KMaxUintValueLength +
+                               (removeObjectCount-1) * KCollectMiddle().Length() +
+                               KPlaylistCollectEnd().Length() );
+
+		TDefId nameSpaceDefID = iNamespaceDef->GetId();
+        buffer.BufferL().Format( KSetPlaylistItemsRemoved, nameSpaceDefID, nameSpaceDefID );
+
+        dataRow.Free();
+        dataRow.Reset();
+        dataRow.AppendL( TColumn( EMdEObjectFlagRemoved ) );
+
+        for (TInt i = 0; i < removeObjectCount; ++i)
+            {
+            if(i>0)
+                {
+                buffer.AppendL( KCollectMiddle );
+                }
+            dataRow.AppendL( TColumn( aObjectIds[i] ) );
+            }
+        buffer.AppendL( KPlaylistCollectEnd );
+
+        __LOGQUERY_16( _L("Remove playlist items:"), buffer.ConstBufferL(), dataRow);
+        connection.ExecuteL( buffer.ConstBufferL(), dataRow );
+#endif
 		}
 
 	// mark relations as removed
@@ -3254,8 +3284,51 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
    	// rowDataDel, commonClauseOne
 	CleanupStack::PopAndDestroy( 7, &commonClauseOne );
 
+#ifdef MDS_PLAYLIST_HARVESTING_ENABLED	
+	if( updateResult == 0 )
+	    {
+	    updateResult = CleanPlaylistsL();
+	    }
+#endif
+
 	return updateResult != 0;
 	}
+
+#ifdef MDS_PLAYLIST_HARVESTING_ENABLED
+TInt CMdSSqlObjectManipulate::CleanPlaylistsL()
+    {
+    _LIT( KDeleteWholePlaylists, "DELETE FROM Object%u WHERE ObjectId IN (SELECT ObjectId FROM AudioPlaylistItem%u WHERE PlaylistID NOT IN (SELECT ObjectId FROM Object%u));" );
+    
+    RClauseBuffer commonClauseOne(*this, KDeleteWholePlaylists().Length());
+    CleanupClosePushL( commonClauseOne );
+    CMdsClauseBuffer& buffer = commonClauseOne.BufferL();
+
+    RRowData rowDataDel;
+    CleanupClosePushL( rowDataDel );
+
+    const RPointerArray<CMdsNamespaceDef>& namespaceDefs = 
+        iSchema.NamespaceDefs();
+
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+    const TInt updateResult = 0; // once all files to be cleaned are handled, no need to continue
+    
+    const TInt count = namespaceDefs.Count();
+    
+    for( TInt i = 0; i < count; ++i )
+        {
+        const TDefId nmspId = namespaceDefs[i]->GetId();
+
+        buffer.BufferL().Format( KDeleteWholePlaylists, nmspId, nmspId, nmspId );
+        User::LeaveIfError( connection.ExecuteL( 
+                buffer.ConstBufferL(), rowDataDel ) );    
+        }
+
+    // rowDataDel, commonClauseOne
+    CleanupStack::PopAndDestroy( 2, &commonClauseOne );
+    
+    return updateResult;
+    }
+#endif
 
 CMdSSqlObjectManipulate::RClauseBuffer::RClauseBuffer( CMdSSqlObjectManipulate& aSOM, TInt aSize )
 	: iBuffers( aSOM.iBuffers ), iBuffer( NULL ), iNr( -1 ), iSize( aSize )
@@ -3266,11 +3339,18 @@ CMdSSqlObjectManipulate::RClauseBuffer::RClauseBuffer( CMdSSqlObjectManipulate& 
 		{
 		if (!iBuffers[i].iLock)
 			{
-			iBuffers[i].iLock = ETrue;
-			iBuffer = iBuffers[i].iBuffer;
+		    iBuffers[i].iLock = ETrue;
+            CMdsClauseBuffer* oldBuffer( iBuffer );
+            iBuffer = iBuffers[i].iBuffer;
+            TRAPD( error, iBuffer->ReserveSpaceL(aSize) );
+            if( error != KErrNone )
+                {
+                iBuffer = oldBuffer;
+                iBuffers[i].iLock = EFalse;
+                continue;
+                }		
+            TRAP_IGNORE( iBuffer->BufferL().Zero() );			
 			iNr = i;
-			TRAP_IGNORE( iBuffer->ReserveSpaceL(aSize) );
-			TRAP_IGNORE( iBuffer->BufferL().Zero() );
 			return;
 			}
 		}

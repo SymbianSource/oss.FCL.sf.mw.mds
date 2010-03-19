@@ -98,6 +98,7 @@ CLocationManagerServer::CLocationManagerServer()
 			         iSessionReady( EFalse ),
                      iTagId( 0 ),
                      iLocManStopDelay( 0 ),
+                     iLocManStopRemapDelay( 0 ),
                      iCaptureSetting( RLocationTrail::EOff ),
                      iRemoveLocation( EFalse )
     {
@@ -133,7 +134,6 @@ void CLocationManagerServer::ConstructL()
     
     CRepository* repository = CRepository::NewLC( KRepositoryUid );
 	TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
-	CleanupStack::PopAndDestroy( repository );
 	
     LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay:%d", iLocManStopDelay);
     
@@ -142,6 +142,17 @@ void CLocationManagerServer::ConstructL()
         LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay err:%d", err);
         iLocManStopDelay = KLocationTrailShutdownDelay;
     	}
+
+    err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
+    CleanupStack::PopAndDestroy( repository );
+    
+    LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
+    
+    if ( err != KErrNone )
+        {
+        LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay err:%d", err);
+        iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
+        }
     
     LOG ("CLocationManagerServer::ConstructL() end");
     }
@@ -295,6 +306,7 @@ void CLocationManagerServer::RemoveSession()
 //
 void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCaptureSetting aCaptureSetting )
     {
+    LOG( "CLocationManagerServer::StartGPSPositioningL" );
     if ( aCaptureSetting == RLocationTrail::EOff )
     	{
     	return;
@@ -308,6 +320,7 @@ void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCapture
         {
         User::Leave( KErrAlreadyExists );
         }
+    
     if ( iTimer )
     	{
     	delete iTimer;
@@ -323,34 +336,28 @@ void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCapture
 //    
 void CLocationManagerServer::StopGPSPositioningL()
     {
+    LOG( "CLocationManagerServer::StopGPSPositioningL()" );
     iCaptureSetting = RLocationTrail::EOff;
     
     RLocationTrail::TTrailState state;
     GetLocationTrailState( state );
-    if( state == RLocationTrail::ETrailStarted || state == RLocationTrail::ETrailStarting )
-    	{
-    	iLocationRecord->Stop();
-    	}
-    else if ( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
+    
+    
+    if( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
-        if ( iLocationRecord->RemappingNeeded() )
-        	{
-        	TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityStandard ) );
-        	if ( error != KErrNone )
-        		{
-        		// If timer can't be created we stop the location trail immediately.
-        		iLocationRecord->Stop();
-        		StopTrackLogL();
-        		return;
-        		}
-        	iLocationRecord->SetStateToStopping();
-        	iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( PositioningStopTimeout, this ) );
-        	}
-        else 
-        	{
-        	iLocationRecord->Stop();
-        	}
-        }
+        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityHigh ) );
+        
+        if ( error != KErrNone )
+            {
+            // If timer can't be created we stop the location trail immediately.
+            iLocationRecord->Stop();
+            StopTrackLogL();
+            return;
+            }   
+        
+        iLocationRecord->SetStateToStopping();
+        iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( CheckForRemappingCallback, this ) );
+    	}
     
     // Always stop tracklog.
     StopTrackLogL();
@@ -362,6 +369,7 @@ void CLocationManagerServer::StopGPSPositioningL()
 //
 void CLocationManagerServer::StopRecording()
 	{
+    LOG( "CLocationManagerServer::StopRecording()" );
 	iLocationRecord->Stop();
 	delete iTimer;
 	iTimer = NULL;
@@ -373,11 +381,35 @@ void CLocationManagerServer::StopRecording()
 //
 TInt CLocationManagerServer::PositioningStopTimeout( TAny* aAny )
 	{
+    LOG( "CLocationManagerServer::PositioningStopTimeout" );
 	CLocationManagerServer* self = STATIC_CAST( CLocationManagerServer*, aAny );
 	self->StopRecording();
 	
 	return KErrNone;
 	}
+
+// --------------------------------------------------------------------------
+// CLocationUtilityServer::PositioningStopTimeout
+// --------------------------------------------------------------------------
+//
+TInt CLocationManagerServer::CheckForRemappingCallback( TAny* aAny )
+    {
+    LOG( "CLocationManagerServer::CheckForRemappingCallback" );
+    CLocationManagerServer* self = STATIC_CAST( CLocationManagerServer*, aAny );
+
+    self->iTimer->Cancel();    
+    
+    if ( self->iLocationRecord->RemappingNeeded() )
+        {     
+        self->iTimer->Start( self->iLocManStopRemapDelay * 1000000, 0, TCallBack( PositioningStopTimeout, self ) );
+        }
+    else
+        {        
+        self->StopRecording();
+        }
+    
+    return KErrNone;
+    }
 
 // --------------------------------------------------------------------------
 // CLocationManagerServer::GetLocationTrailState
@@ -443,7 +475,7 @@ void CLocationManagerServer::CancelNotificationRequest( const TInt aHandle )
 //   
 void CLocationManagerServer::GetLocationByTimeL( const TTime& aTimeStamp, 
 												 TLocationData& aLocationData,
-                                                 TLocTrailState& aState )
+                                                 TLocTrailState& aState ) __SOFTFP
     {
     iLocationRecord->GetLocationByTimeL( aTimeStamp,
     									 aLocationData,
@@ -497,7 +529,7 @@ void CLocationManagerServer::CancelLocationRequest( const TInt aHandle )
 // CLocationManagerServer::GetCurrentCellId
 // --------------------------------------------------------------------------
 //    
-void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo )
+void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP
     {
     iLocationRecord->GetNetworkInfo( aNetworkInfo );
     }    
@@ -506,7 +538,7 @@ void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& 
 // CLocationManagerServer::LocationTrailStateChange
 // --------------------------------------------------------------------------
 //    
-void CLocationManagerServer::LocationTrailStateChange()
+void CLocationManagerServer::LocationTrailStateChange() __SOFTFP
     {
     LOG( "CLocationManagerServer::LocationTrailStateChange(), begin" );
 
@@ -529,7 +561,7 @@ void CLocationManagerServer::LocationTrailStateChange()
 //
 void CLocationManagerServer::CurrentLocation( const TPositionSatelliteInfo& aSatelliteInfo, 
 											  const CTelephony::TNetworkInfoV1& aNetworkInfo,
-                                              const TInt aError )
+                                              const TInt aError ) __SOFTFP
     {
     LOG( "CLocationManagerServer::CurrentLocation(), begin" );
     const TInt KParamLocationData = 0;
@@ -576,7 +608,7 @@ void CLocationManagerServer::CurrentLocation( const TPositionSatelliteInfo& aSat
     LOG( "CLocationManagerServer::CurrentLocation(), end" );    
     }
 
-void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo )
+void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP
 	{
 	LOG( "CLocationManagerServer::GPSSignalQualityChanged" );
 	const TInt KFixParam = 0;
@@ -651,7 +683,7 @@ void CLocationManagerServer::CancelTrackLogNotificationRequest( const TInt aHand
 	}
 
 void CLocationManagerServer::CreateLocationObjectL( const TLocationData& aLocationData,
-													const TUint& aObjectId )
+													const TUint& aObjectId ) __SOFTFP
 	{
 	if ( !IsSessionReady() )
 		{
@@ -1012,7 +1044,7 @@ void CLocationManagerServer::IsTrackLogRecording( TBool &aRec )
 	}
 
 void CLocationManagerServer::GpxFileCreated( const TDesC& aFileName, TItemId aTagId,
-		TReal32 aLength, TTime aStart, TTime aEnd )
+		TReal32 aLength, TTime aStart, TTime aEnd ) __SOFTFP
 	{
 	TRAP_IGNORE( CreateTrackLogL( aTagId, aFileName, aLength, aStart, aEnd ) );
 	}
@@ -1100,7 +1132,7 @@ void CLocationManagerServer::CreateTrackLogL( TItemId aTagId, const TDesC& aUri,
     CleanupStack::PopAndDestroy( trackLog );
 	}
 
-TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality)
+TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality) __SOFTFP
 	{
 	if ( !iTrackLog )
 		{

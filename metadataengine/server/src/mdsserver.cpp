@@ -853,11 +853,11 @@ void CMdSServer::CheckInitSriptL()
     User::LeaveIfError( fs.Connect() );
     CleanupClosePushL( fs );
     
-    RFileReadStream tmpFile;
     TBuf<KMaxFileName> privatePath;
     TBuf<KMaxFileName> schema;
     TBuf<KMaxFileName> defaultImportProfile;
     TBuf<KMaxFileName> backupRegistration;
+    RFileReadStream tmpFile;
     
     fs.PrivatePath( privatePath );
     
@@ -887,7 +887,7 @@ void CMdSServer::CheckInitSriptL()
         else if ( err == KErrPathNotFound)
             {
             // Create private dir
-            fs.CreatePrivatePath( EDriveC );
+            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
             
             // Copy schema.mde
             const TInt error = fileMan->Copy( KSchemaPath, schema, CFileMan::EOverWrite );
@@ -909,7 +909,7 @@ void CMdSServer::CheckInitSriptL()
         else if ( err == KErrPathNotFound)
             {
             // Create private dir
-            fs.CreatePrivatePath( EDriveC );
+            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
              
             // Copy schema.mde
             const TInt error1 = fileMan->Copy( KDefaultImportProfilePath, defaultImportProfile, CFileMan::EOverWrite );
@@ -931,7 +931,7 @@ void CMdSServer::CheckInitSriptL()
         else if ( err == KErrPathNotFound)
             {
             // Create private dir
-            fs.CreatePrivatePath( EDriveC );
+            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
             
             // Copy schema.mde
             const TInt error2 = fileMan->Copy( KBackupRegistrationPath, backupRegistration, CFileMan::EOverWrite );

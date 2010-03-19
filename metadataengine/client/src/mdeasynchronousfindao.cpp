@@ -107,7 +107,7 @@ void CMdEAsynchronousFindAO::DoFindL( TUint aMaxCount, TUint aNotifyCount )
         }
 
     iConditionBuffer = 
-    	CMdEQueryCriteriaSerialization::NewLC( resultMode, iQuery.Type(),     										   
+    	CMdEQueryCriteriaSerialization::NewL( resultMode, iQuery.Type(),     										   
     										   iQuery.NamespaceDef(), 
     										   objectDef, 
     										   objectDefs, 
@@ -116,7 +116,6 @@ void CMdEAsynchronousFindAO::DoFindL( TUint aMaxCount, TUint aNotifyCount )
     										   queryOptimizationFlags, 
     										   iQuery.Conditions(), iQuery.OrderRules(),
     										   propertyFilter );
-	CleanupStack::Pop();
     iSession.DoFindAsync( 
     	iQuery.GetQueryId(), 
         *iConditionBuffer,
@@ -312,6 +311,7 @@ void CMdEAsynchronousFindAO::DoNotifyResultsL( TInt aStatus )
 
         // get rid of local results list
         iResultList.Reset();
+        iResultList.Compress();
         }
     // Notify result ids
     else if ( ( aStatus == EAsyncFindSetReady ||

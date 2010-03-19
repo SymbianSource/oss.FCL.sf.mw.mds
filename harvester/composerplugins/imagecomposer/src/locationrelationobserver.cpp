@@ -42,6 +42,12 @@ CLocationRelationObserver::~CLocationRelationObserver()
 		{
 		TRAP_IGNORE( iSession->RemoveRelationObserverL( *this ) );
 		}
+	
+	if( iQuery )
+	    {
+	    iQuery->Cancel();
+	    delete iQuery;
+	    }
 	}
 
 CLocationRelationObserver* CLocationRelationObserver::NewL( CMdESession* aSession, CComposerImagePlugin* aComposer )

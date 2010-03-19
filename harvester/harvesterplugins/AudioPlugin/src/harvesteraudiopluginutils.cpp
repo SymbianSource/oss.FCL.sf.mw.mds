@@ -77,6 +77,7 @@ CAudioMDParser::~CAudioMDParser()
     {
     delete iMetaDataUtility;
     
+    iMimeTypeMappings.Close();
     iWantedMetadataFields.Close();
     }
 

@@ -81,4 +81,8 @@ EXPORTS
 	_ZN22CHarvesterEventManager22RegisterEventObserverLERK9RMessage2 @ 80 NONAME
 	_ZN22CHarvesterEventManager23UnregisterEventObserverERK9RMessage2 @ 81 NONAME
 	_ZN17CMdeObjectWrapper21HandleObjectPropertyLER10CMdEObjectR15CMdEPropertyDefPvi @ 82 NONAME
+	_ZN23CHarvesterPluginFactory26SendHarvestingStatusEventLEi @ 83 NONAME
+	_ZN18CHarvesterExifUtilD0Ev @ 84 NONAME
+	_ZN18CHarvesterExifUtilD1Ev @ 85 NONAME
+	_ZN18CHarvesterExifUtilD2Ev @ 86 NONAME
 

@@ -217,10 +217,20 @@ void CMdSFindEngine::Cancel( TInt aError )
 // SetComplete
 // ---------------------------------------------------------------------------
 //
-void CMdSFindEngine::SetComplete( TInt aError )
+void CMdSFindEngine::SetComplete( TInt aError, TBool aSet )
     {
     TBool toComplete = iAsyncPending;
-    __LOG1( ELogServer, "<- Find Set Complete (%d)", aError );
+    
+#ifdef _DEBUG
+    if( aSet )
+        {
+        __LOG1( ELogServer, "<- Find Set Complete (%d)", aError );
+        }
+    else
+        {
+        __LOG1( ELogServer, "<- Find Complete (%d)", aError );    
+        }
+#endif
 
     if( aError == KErrNone )
         {
@@ -260,70 +270,16 @@ void CMdSFindEngine::SetComplete( TInt aError )
        		{        	
        		if ( toComplete && iMessage.IsNull() == EFalse ) 
        			{
-       			iMessage.Complete( EAsyncFindSetReady );
+       		    if( aSet )
+       		        {
+                    iMessage.Complete( EAsyncFindSetReady );
+       		        }
+       		    else
+       		        {
+       		        iMessage.Complete( EAsyncFindComplete );
+       		        }
        			}
        		}
-        }
-    else
-        {
-       	if ( toComplete && iMessage.IsNull() == EFalse ) 
-       		{
-       		iMessage.Complete( aError );
-       		}
-       	return;
-        }
-    }
-
-// ---------------------------------------------------------------------------
-// FindComplete
-// ---------------------------------------------------------------------------
-//
-void CMdSFindEngine::FindComplete( TInt aError )
-    {
-    TBool toComplete = iAsyncPending;
-    __LOG1( ELogServer, "<- Find Complete (%d)", aError );
-
-    if( aError == KErrNone )
-        {
-        TUint32 resultSize = 0;
-
-        TInt err = KErrNone;
-
-        TRAP( err, resultSize = iSequence->ResultsL().Size() );
-
-       	if( err )
-       		{
-       		if ( toComplete && iMessage.IsNull() == EFalse )
-       			{
-       			iMessage.Complete( err );
-       			}
-       		return;
-       		}
-
-        iAsyncPending = EFalse;
-        
-        if ( iMessage.IsNull() == EFalse )
-        	{
-        	TPckgBuf<TInt> sizeBuf( resultSize );    	
-
-        	err = iMessage.Write( 2, sizeBuf );
-        	}
-
-       	if( err )
-       		{
-       		if ( toComplete && iMessage.IsNull() == EFalse ) 
-       			{
-       			iMessage.Complete( err );
-       			}
-       		return;
-       		}
-       	else
-			{
-        	if ( toComplete && iMessage.IsNull() == EFalse ) 
-        		{
-        		iMessage.Complete( EAsyncFindComplete );
-        		}
-			}
         }
     else
         {

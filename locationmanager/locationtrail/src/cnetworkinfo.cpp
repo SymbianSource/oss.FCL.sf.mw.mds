@@ -74,7 +74,7 @@ void CNetworkInfo::ConstructL()
 // CNetworkInfo::~CNetworkInfo
 // --------------------------------------------------------------------------
 //    
-CNetworkInfo::~CNetworkInfo()
+EXPORT_C CNetworkInfo::~CNetworkInfo()
     {
     Cancel();
     delete iTelephony;

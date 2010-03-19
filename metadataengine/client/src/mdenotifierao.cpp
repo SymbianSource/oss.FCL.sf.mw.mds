@@ -238,74 +238,64 @@ void CMdENotifierAO::DoNotifyObserver()
         case EObjectNotifyAdd:
         	{
         	MMdEObjectObserver* obs = static_cast<MMdEObjectObserver*>( iObserver );
-        	obs->HandleObjectNotification( iSessionImpl, ENotifyAdd, iIdArray );
-            iIdArray.Reset();            
+        	obs->HandleObjectNotification( iSessionImpl, ENotifyAdd, iIdArray );     
         	break;
         	}
         case EObjectNotifyModify:
         	{
         	MMdEObjectObserver* obs = static_cast<MMdEObjectObserver*>( iObserver );
-        	obs->HandleObjectNotification( iSessionImpl, ENotifyModify, iIdArray );
-            iIdArray.Reset();            
+        	obs->HandleObjectNotification( iSessionImpl, ENotifyModify, iIdArray );         
         	break;
         	}
         case EObjectNotifyRemove:
         	{
         	MMdEObjectObserver* obs = static_cast<MMdEObjectObserver*>( iObserver );
-        	obs->HandleObjectNotification( iSessionImpl, ENotifyRemove, iIdArray );
-            iIdArray.Reset();            
+        	obs->HandleObjectNotification( iSessionImpl, ENotifyRemove, iIdArray );        
         	break;
         	}
 
         case EObjectNotifyPresent:
         	{
 	    	MMdEObjectPresentObserver* obs = static_cast<MMdEObjectPresentObserver*>( iObserver );
-            obs->HandleObjectPresentNotification( iSessionImpl, ETrue, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleObjectPresentNotification( iSessionImpl, ETrue, iIdArray );      
 	    	break;
         	}
         case EObjectNotifyNotPresent:
         	{
 	    	MMdEObjectPresentObserver* obs = static_cast<MMdEObjectPresentObserver*>( iObserver );
-            obs->HandleObjectPresentNotification( iSessionImpl, EFalse, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleObjectPresentNotification( iSessionImpl, EFalse, iIdArray );       
 	    	break;
         	}
     	
         case ERelationNotifyAdd:
         	{
 	        MMdERelationObserver* obs = static_cast<MMdERelationObserver*>( iObserver );
-            obs->HandleRelationNotification( iSessionImpl, ENotifyAdd, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleRelationNotification( iSessionImpl, ENotifyAdd, iIdArray );           
 	        break;
         	}
         case ERelationNotifyModify:
         	{
 	        MMdERelationObserver* obs = static_cast<MMdERelationObserver*>( iObserver );
-            obs->HandleRelationNotification( iSessionImpl, ENotifyModify, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleRelationNotification( iSessionImpl, ENotifyModify, iIdArray );        
 	        break;
         	}
         case ERelationNotifyRemove:
         	{
 	        MMdERelationObserver* obs = static_cast<MMdERelationObserver*>( iObserver );
-            obs->HandleRelationNotification( iSessionImpl, ENotifyRemove, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleRelationNotification( iSessionImpl, ENotifyRemove, iIdArray );        
 	        break;
         	}
 
         case ERelationNotifyPresent:
         	{
 	    	MMdERelationPresentObserver* obs = static_cast<MMdERelationPresentObserver*>( iObserver );
-            obs->HandleRelationPresentNotification( iSessionImpl, ETrue, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleRelationPresentNotification( iSessionImpl, ETrue, iIdArray );          
 	    	break;
         	}
         case ERelationNotifyNotPresent:
         	{
 	    	MMdERelationPresentObserver* obs = static_cast<MMdERelationPresentObserver*>( iObserver );
-            obs->HandleRelationPresentNotification( iSessionImpl, EFalse, iIdArray );
-            iIdArray.Reset();            
+            obs->HandleRelationPresentNotification( iSessionImpl, EFalse, iIdArray );         
 	    	break;
         	}
         	
@@ -313,22 +303,21 @@ void CMdENotifierAO::DoNotifyObserver()
         	{
         	MMdERelationItemObserver* obs = static_cast<MMdERelationItemObserver*>( iObserver );
             obs->HandleRelationItemNotification( iSessionImpl, ENotifyRemove, iRelationItemArray );
-            iRelationItemArray.Reset();            
+            iRelationItemArray.Reset();
+            iRelationItemArray.Compress();
         	break;
         	}
 
         case EEventNotifyAdd:
         	{
             MMdEEventObserver* obs = static_cast<MMdEEventObserver*>( iObserver );
-            obs->HandleEventNotification( iSessionImpl, ENotifyAdd, iIdArray);
-            iIdArray.Reset();            
+            obs->HandleEventNotification( iSessionImpl, ENotifyAdd, iIdArray);      
             break;
         	}
         case EEventNotifyRemove:
         	{
             MMdEEventObserver* obs = static_cast<MMdEEventObserver*>( iObserver );
-            obs->HandleEventNotification( iSessionImpl, ENotifyRemove, iIdArray);
-            iIdArray.Reset();            
+            obs->HandleEventNotification( iSessionImpl, ENotifyRemove, iIdArray);           
             break;
         	}
     	
@@ -343,6 +332,8 @@ void CMdENotifierAO::DoNotifyObserver()
         	// no observer to call - this should be skipped on server side!
         	break;
         }
+    iIdArray.Reset();
+    iIdArray.Compress();
     }
 
 void CMdENotifierAO::DecodeIdBufferL()
@@ -356,6 +347,7 @@ void CMdENotifierAO::DecodeIdBufferL()
 	__ASSERT_DEBUG( iNamespaceDefId == itemIds.iNamespaceDefId, User::Panic( _L("Incorrect namespaceDef from returned items!"), KErrCorrupt ) );
 
     iDataBuffer->PositionL( itemIds.iObjectIds.iPtr.iOffset );
+    iIdArray.ReserveL( itemIds.iObjectIds.iPtr.iCount );
 	for( TUint32 i = 0; i < itemIds.iObjectIds.iPtr.iCount; ++i )
 		{
 		TItemId id;
@@ -374,12 +366,13 @@ void CMdENotifierAO::DecodeRelationItemBufferL()
     CMdENamespaceDef& namespaceDef = iSessionImpl.GetNamespaceDefL( iNamespaceDefId );
     iDataBuffer->PositionL( items.iRelations.iPtr.iOffset );
     TMdERelation relation;
+    iRelationItemArray.ReserveL( items.iRelations.iPtr.iCount );
     for (TInt i = 0; i < items.iRelations.iPtr.iCount; ++i )
     	{
     	relation.DeSerializeL( *iDataBuffer, namespaceDef );
     	if ( relation.Id() )
     		{
-    		iRelationItemArray.Append( relation );
+    		iRelationItemArray.AppendL( relation );
     		}
     	}
 	}

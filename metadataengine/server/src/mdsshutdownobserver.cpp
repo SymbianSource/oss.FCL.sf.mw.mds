@@ -32,7 +32,7 @@
 // CMDSShutdownObserver::NewL()
 // ---------------------------------------------------------------------------
 //
-CMDSShutdownObserver* CMDSShutdownObserver::NewL( MMDSShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
+EXPORT_C CMDSShutdownObserver* CMDSShutdownObserver::NewL( MMDSShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
     { 
     CMDSShutdownObserver* self = new( ELeave )CMDSShutdownObserver( aObserver/*, aKeyCategory */);
     CleanupStack::PushL( self );

@@ -37,11 +37,6 @@ const TUid KServerUid3 = { 0x0765EEC3 }; // Server UID
 
 _LIT( KMdSServerFilename, "MdSServer" );
 
-#ifdef __WINS__
-static const TUint KServerMinHeapSize = 0x10000;
-static const TUint KServerMaxHeapSize = 0x400000; // ~4 megs
-#endif
-
 // FORWARD DECLARATIONS
 class CMdESessionImpl;
 class CMdESchemaItem;

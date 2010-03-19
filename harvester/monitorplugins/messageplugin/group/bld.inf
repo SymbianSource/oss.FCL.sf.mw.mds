@@ -22,7 +22,7 @@ PRJ_PLATFORMS
 PRJ_EXPORTS
 
 PRJ_MMPFILES
-messagemonitorplugin.mmp
+//messagemonitorplugin.mmp
 
 PRJ_TESTMMPFILES
 

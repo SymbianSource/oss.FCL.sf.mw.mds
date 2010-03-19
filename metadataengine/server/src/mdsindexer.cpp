@@ -41,7 +41,7 @@ void MMdSIndexer::RevertIndex( )
 
 void MMdSIndexer::GetLastItemIdL()
 	{
-	_LIT( KGetLastMaxId, "SELECT max(seq) FROM SQLITE_SEQUENCE WHERE name!='symbian_security';" );
+	_LIT( KGetLastMaxId, "SELECT max(seq) FROM SQLITE_SEQUENCE WHERE name!='symbian_security' LIMIT 1;" );
 	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
 
 	RRowData getData;
@@ -64,27 +64,8 @@ void MMdSIndexer::GetLastItemIdL()
 
 TItemId MMdSIndexer::GetIndexL()
 	{
-	_LIT( KIndexerQuery, "SELECT last_insert_rowid();" );
-
 	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
-
-	RRowData getData;
-	CleanupClosePushL(getData);
-
-	RMdsStatement selectObject;
-	CleanupClosePushL(selectObject);
-
-	TItemId id = KNoId;
-	//Get one row and set first column to id
-	connection.ExecuteQueryL(KIndexerQuery,selectObject,getData);
-	getData.AppendL(TColumn(id));
-	if (connection.NextRowL(selectObject, getData))
-		{
-		getData.Column(0).Get(id);
-		}
-
-	CleanupStack::PopAndDestroy(2, &getData);
-	return id;
+	return connection.LastInsertedRowId();
 	}
 
 TItemId MMdSIndexer::ExecuteAndGetIndexL( const TDesC &aSqlClause,

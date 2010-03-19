@@ -256,7 +256,7 @@ void CMdsSchema::CreateObjectTablesL()
 			{
 			// add base objectdef[number]
 			clause->BufferL().Format( KBaseObjectDefinition, &MdeConstants::Object::KBaseObject, namespaceDefId );
-			TRAP_IGNORE( connection.ExecuteL( clause->ConstBufferL(), emptyRowData ) );			
+			connection.ExecuteL( clause->ConstBufferL(), emptyRowData );			
 
 			// add relations[number]
 			clause->BufferL().Format( KCreateRelationsTable, namespaceDefId );
@@ -320,7 +320,8 @@ void CMdsSchema::CreateObjectTablesL()
 
 			// add updateremovedrelations[number]
             clauseTrigger->ReserveSpaceL( KMdsTriggerUpdateRemovedRelation().Size() + ( KMaxUintValueLength * 5 ) );  
-            clauseTrigger->BufferL().Format( KMdsTriggerUpdateRemovedRelation, namespaceDefId, namespaceDefId, EMdERelationFlagNotPresent | EMdERelationFlagDeleted, EMdERelationFlagNotPresent | EMdERelationFlagDeleted, namespaceDefId );
+            clauseTrigger->BufferL().Format( KMdsTriggerUpdateRemovedRelation, namespaceDefId, namespaceDefId, 
+                    EMdERelationFlagNotPresent | EMdERelationFlagDeleted, EMdERelationFlagNotPresent | EMdERelationFlagDeleted, namespaceDefId );
             connection.ExecuteL( clauseTrigger->ConstBufferL(), emptyRowData );
 
 			// add relationleftobjectidindex[number]
@@ -357,7 +358,7 @@ void CMdsSchema::CreateObjectTablesL()
 				AddObjectToSqlClauseL( objectDef, clause, ETrue );
 
 				clause->AppendL( KMdsSqlClauseObjTableEnd );
-				TRAP_IGNORE( connection.ExecuteL( clause->ConstBufferL(), emptyRowData ) );
+				connection.ExecuteL( clause->ConstBufferL(), emptyRowData );
 
 				objectDef->SetTableStoredInDB();
 				}
@@ -393,6 +394,7 @@ void CMdsSchema::CreatePropertyIndexL( const TDesC& aPropertyName, const TDesC& 
     CleanupClosePushL( emptyRowData );
     clause->BufferL().Format( KMdsPropertyIndexCreate, &aTableName, &aPropertyName, aNamespaceId,
     		&aTableName, aNamespaceId, &aPropertyName );
+    // Ignore possible SQL error, MDS can still live without this index
 	TRAP_IGNORE( connection.ExecuteL( clause->ConstBufferL(), emptyRowData ) );
 	CleanupStack::PopAndDestroy( 2, clause ); // emptyRowData, clause
 	}
@@ -408,9 +410,6 @@ void CMdsSchema::StoreToDBL()
     CreateObjectTablesL();
 	StoreSchemaToDBL();
 	CreateCol2PropTableL();
-
-    transaction.CommitL();
-    CleanupStack::PopAndDestroy( &transaction );
     
     TUint propertyCount = iProperties.Count();
     for ( TUint i = 0; i < propertyCount; ++i )
@@ -419,6 +418,10 @@ void CMdsSchema::StoreToDBL()
     	CreatePropertyIndexL( propertyInfo.iPropertyName, propertyInfo.iTableName,
     			propertyInfo.iNamespaceId );
     	}
+    
+    transaction.CommitL();
+    CleanupStack::PopAndDestroy( &transaction );
+    
     iProperties.Reset();
 	}
 
@@ -564,7 +567,7 @@ void CMdsSchema::StoreNamespacesAndBaseObjectL()
 	for (TUint i = 0; i < KNumClauses; i++)
 		{
 		TRAP( error,connection.ExecuteL( (*descarray)[i], emptyRowData ) );
-		if ( error != KErrNone && error != KSqlErrGeneral )
+		if ( error != KErrNone )
 			{
 			User::Leave( error );
 			}
@@ -574,11 +577,25 @@ void CMdsSchema::StoreNamespacesAndBaseObjectL()
 
 	const TInt count = iNamespaceDefs.Count();
 	
+    RMdSTransaction transaction( connection );
+    CleanupClosePushL(transaction);
+    const TInt beginError( transaction.Error() );
+    if( beginError != KErrNone )
+        {
+        CleanupStack::PopAndDestroy( &transaction );
+        }
+	
 	// add only namespaceDef to DB
 	for( TInt i = 0; i < count; ++i )
 		{
 		iNamespaceDefs[i]->StoreToDBL( ETrue );
 		}
+
+    if( beginError == KErrNone )
+        {
+        transaction.CommitL();
+        CleanupStack::PopAndDestroy( &transaction );
+        }	
 
 	CleanupStack::PopAndDestroy( &emptyRowData );
 	}
@@ -588,6 +605,16 @@ void CMdsSchema::StoreSchemaToDBL()
 	_LIT( KMdsSqlClauseDeleteBoFromOd,  "DELETE FROM ObjectDef WHERE ObjectDefId=?;" );
 	_LIT( KMdsSqlClauseDeleteBoFromPd,  "DELETE FROM PropertyDef WHERE ObjectDefId=?;" );
 
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+
+    RMdSTransaction transaction( connection );
+    CleanupClosePushL(transaction);
+    const TInt beginError( transaction.Error() );
+    if( beginError != KErrNone )
+        {
+        CleanupStack::PopAndDestroy( &transaction );
+        }
+    
 	iBaseObject->StoreToDBL( KNoDefId );
 	
 	const TInt count = iNamespaceDefs.Count();
@@ -598,11 +625,16 @@ void CMdsSchema::StoreSchemaToDBL()
 		iNamespaceDefs[i]->StoreToDBL();
 		}
 
+    if( beginError == KErrNone )
+        {
+        transaction.CommitL();
+        CleanupStack::PopAndDestroy( &transaction );
+        }   
+	
 	RRowData removeBo;
 	CleanupClosePushL( removeBo );
 	removeBo.AppendL( TColumn( KBaseObjectDefId ) );
 
-	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
 	TRAPD( err, connection.ExecuteL( KMdsSqlClauseDeleteBoFromOd,  removeBo ) );
 	TRAP ( err, connection.ExecuteL( KMdsSqlClauseDeleteBoFromPd,  removeBo ) );
 	

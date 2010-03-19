@@ -22,7 +22,7 @@ PRJ_PLATFORMS
 PRJ_EXPORTS
 
 PRJ_MMPFILES
-harvestermessageplugin.mmp
+//harvestermessageplugin.mmp
 
 PRJ_TESTMMPFILES
 

@@ -85,7 +85,7 @@ void CLocationRecord::ConstructL()
     TRAP(err, ReadCenRepValueL(KIntervalKey, interval));
     LOG1("CLocationManagerServer::ConstructL, cenrep interval value:%d", interval);
     
-    if (interval == 0)
+    if (interval == 0 || err != KErrNone )
     	{
         LOG1("CLocationManagerServer::ConstructL, cenrep interval err:%d", err);
     	iInterval = KUpdateInterval;
@@ -93,20 +93,6 @@ void CLocationRecord::ConstructL()
     else 
     	{
     	iInterval = interval * KMillion;
-    	}
-    
-    TInt trailLength( 0 );
-    TRAP(err, ReadCenRepValueL(KTrailLengthKey, trailLength));
-    LOG1("CLocationManagerServer::ConstructL, cenrep trail length value:%d", trailLength);
-    
-    if ( err != KErrNone )
-    	{
-        LOG1("CLocationManagerServer::ConstructL, cenrep trail length err:%d", err);
-    	iBufferSize = KMaxTrailLength / iInterval;
-    	}
-    else
-    	{
-    	iBufferSize = trailLength * KMillion / iInterval;
     	}
 
     TRAP(err, ReadCenRepValueL(KLocationDeltaKey, iLocationDelta));
@@ -124,7 +110,7 @@ void CLocationRecord::ConstructL()
 // CLocationRecord::~CLocationRecord
 // --------------------------------------------------------------------------
 //    
-CLocationRecord::~CLocationRecord()
+EXPORT_C CLocationRecord::~CLocationRecord()
     {
     Stop();
     iProperty.Delete( KPSUidLocationTrail, KLocationTrailState );
@@ -160,6 +146,10 @@ EXPORT_C void CLocationRecord::StartL( RLocationTrail::TTrailCaptureSetting aCap
     iTrailCaptureSetting = aCaptureSetting;
     if ( aCaptureSetting == RLocationTrail::ECaptureAll && !iPositionInfo->IsActive() )
         {
+        if( iState == RLocationTrail::ETrailStopped  )
+            {
+            iTrail.Reset();
+            }
         iPositionInfo->StartL( aCaptureSetting, iInterval );
         }
     else if ( aCaptureSetting == RLocationTrail::ECaptureNetworkInfo )
@@ -222,7 +212,7 @@ EXPORT_C void CLocationRecord::SetStateToStopping()
 //
 EXPORT_C void CLocationRecord::GetLocationByTimeL( const TTime aTime, 
 												   TLocationData& aLocationData,
-                                                   TLocTrailState& aState )
+                                                   TLocTrailState& aState ) __SOFTFP 
     {
     LOG( "CLocationRecord::GetLocationByTimeL(), begin" );
     TInt posFound( EFalse );
@@ -252,7 +242,7 @@ EXPORT_C void CLocationRecord::GetLocationByTimeL( const TTime aTime,
         LOG1( "CLocationRecord::GetLocationByTimeL - timeDiff: %d", timeDiff );
 #endif
 
-        if ( err == KErrNone && timeDiff <= KIntervalSeconds )
+        if ( err == KErrNone && timeDiff <= KMaximumIntervalSeconds )
             {
             // The nearest time is in iTrail[i] or in iTrail[i-1].
             if ( i > 0 )
@@ -327,7 +317,7 @@ EXPORT_C void CLocationRecord::CancelLocationRequest()
 // CLocationRecord::GetNetworkInfo
 // --------------------------------------------------------------------------
 //
-EXPORT_C void CLocationRecord::GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo )
+EXPORT_C void CLocationRecord::GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP 
     {
     LOG("CLocationRecord::GetNetworkInfo");
 
@@ -338,7 +328,7 @@ EXPORT_C void CLocationRecord::GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetw
 // CLocationRecord::SetObserver
 // --------------------------------------------------------------------------
 //
-EXPORT_C void CLocationRecord::SetObserver( MLocationTrailObserver* aObserver)
+EXPORT_C void CLocationRecord::SetObserver( MLocationTrailObserver* aObserver) 
     {
     iObserver = aObserver;
     }
@@ -358,7 +348,7 @@ EXPORT_C void CLocationRecord::SetAddObserver( MLocationAddObserver* aObserver)
 // --------------------------------------------------------------------------
 //    
 void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
-                                const TInt aError  )
+                                const TInt aError  ) __SOFTFP
     {    
     const TPositionSatelliteInfo& positionSatelliteInfo = 
     	static_cast<const TPositionSatelliteInfo&>(aPositionInfo);
@@ -467,7 +457,7 @@ TBool CLocationRecord::CheckGPSFix( const TPositionSatelliteInfo& aSatelliteInfo
 // --------------------------------------------------------------------------
 //    
 void CLocationRecord::NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, 
-		const TInt aError )
+		const TInt aError ) __SOFTFP
     {
     LOG("CLocationRecord::NetworkInfo");
     if ( aError == KErrNone )
@@ -595,7 +585,7 @@ TInt CLocationRecord::UpdateNetworkInfo( TAny* aAny )
 
 
 EXPORT_C void CLocationRecord::CreateLocationObjectL( const TLocationData& aLocationData,
-		const TUint& aObjectId )
+		const TUint& aObjectId ) __SOFTFP
 	{
 	TItemId locationId = DoCreateLocationL( aLocationData );
 	CreateRelationL( aObjectId, locationId );
@@ -802,7 +792,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 	}
 
 	
-TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
+TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData ) __SOFTFP 
 	{
 	LOG("CLocationRecord::DoCreateLocationL - start");
 	TItemId locationObjectId;

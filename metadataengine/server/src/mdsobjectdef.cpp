@@ -243,7 +243,8 @@ void CMdsObjectDef::StoreToDBL( TDefId aNamespaceDefId )
 		rowData.AppendL( TColumn( aNamespaceDefId ) );
 		rowData.AppendL( TColumn( iParent ? iParent->GetId() : KNoDefId ) );
 		rowData.AppendL( TColumn( (TInt32)iFlags ) );
-		rowData.AppendL( TColumn( GetName().AllocL() ) );
+		rowData.AppendL( TColumn( GetName().AllocLC() ) );
+		CleanupStack::Pop(); // name
 
 		TDefId id = MMdSIndexer::ExecuteAndGetIndexL( KMdsSqlClauseAddObjectDef,rowData );
 

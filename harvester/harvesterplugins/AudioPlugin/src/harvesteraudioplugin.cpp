@@ -129,7 +129,6 @@ void CHarvesterAudioPlugin::ConstructL()
     CleanupStack::PopAndDestroy( rep );   
 	
 	iAudioParser = CAudioMDParser::NewL( iHarvestAlbumArt );
-    iAudioParser->ResetL();
     
     if( iHarvestAlbumArt )
         {
@@ -168,7 +167,7 @@ void CHarvesterAudioPlugin::ThumbnailPreviewReady( MThumbnailData& /*aThumbnail*
     }
 
 // ---------------------------------------------------------------------------
-// CHarvesterAudioPlugin::HarvestL (from CHarvesterPlugin)
+// CHarvesterAudioPlugin::ThumbnailReady
 // ---------------------------------------------------------------------------
 //    
 void CHarvesterAudioPlugin::ThumbnailReady( TInt /*aError*/, 
@@ -176,6 +175,25 @@ void CHarvesterAudioPlugin::ThumbnailReady( TInt /*aError*/,
     TThumbnailRequestId /*aId*/ )
     {
     // Pass through, nothing to do
+    }
+
+// ---------------------------------------------------------------------------
+// CHarvesterAudioPlugin::GetMimeType (from CHarvesterPlugin)
+// ---------------------------------------------------------------------------
+//    
+void CHarvesterAudioPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
+    {
+    aMimeType.Zero();
+    
+    const TMimeTypeMapping<TAudioMetadataHandling>* mapping = 
+        iAudioParser->ParseMimeType( aUri );
+
+    if ( !mapping )
+        {
+        return;
+        }
+    
+    aMimeType = mapping->iMimeType;
     }
 
 // ---------------------------------------------------------------------------
@@ -279,7 +297,7 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
     const TMimeTypeMapping<TAudioMetadataHandling>* mapping = 
     	iAudioParser->ParseMimeType( mdeObject.Uri() );
     
-    if ( mapping )
+    if ( mapping && !mdeObject.Placeholder() )
         {
     	if( !iPropDefs )
     		{
@@ -343,17 +361,9 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     
     if ( song.Length() > 0
         && song.Length() < iPropDefs->iTitlePropertyDef->MaxTextLengthL() )
-        {
-        TRAPD( error, CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-        		*iPropDefs->iTitlePropertyDef, &song, aIsAdd ) );
-        if( error != KErrNone )
-            {
-            CMdEProperty* prop = NULL;
-            const TInt index = mdeObject.Property( *iPropDefs->iTitlePropertyDef, prop );
-            mdeObject.RemoveProperty( index );
-            CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-            		*iPropDefs->iTitlePropertyDef, &song, aIsAdd );
-            }
+        {    
+        CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
+        		*iPropDefs->iTitlePropertyDef, &song, EFalse );
         }
 
     if ( artist.Length() > 0

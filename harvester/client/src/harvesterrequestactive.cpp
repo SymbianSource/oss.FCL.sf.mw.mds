@@ -50,7 +50,7 @@ CHarvesterRequestActive::~CHarvesterRequestActive()
 CHarvesterRequestActive* CHarvesterRequestActive::NewL(
         RHarvesterClient& aClient, MHarvestObserver* aObserver,
         TInt aService, const TDesC& aUri, 
-        HBufC8* aAlbumIds, TBool& aAddLocation,
+        HBufC8* aAlbumIds, TBool aAddLocation,
         CHarvesterRequestQueue* aQueue )
     {
     CHarvesterRequestActive* self = new( ELeave )CHarvesterRequestActive( aClient, aObserver,
@@ -65,7 +65,7 @@ CHarvesterRequestActive* CHarvesterRequestActive::NewL(
 //
 CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient,
     MHarvestObserver* aObserver, TInt aService, const TDesC& aUri, 
-    HBufC8* aAlbumIds, TBool& aAddLocation, CHarvesterRequestQueue* aQueue )
+    HBufC8* aAlbumIds, TBool aAddLocation, CHarvesterRequestQueue* aQueue )
     : CActive( CActive::EPriorityStandard ), iClient( aClient ), iObserver( aObserver ), 
     iService( aService ), iUri( aUri ), iAlbumIds( aAlbumIds ), iAddLocation( aAddLocation ),
     iRequestQueue( aQueue ), iLocation( EFalse ), iCancelled( EFalse )

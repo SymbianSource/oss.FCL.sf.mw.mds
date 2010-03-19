@@ -2610,7 +2610,7 @@ void CMdSFindSqlClause::AppendColumnByPropertyDefIdL(TDefId aPropertyDefId,
 				// expected result for property's type
 			    iResultRow.AppendL( TColumn( propDef->GetSqlType() ) );
 
-			    iPropertyFilters.Append( propDef );
+			    iPropertyFilters.AppendL( propDef );
 				}
 			}
 		}

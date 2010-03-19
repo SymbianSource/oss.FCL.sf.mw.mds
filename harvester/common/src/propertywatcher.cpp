@@ -203,7 +203,8 @@ TInt CPropertyWatcher::FindListener( const TUid aPropertyCategory, const TUint a
 	
     TInt listenerIndex ( KErrNotFound );
     
-    for ( TInt i = iListenersArray.Count(); --i >= 0; )
+    const TInt count( iListenersArray.Count() );
+    for ( TInt i = count; --i >= 0; )
     	{
     	CListener& listenerItem = *iListenersArray[i];
     	

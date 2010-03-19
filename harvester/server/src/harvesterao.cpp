@@ -51,7 +51,17 @@ const TInt KObjectDefStrSize = 20;
 _LIT( KTAGDaemonName, "ThumbAGDaemon" );
 _LIT( KTAGDaemonExe, "thumbagdaemon.exe" );
 
+_LIT(KVideo, "Video");
 _LIT(KInUse, "InUse");
+
+_LIT(KUndefinedMime, " ");
+
+_LIT( KExtensionMp4,   "mp4" );
+_LIT( KExtensionMpg4,  "mpg4" );
+_LIT( KExtensionMpeg4, "mpeg4" );
+_LIT( KExtension3gp,   "3gp" );
+_LIT( KExtension3gpp,  "3gpp" );
+_LIT( KExtension3g2,   "3g2" );
 
 CHarvesterAoPropertyDefs::CHarvesterAoPropertyDefs() : CBase()
 	{
@@ -67,6 +77,8 @@ void CHarvesterAoPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iOriginPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KOriginProperty );
+	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
+	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
 	
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
 	iPreinstalledPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KPreinstalledProperty );
@@ -113,7 +125,7 @@ CHarvesterAO* CHarvesterAO::NewL()
 // CHarvesterAO
 // ---------------------------------------------------------------------------
 //
-CHarvesterAO::CHarvesterAO() : CActive( KHarvesterCustomImportantPriority)
+CHarvesterAO::CHarvesterAO() : CActive( KHarvesterCustomImportantPriority )
     {
     WRITELOG( "CHarvesterAO::CHarvesterAO() - begin" );
     
@@ -186,7 +198,8 @@ CHarvesterAO::~CHarvesterAO()
     
     iContainerPHArray.ResetAndDestroy();
     iContainerPHArray.Close();
-	
+    
+	delete iHarvesterOomAO;
     delete iRestoreWatcher;
 	delete iOnDemandAO;
 	delete iMdEHarvesterSession;
@@ -197,6 +210,7 @@ CHarvesterAO::~CHarvesterAO()
 	delete iUnmountHandlerAO;
 	
 	delete iPropDefs;
+	delete iCameraExtensionArray;
 	
 	RMediaIdUtil::ReleaseInstance();
     
@@ -250,6 +264,14 @@ void CHarvesterAO::ConstructL()
     
     iHarvesterPluginFactory = CHarvesterPluginFactory::NewL();
     iHarvesterPluginFactory->SetBlacklist( *iBlacklist );
+    
+    iCameraExtensionArray = new ( ELeave ) CDesCArraySeg( 6 );
+    iCameraExtensionArray->InsertIsqL( KExtensionMp4 );
+    iCameraExtensionArray->InsertIsqL( KExtensionMpg4 );
+    iCameraExtensionArray->InsertIsqL( KExtensionMpeg4 );
+    iCameraExtensionArray->InsertIsqL( KExtension3gp );
+    iCameraExtensionArray->InsertIsqL( KExtension3gpp );
+    iCameraExtensionArray->InsertIsqL( KExtension3g2 );
 	
     WRITELOG( "CHarvesterAO::ConstructL() - end" );
     }
@@ -704,8 +726,12 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 			continue;
 			}
 		TBuf<KObjectDefStrSize> objDefStr;
-		iHarvesterPluginFactory->GetObjectDefL( *hd, objDefStr );
-	    
+		
+		if( !CheckForCameraItem( hd, objDefStr ) )
+		    {
+		    iHarvesterPluginFactory->GetObjectDefL( *hd, objDefStr );
+		    }
+		
 		if( objDefStr.Length() == 0 ||
 		    ( objDefStr == KInUse ) )
 			{
@@ -788,7 +814,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	    
 	    if( !iPropDefs )
 	    	{
-	    	iPropDefs = CHarvesterAoPropertyDefs::NewL( mdeObjectDef );
+	    	iPropDefs = CHarvesterAoPropertyDefs::NewL( defNS.GetObjectDefL( MdeConstants::Object::KBaseObject ) );
 	    	}
 
 	    // set file size
@@ -803,7 +829,30 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	    
     	// set origin
 		mdeObject->AddUint8PropertyL( *iPropDefs->iOriginPropertyDef, hd->Origin() );
-    	
+
+        TBuf<KMaxDataTypeLength> mimeType;
+        iHarvesterPluginFactory->GetMimeType( hd->Uri(), mimeType );
+        if( mimeType.Length() > 0 )
+            {
+            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, mimeType );
+            }
+        else
+            {
+            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KUndefinedMime );
+            }
+		
+	    TPtrC name;
+	    TBool nameFound = MdsUtils::GetName( hd->Uri(), name );
+
+	    if ( nameFound )
+	        {
+	        mdeObject->AddTextPropertyL( *iPropDefs->iTitlePropertyDef, name );
+	        }
+	    else
+	        {
+	        mdeObject->AddTextPropertyL( *iPropDefs->iTitlePropertyDef, KNullDesC );
+	        }
+	    
     	CPlaceholderData* ph = NULL;
     	if( hd->TakeSnapshot() )
     	    {
@@ -1119,7 +1168,6 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
             
             delete aHD;
 			aHD = NULL;
-			return;
             }
         else
             {
@@ -1160,14 +1208,14 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         	{
             WRITELOG( "CHarvesterAO::HandleSessionOpened() - error creating mde harvester session" );
         	}
-        
-        TRAPD( ohTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
-        if ( ohTrap != KErrNone )
+
+#ifdef _DEBUG        
+        TRAP( errorTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
+        if ( errorTrap != KErrNone )
                 {
                 WRITELOG( "CHarvesterAO::HandleSessionOpened() - ObjectHandler creation failed" );
                 }
         
-#ifdef _DEBUG
         TRAP( errorTrap, PreallocateNamespaceL( aSession.GetDefaultNamespaceDefL() ) );
         if ( errorTrap != KErrNone )
             {
@@ -1187,12 +1235,12 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
             WRITELOG( "CHarvesterAO::HandleSessionOpened() - couldn't start composer plugins" );
             }
 #else
-        // The idea here is that all of these three methods needs to be called,
-        // even if some leave, thus the three TRAPs
+        // The idea here is that all of these  methods needs to be called,
+        // even if some leave, thus the several TRAPs
+        TRAP_IGNORE( iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
         TRAP_IGNORE( PreallocateNamespaceL( aSession.GetDefaultNamespaceDefL() ) );
         TRAP_IGNORE( LoadMonitorPluginsL() );
-        TRAP_IGNORE( StartComposersL() );
-        
+        TRAP_IGNORE( StartComposersL() );        
 #endif
 
         if ( iContextEngineInitialized )
@@ -1220,6 +1268,7 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
     	
         // Initializing pause indicator
         iServerPaused = EFalse;
+		
 #ifdef _DEBUG
         WRITELOG( "HarvesterThread::HandleSessionOpened() - Succeeded!" );
         
@@ -1386,7 +1435,6 @@ void CHarvesterAO::RunL()
             // no more items to harvest
             else
                 {
-                
                 // if container files to harvest, handle those
                 if( iContainerPHArray.Count() > 0 )
                 	{
@@ -1394,12 +1442,12 @@ void CHarvesterAO::RunL()
                 	break;
                 	}
                 
-				if(iReadyPHArray.Count() > 0)
+                const TInt arrayCount( iReadyPHArray.Count() );
+				if( arrayCount > 0 )
             		{
 #ifdef _DEBUG
-            		WRITELOG1("CHarvesterAO::RunL - items in ready pharray: %d", iReadyPHArray.Count() );
+            		WRITELOG1("CHarvesterAO::RunL - items in ready pharray: %d", arrayCount );
 #endif   		
-            		const TInt arrayCount( iReadyPHArray.Count() );
             		TInt endIndex( KPlaceholderQueueSize );
             		if( arrayCount < KPlaceholderQueueSize )
             		    {
@@ -1721,7 +1769,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
     
     CHarvesterData* hd = NULL;
     TRAP( err, hd = CHarvesterData::NewL( uri ) );
-    if ( err != KErrNone )
+    if ( err != KErrNone || !hd )
         {
         WRITELOG( "CHarvesterAO::HarvestFile - creating harvUri failed" );
         albumIds.Close();
@@ -1752,7 +1800,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         WRITELOG( "CHarvesterAO::HarvestFile - creating clientData failed" );
         }
 
-    if( iQueue && hd )
+    if( iQueue )
         {
         iQueue->Append( hd );
         
@@ -1764,6 +1812,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         }
     else
         {
+        delete hd;
         err = KErrUnknown;
         }
     
@@ -1897,7 +1946,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     
     CHarvesterData* hd = NULL;
     TRAP( err, hd = CHarvesterData::NewL( uri ) );
-    if ( err != KErrNone )
+    if ( err != KErrNone || !hd )
         {
         WRITELOG( "CHarvesterAO::HarvestFileWithUID - creating harvUri failed" );
         albumIds.Close();
@@ -1928,7 +1977,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
         WRITELOG( "CHarvesterAO::HarvestFileWithUID - creating clientData failed" );
         }
 
-    if( iQueue && hd )
+    if( iQueue )
     	{
     	iQueue->Append( hd );
 
@@ -1940,6 +1989,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     	}
     else
         {
+        delete hd;
         err = KErrUnknown;
         }
 
@@ -2158,13 +2208,21 @@ void CHarvesterAO::ContextSnapshotStatus( CHarvesterData* aHD )
     HarvestCompleted( aHD->ClientId(), aHD->Uri(), aHD->ErrorCode() );
 
     const TInt errorCode = aHD->ErrorCode();
-    if( errorCode != KErrNone )
+    if( errorCode != KErrNone && errorCode != KErrCompletion )
     	{
         WRITELOG1( "CHarvesterAO::ContextSnapshotStatus() - error occurred: %d", errorCode );    	
     	}
     else
     	{
-        WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - successfully completed" );
+        if( errorCode == KErrCompletion )
+            {
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - snapshot could not be completed" );
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - processing non-context data anyway" );   
+            }
+        else
+            {
+            WRITELOG( "CHarvesterAO::ContextSnapshotStatus() - successfully completed" );
+            }
         if( aHD->Origin() == MdeConstants::Object::ECamera )
         	{
             aHD->MdeObject().SetPlaceholder( EFalse );
@@ -2252,7 +2310,11 @@ void CHarvesterAO::BootPartialRestoreScanL()
 	{
 	// check if partial restore was done before last boot
 	TBool partialRestore = iRestoreWatcher->Register();
-		
+	
+#ifdef __WINSCW__
+	partialRestore = ETrue;
+#endif
+	
 	if ( !partialRestore )
 		{
 		return;
@@ -2592,4 +2654,23 @@ void CHarvesterAO::MemoryGood()
 	
 	TRAP_IGNORE( ResumeHarvesterL() );
 	}
+
+TBool CHarvesterAO::CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef )
+    {
+    if( aHd->Origin() == MdeConstants::Object::ECamera )
+        {
+        TPtrC ext;
+        if( !MdsUtils::GetExt( aHd->Uri(), ext ) )
+            {
+            return EFalse;
+            }
+        TInt pos( 0 );
+        if( iCameraExtensionArray->FindIsq( ext, pos ) == 0 ) // video extension matched
+            {
+            aObjectDef.Copy( KVideo );
+            return ETrue;
+            }
+        }
+    return EFalse;
+    }
 

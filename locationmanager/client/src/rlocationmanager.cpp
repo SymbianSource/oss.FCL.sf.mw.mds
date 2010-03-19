@@ -117,9 +117,10 @@ EXPORT_C void RLocationManager::Close()
 //      
 TVersion RLocationManager::Version() const
     {
-    return TVersion( KLocationManagerServerMajor, 
-                     KLocationManagerServerMinor, 
-                     KLocationManagerServerBuild );
+    TVersion version( KLocationManagerServerMajor, 
+                              KLocationManagerServerMinor, 
+                              KLocationManagerServerBuild );
+    return version;
     }
 
 // --------------------------------------------------------------------------

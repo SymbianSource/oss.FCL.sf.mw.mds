@@ -117,6 +117,10 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
 		/** */
 		void GetObjectType( const TDesC& aUri, TDes& aObjectType );
 		
+    protected: // from CHarvesterPlugin
+        
+        void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+	
 	private:
 		/**
 		* C++ constructor - not exported;

@@ -129,6 +129,10 @@ class CHarvesterImagePlugin : public CHarvesterPlugin
 		*/
 		void HarvestL( CHarvesterData* aHD );
 
+	protected:
+		
+	      void GetMimeType( const TDesC& aUri, TDes& aMimeType );
+		
 	private:
 	    /**
 	     * The method that actually extracts the metadata.

@@ -747,14 +747,16 @@ void CBlacklistServer::CommitBufferedItemsL()
     WRITELOG( "CBlacklistServer::CommitBufferedItemsL - begin" );
    
     // First, removed items
-    for ( TInt i( 0 ); i < iBufferedRemoveItems.Count(); ++i )
+    const TInt removedCount( iBufferedRemoveItems.Count() );
+    for ( TInt i( 0 ); i < removedCount; ++i )
         {
         iSqLiteConnection->ExecuteL( KMdsBlacklistDelete, *iBufferedRemoveItems[i] );
         iBufferedRemoveItems[i]->Column( 0 ).Free();      
         }
    
     // Second, added items
-    for ( TInt i( 0 ); i < iBufferedAddedItems.Count(); ++i )
+    const TInt addedCount( iBufferedAddedItems.Count() );
+    for ( TInt i( 0 ); i < addedCount; ++i )
         {
         iSqLiteConnection->ExecuteL( KMdsBlacklistUpdate, *iBufferedAddedItems[i] );
         iBufferedAddedItems[i]->Column( 0 ).Free();  

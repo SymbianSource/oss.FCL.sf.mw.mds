@@ -28,7 +28,7 @@
 CMdEQuery::CMdEQuery(TQueryType aType, CMdESession& aSession, CMdENamespaceDef& aNamespaceDef)
         : iQueryId( 0 ), iSession(aSession), iNamespaceDef(aNamespaceDef), iType(aType), 
           iResultMode(EQueryResultModeItem), iState(EStateNew), iError(KErrNone), 
-          iObjectResult(NULL), iCountResult(0), iDistinctResults(NULL)
+          iObjectResult(NULL), iCountResult(0), iDistinctResults(NULL), iDestroyed(EFalse)
     {
     }
 
@@ -41,6 +41,7 @@ void CMdEQuery::QueryConstructL()
 
 CMdEQuery::~CMdEQuery()
 	{
+    iDestroyed = ETrue;
 	Cancel();
   
     // This will destroy the entire conditions tree.
@@ -204,7 +205,10 @@ EXPORT_C void CMdEQuery::Cancel()
     if( incomplete || IsComplete() == EFalse )
     	{
     	iState = EStateError;
-    	NotifyCompleted( KErrCancel );
+    	if( !iDestroyed )
+    	    {
+            NotifyCompleted( KErrCancel );
+    	    }
     	}
     }
 
@@ -538,11 +542,14 @@ void CMdEQuery::NotifyCompleted(TInt aError)
 
     // Update the latest error code.
     iError = aError;
-	for (TInt i = iObservers.Count() - 1; i >= 0; --i)
-		{
-		MMdEQueryObserver* observer = iObservers[i];
-		observer->HandleQueryCompleted(*this, aError);
-		}
+    for (TInt i = iObservers.Count() - 1; i >= 0; --i)
+        {
+        MMdEQueryObserver* observer = iObservers[i];
+        if( observer )
+            {
+            observer->HandleQueryCompleted(*this, aError);
+            }
+        }
     }
 
 

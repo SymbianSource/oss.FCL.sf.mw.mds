@@ -16,6 +16,10 @@
 
 #include <driveinfo.h>
 
+#ifdef __WINSCW__
+#include <pathinfo.h>
+#endif
+
 #include <placeholderdata.h>
 #include "mmcmounttaskao.h"
 #include "mmcmonitorplugin.h"
@@ -56,7 +60,7 @@ void CMMCMountTaskAO::ConstructL()
 	}
 
 CMMCMountTaskAO::CMMCMountTaskAO() :
-		CActive( KHarvesterCustomImportantPriority )
+		CActive( KHarvesterPriorityMonitorPlugin )
 	{
 	WRITELOG( "CMMCMountTaskAO::CMMCMountTaskAO" );
 	}
@@ -68,6 +72,8 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 	iFs.Close();
 	
 	iMountDataQueue.ResetAndDestroy();
+	iEntryArray.ResetAndDestroy();
+	iHarvestEntryArray.ResetAndDestroy();
 	
 	delete iMdeSession;
   
@@ -182,6 +188,7 @@ void CMMCMountTaskAO::RunL()
 				}
 			else
 				{
+			    SetPriority( KHarvesterCustomImportantPriority );
 				SetNextRequest( ERequestIdle );
 				iMountDataQueue.Compress();
 				}
@@ -281,7 +288,7 @@ void CMMCMountTaskAO::RunL()
 						}
 					Deinitialize();
 					SetNextRequest( ERequestStartTask );
-					return;
+					break;
 					}
 				
 	            if ( iEntryArray.Count() > 0 )
@@ -342,6 +349,7 @@ void CMMCMountTaskAO::RunL()
 			WRITELOG( "CMMCMountTaskAO::RunL - ERequestCleanup" );
 			TBool present = (iMountData->iMountType == TMountData::EMount);
 			iMdeSession->SetMediaL( iMountData->iMediaID, iMountData->iDrivePath[0], present );
+			SetPriority( KHarvesterCustomImportantPriority );
 			Deinitialize();
 			SetNextRequest( ERequestStartTask );
 			}
@@ -522,12 +530,26 @@ TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
     	{
     	return 0;
     	}
+ 
+#ifdef __WINSCW__
+    TFileName systemPath = PathInfo::GetPath( PathInfo::EPhoneMemoryRootPath );
+    TInt systemDriveNum( -1 );
+    iFs.CharToDrive( systemPath[0], systemDriveNum );
+#endif
     
 	TUint32 hdMediaId = 0;
 	TInt i( 0 );
 
-	for ( i = 0; i < driveList.Length(); i++ )
+	const TInt acount = driveList.Length();
+	for ( i = 0; i < acount; i++ )
 		{
+#ifdef __WINSCW__
+        if ( i == systemDriveNum )
+            {
+            continue;
+            }
+#endif
+	
 	    if ( driveList[i] > 0 )
 	    	{
 	    	iFs.Drive( driveInfo, i );

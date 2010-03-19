@@ -101,6 +101,21 @@ void CObjectDataArray::Remove( TInt aIndex )
     iMdeObjectArray.Remove( aIndex );
     iLocationArray.Remove( aIndex );
     iQueryArray.Remove( aIndex );
+    
+    if( iMdeObjectArray.Count() == 0 )
+        {
+        iMdeObjectArray.Compress();
+        }
+
+    if( iLocationArray.Count() == 0 )
+        {
+        iLocationArray.Compress();
+        }
+
+    if( iQueryArray.Count() == 0 )
+        {
+        iQueryArray.Compress();
+        }    
     }
 
 // ---------------------------------------------------------------------------

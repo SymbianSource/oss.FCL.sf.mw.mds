@@ -54,13 +54,13 @@ public:
     /**
      * This method is used to notify about location trail state changes.
      */
-    virtual void LocationTrailStateChange() = 0;
+    virtual void LocationTrailStateChange() __SOFTFP = 0;
     
     virtual void CurrentLocation( const TPositionSatelliteInfo& aSatelliteInfo, 
     							  const CTelephony::TNetworkInfoV1& aNetworkInfo,
-                                  const TInt aError ) = 0;
+                                  const TInt aError ) __SOFTFP = 0;
     
-    virtual void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) = 0;
+    virtual void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP = 0;
     };
 
 /**
@@ -81,7 +81,7 @@ public:
 	 * This method is used to notify about new locations added to location trail
 	 */
 	virtual void LocationAdded( const TLocationTrailItem& aTrailItem, 
-								const TPositionSatelliteInfo& aSatellites ) = 0;
+								const TPositionSatelliteInfo& aSatellites ) __SOFTFP = 0;
 	};    
 
 /**
@@ -147,7 +147,7 @@ public:
     								  TLocationData& aLocationData,
                                       /*TLocality& aPosition,
                                       CTelephony::TNetworkInfoV1& aNetworkInfo,*/
-                                      TLocTrailState& aState );
+                                      TLocTrailState& aState ) __SOFTFP;
 
     /**
      * Request location info. The result is returned by calllback method.
@@ -171,7 +171,7 @@ public:
      * @param aCellId, Network cell is written into this param.
      * @return None.
      */
-    IMPORT_C void GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo );
+    IMPORT_C void GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP;
     
     /**
      * Set observer for notifying state changes.
@@ -189,11 +189,11 @@ public:
     static TInt UpdateNetworkInfo( TAny* aAny );
     
     IMPORT_C void CreateLocationObjectL( const TLocationData& aLocationData,
-    		const TUint& aObjectId );
+    		const TUint& aObjectId ) __SOFTFP;
     
     IMPORT_C void LocationSnapshotL( const TUint& aObjectId );
     
-    TItemId DoCreateLocationL( const TLocationData& aLocationData );
+    TItemId DoCreateLocationL( const TLocationData& aLocationData ) __SOFTFP;
     
     TItemId CreateRelationL( const TUint& aObjectId, const TUint& aLocationId );
     
@@ -212,7 +212,7 @@ public: // from MNetworkInfoObserver.
      * @param 
      * @return 
      */
-    void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, TInt aError );
+    void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, TInt aError ) __SOFTFP;
     
 public: // from MPositionInfoObserver    
     /**
@@ -221,7 +221,7 @@ public: // from MPositionInfoObserver
      * @param 
      * @return  
      */
-    void Position( const TPositionInfo& aPositionInfo, const TInt aError );
+    void Position( const TPositionInfo& aPositionInfo, const TInt aError ) __SOFTFP;
     
     
 public: // From MMdEQueryObserver
@@ -339,11 +339,6 @@ private:
      * Interval value for location trail
      */
     TInt iInterval;
-    
-    /**
-     * Buffer size for tracklog
-     */ 
-    TInt iBufferSize;
     
     TBool                  iRequestCurrentLoc;
     TBool                  iTrailStarted;

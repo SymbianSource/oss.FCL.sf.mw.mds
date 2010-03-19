@@ -114,11 +114,11 @@ EXPORT_C TInt RHarvesterClient::Connect()
 #ifdef _DEBUG
     if ( err != KErrNone )
         {
-        WRITELOG( "RHarvesterClient::Connect() - Server is not running or could not be started" );
+        WRITELOG1( "RHarvesterClient::Connect() - Server is not running or could not be started, error &d", err );
         }
     else
         {
-        WRITELOG1( "RHarvesterClient::Connect() - no errors: %d", err );
+        WRITELOG( "RHarvesterClient::Connect() - no errors" );
         }
     WRITELOG( "RHarvesterClient::Connect() - end" );
 #endif
@@ -463,8 +463,9 @@ TVersion RHarvesterClient::Version() const
     {
     WRITELOG( "RHarvesterClient::Version()" );
         
-    return TVersion( KHarvesterServerMajorVersion, KHarvesterServerMinorVersion,
-    	KHarvesterServerBuildVersion );
+    TVersion version( KHarvesterServerMajorVersion, KHarvesterServerMinorVersion,
+                              KHarvesterServerBuildVersion );
+    return version;
     }
 
 // ----------------------------------------------------------------------------------------
@@ -486,10 +487,19 @@ static TInt StartServer()
         // Server already running
         return KErrNone;
         }
+#ifdef _DEBUG
     else
         {
-        WRITELOG1( "StartServer() error - error code: %d", result );
+        if( result == KErrNotFound )
+            {
+            WRITELOG( "StartServer() - server not found running" );
+            }
+        else
+            {
+            WRITELOG1( "StartServer() error - error code: %d", result );
+            }
         }
+#endif
     
     result = CreateServerProcess();
     if ( result != KErrNone )

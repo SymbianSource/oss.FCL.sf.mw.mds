@@ -131,7 +131,8 @@ void CContextEngineAO::SetMdeSession( CMdESession* aSession )
     {
     iMdESession = aSession;
 
-    for ( TInt i = 0; i < iPlugins.Count(); ++i )
+    const TInt count( iPlugins.Count() );
+    for ( TInt i = 0; i < count; ++i )
         {
         iPlugins[i]->SetMdeSession( *aSession );
         }

@@ -366,4 +366,5 @@ EXPORTS
 	_ZN19CMdEObjectCondition18SetPlaceholderOnlyEi @ 365 NONAME
 	_ZNK19CMdEObjectCondition15PlaceholderOnlyEv @ 366 NONAME
 	_ZN20CMdEHarvesterSession23CheckMassStorageMediaIdEm @ 367 NONAME
+	_ZNK13CMdEObjectDef2IdEv @ 368 NONAME
 

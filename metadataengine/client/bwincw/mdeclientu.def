@@ -295,4 +295,5 @@ EXPORTS
 	?PlaceholderOnly@CMdEObjectCondition@@QBEHXZ @ 294 NONAME ; int CMdEObjectCondition::PlaceholderOnly(void) const
 	?SetPlaceholderOnly@CMdEObjectCondition@@QAEXH@Z @ 295 NONAME ; void CMdEObjectCondition::SetPlaceholderOnly(int)
 	?CheckMassStorageMediaId@CMdEHarvesterSession@@QAEXK@Z @ 296 NONAME ; void CMdEHarvesterSession::CheckMassStorageMediaId(unsigned long)
+	?Id@CMdEObjectDef@@QBEKXZ @ 297 NONAME ; unsigned long CMdEObjectDef::Id(void) const
 
