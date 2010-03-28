@@ -75,7 +75,7 @@ public:
     @param aPropertyCategory observed key's category.       
     @param aKey observed key.
     */
-	void CBackupSubscriber::NotifyKeyAndStatusL( 
+	void NotifyKeyAndStatusL( 
 		const TInt aKeyValue,
 		TRequestStatus& aStatus,
 		const TUid aPropertyCategory,

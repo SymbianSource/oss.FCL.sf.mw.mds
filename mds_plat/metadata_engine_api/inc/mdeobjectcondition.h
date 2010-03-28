@@ -232,7 +232,7 @@ private:
      * @param aString         Text string to look for.
      * @param aObjectIds      object IDs to look for.
      */
-    void CMdEObjectCondition::ConstructL( const RArray<TItemId>* aObjectIds,
+    void ConstructL( const RArray<TItemId>* aObjectIds,
     		const TDesC* aString, const TMdEUintRange* aRange );
 
 private:
