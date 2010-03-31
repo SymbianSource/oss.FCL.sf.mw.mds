@@ -100,7 +100,7 @@ class CMdSNotifier : public CBase
 				*	Return the id of this entry
 				*	@return The id
 				*/
-				TInt Id()
+				TInt Id() const
 					{
 					return iId;
 					}
@@ -355,7 +355,11 @@ class CMdSNotifier : public CBase
 		void NotifySchemaAddedL();
 		
 		TBool CheckForNotifier( TUint32 aNotifyTypes );
-	
+
+    private:
+		
+		static TInt Compare( const TEntry& aFirst, const TEntry& aSecond );
+		
 	private: // data members
 
         /** the entry array */

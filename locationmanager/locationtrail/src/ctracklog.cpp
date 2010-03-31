@@ -137,7 +137,7 @@ EXPORT_C void CTrackLog::CancelRecording()
 	}
 
 void CTrackLog::LocationAdded( const TLocationTrailItem& aTrailItem, 
-							   const TPositionSatelliteInfo& aSatellites ) __SOFTFP
+							   const TPositionSatelliteInfo& aSatellites )
 	{
 	LOG("CTrackLog::LocationAdded start");
 
@@ -230,8 +230,8 @@ void CTrackLog::WriteBufferToFileL()
 			{
 			User::Leave( err );
 			}
-		writer << I64LOW( iTagId );
-		writer << I64HIGH( iTagId ); // Causes compiler warning due to misinterpretation by compiler parser
+		writer << I64LOW( static_cast<TUint64>(iTagId) );
+		writer << I64HIGH( static_cast<TUint64>(iTagId) );
 		}
 	else 
 		{

@@ -54,6 +54,7 @@ class CHarvesterAudioPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iCopyrightPropertyDef;
 		CMdEPropertyDef* iThumbnailPropertyDef;
 		CMdEPropertyDef* iDatePropertyDef;
+		CMdEPropertyDef* iDrmPropertyDef;
 
 		// Audio property definitions
 		CMdEPropertyDef* iAlbumPropertyDef;

@@ -58,6 +58,7 @@ class CDRMHarvestData : public CBase
         TBuf<KMaxDataTypeLength> iDescription;
         TBuf<KMaxDataTypeLength> iTitle;
         TBuf<KMaxDataTypeLength> iAuthor;
+        TBuf<KMaxDataTypeLength> iGenre;
         TInt64 iFileSize;
         TTime iModified;
         TBool iDrmProtected;
@@ -81,6 +82,7 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iDrmPropertyDef;
 		CMdEPropertyDef* iDescriptionPropertyDef;
 		CMdEPropertyDef* iAuthorPropertyDef;
+		CMdEPropertyDef* iGenrePropertyDef;
 	
 	private:
 		CHarvesterOmaDrmPluginPropertyDefs();

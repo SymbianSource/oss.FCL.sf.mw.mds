@@ -272,33 +272,38 @@ void CLocationRemappingAO::RemapObjectsL()
 	for (TInt i = 0; i < count; i++)
 		{
 		CMdEObject* location = iMdEClient->OpenObjectL(iObjectIds[i], *iObjLocationDef);
-		CleanupStack::PushL( location );
 		
-		if (location->PropertyCount(*iPropLatDef) == 0)
-			{
-			location->AddReal64PropertyL(*iPropLatDef, iLocationData.iPosition.Latitude());
-			LOG( "CLocationRemappingAO::RemapObjects - wrote latitude" );
-			}
-		if (location->PropertyCount(*iPropLongDef) == 0)
-			{
-			location->AddReal64PropertyL(*iPropLongDef, iLocationData.iPosition.Longitude());
-			LOG( "CLocationRemappingAO::RemapObjects - wrote longitude" );
-			}
-		if (location->PropertyCount(*iPropAltDef) == 0)
-			{
-			location->AddReal64PropertyL(*iPropAltDef, iLocationData.iPosition.Altitude());
-			LOG( "CLocationRemappingAO::RemapObjects - wrote altitude" );
-			}
-		CMdEProperty* modProp = NULL;
-		location->Property( *iPropModifiedDef, modProp, 0 );
-		if ( modProp )
-			{
-			TTime timestamp( 0 );
-			timestamp.UniversalTime();
-			modProp->SetTimeValueL( timestamp );
-			}
-		iObjects.AppendL(location);
-		CleanupStack::Pop( location );
+		if(location)
+		    {
+            CleanupStack::PushL( location );
+		
+            if (location->PropertyCount(*iPropLatDef) == 0)
+                {
+                location->AddReal64PropertyL(*iPropLatDef, iLocationData.iPosition.Latitude());
+                LOG( "CLocationRemappingAO::RemapObjects - wrote latitude" );
+                }
+            if (location->PropertyCount(*iPropLongDef) == 0)
+                {
+                location->AddReal64PropertyL(*iPropLongDef, iLocationData.iPosition.Longitude());
+                LOG( "CLocationRemappingAO::RemapObjects - wrote longitude" );
+                }
+            if (location->PropertyCount(*iPropAltDef) == 0)
+                {
+                location->AddReal64PropertyL(*iPropAltDef, iLocationData.iPosition.Altitude());
+                LOG( "CLocationRemappingAO::RemapObjects - wrote altitude" );
+                }
+            CMdEProperty* modProp = NULL;
+            location->Property( *iPropModifiedDef, modProp, 0 );
+            if ( modProp )
+                {
+                TTime timestamp( 0 );
+                timestamp.UniversalTime();
+                modProp->SetTimeValueL( timestamp );
+                }
+            iObjects.AppendL(location);
+            CleanupStack::Pop( location );
+            
+          }
 		}
 	count = iRemapItems.Count();
 	LOG1("CLocationRemappingAO::RemapObjectsL - updating relations, count:%d", count);
@@ -308,12 +313,16 @@ void CLocationRemappingAO::RemapObjectsL()
 		CMdERelation* relation = NULL;
 		relation = iMdEClient->GetRelationL( iRemapItems[i].iRelationId );
 		
-    	TTime timestamp( 0 );
-    	timestamp.UniversalTime();
-    	relation->SetLastModifiedDate( timestamp );
+		if(relation)
+		    {   
+            TTime timestamp( 0 );
+            timestamp.UniversalTime();
+            relation->SetLastModifiedDate( timestamp );
     	
-    	iMdEClient->UpdateRelationL( *relation );
+            iMdEClient->UpdateRelationL( *relation );
+		    }
 		}
+	
 	LOG("CLocationRemappingAO::RemapObjectsL - relations updated");
 	
 	iObjectIds.Reset();

@@ -549,21 +549,23 @@ TBool CMdSServer::BackupOrRestoreRunning() const
 	{
 	return iBackupOrRestoreRunning;
 	}
-    
+  
+TBool CMdSServer::ShutdownInProgress() const
+    {
+    return iShutdown;
+    }
+
 // -----------------------------------------------------------------------------
 // CMdSServer::ShutdownNotification
 // -----------------------------------------------------------------------------
 //
 void CMdSServer::ShutdownNotification()
     {
-
-    
     if (!iShutdown)
         {    
         CActiveScheduler::Stop();
         iShutdown = ETrue;
         }
-    
     }
 
 // -----------------------------------------------------------------------------

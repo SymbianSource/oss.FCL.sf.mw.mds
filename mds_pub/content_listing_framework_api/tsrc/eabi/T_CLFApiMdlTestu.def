@@ -1,5 +1,0 @@
-EXPORTS
-	_Z16CreateTestSuiteLv @ 1 NONAME
-	_ZTI19T_CLFApiModuleTests @ 2 NONAME ; #<TI>#
-	_ZTV19T_CLFApiModuleTests @ 3 NONAME ; #<VT>#
-

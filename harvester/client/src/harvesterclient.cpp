@@ -261,9 +261,13 @@ EXPORT_C TInt RHarvesterClient::AddHarvesterEventObserver(
 //
 EXPORT_C TInt RHarvesterClient::RemoveHarvesterEventObserver( MHarvesterEventObserver& aHarvesterEventObserver )
 	{
-	TRAPD( err, iHEO->RemoveHarvesterEventObserverL( aHarvesterEventObserver ) );
+    if( iHEO )
+          {
+          TRAPD( err, iHEO->RemoveHarvesterEventObserverL( aHarvesterEventObserver ) );
+          return err;
+          }
 	
-	return err;
+	return KErrNone;
 	}
 
 // ----------------------------------------------------------------------------------------

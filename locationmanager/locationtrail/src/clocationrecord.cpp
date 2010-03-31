@@ -212,7 +212,7 @@ EXPORT_C void CLocationRecord::SetStateToStopping()
 //
 EXPORT_C void CLocationRecord::GetLocationByTimeL( const TTime aTime, 
 												   TLocationData& aLocationData,
-                                                   TLocTrailState& aState ) __SOFTFP 
+                                                   TLocTrailState& aState ) 
     {
     LOG( "CLocationRecord::GetLocationByTimeL(), begin" );
     TInt posFound( EFalse );
@@ -317,7 +317,7 @@ EXPORT_C void CLocationRecord::CancelLocationRequest()
 // CLocationRecord::GetNetworkInfo
 // --------------------------------------------------------------------------
 //
-EXPORT_C void CLocationRecord::GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP 
+EXPORT_C void CLocationRecord::GetNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) 
     {
     LOG("CLocationRecord::GetNetworkInfo");
 
@@ -348,7 +348,7 @@ EXPORT_C void CLocationRecord::SetAddObserver( MLocationAddObserver* aObserver)
 // --------------------------------------------------------------------------
 //    
 void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
-                                const TInt aError  ) __SOFTFP
+                                const TInt aError  )
     {    
     const TPositionSatelliteInfo& positionSatelliteInfo = 
     	static_cast<const TPositionSatelliteInfo&>(aPositionInfo);
@@ -464,7 +464,7 @@ TBool CLocationRecord::CheckGPSFix( const TPositionSatelliteInfo& aSatelliteInfo
 // --------------------------------------------------------------------------
 //    
 void CLocationRecord::NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, 
-		const TInt aError ) __SOFTFP
+		const TInt aError )
     {
     LOG("CLocationRecord::NetworkInfo");
     if ( aError == KErrNone )
@@ -592,7 +592,7 @@ TInt CLocationRecord::UpdateNetworkInfo( TAny* aAny )
 
 
 EXPORT_C void CLocationRecord::CreateLocationObjectL( const TLocationData& aLocationData,
-		const TUint& aObjectId ) __SOFTFP
+		const TUint& aObjectId )
 	{
 	TItemId locationId = DoCreateLocationL( aLocationData );
 	CreateRelationL( aObjectId, locationId );
@@ -799,7 +799,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 	}
 
 	
-TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData ) __SOFTFP 
+TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData ) 
 	{
 	LOG("CLocationRecord::DoCreateLocationL - start");
 	TItemId locationObjectId;

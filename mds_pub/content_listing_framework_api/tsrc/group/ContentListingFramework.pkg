@@ -19,7 +19,7 @@
 &EN
 
 ; Header
-#{"ContentListingFrameworkAPItest"},(0x1000af59),1,0,1,TYPE=SA
+#{"ContentListingFrameworkTest"},(0x1000af59),1,0,1,TYPE=SA
 
 ; Localised Vendor name
 %{"Nokia-EN"}
@@ -28,5 +28,7 @@
 :"Nokia"
 
 ; Files
-"\epoc32\release\armv5\urel\T_CLFApiMdlTest.dll"      -"C:\sys\bin\T_CLFApiMdlTest.dll"
-
+"\epoc32\release\armv5\urel\ContentListingFrameworkTest.dll"      -"C:\sys\bin\ContentListingFrameworkTest.dll"
+"..\init\ContentListingFrameworkTest.ini"      -"C:\testframework\ContentListingFrameworkTest.ini"
+"..\conf\ContentListingFrameworkTest.cfg"      -"C:\testframework\ContentListingFrameworkTest.cfg"
+"\epoc32\data\z\resource\ContentListingFrameworkTest.rsc"	-"!:\resource\ContentListingFrameworkTest.rsc"

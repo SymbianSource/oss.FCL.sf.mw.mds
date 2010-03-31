@@ -41,6 +41,8 @@ const TDefId KBaseObjectDefId = 1;
 
 const TUint32 KBaseObjectBasicValueColumnOffset = 8;
 
+const TItemId KSystemFavouritesAlbumId = 1;
+
 const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
 

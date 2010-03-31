@@ -115,6 +115,12 @@ void CMdSServerSession::ServiceL( const RMessage2& aMessage )
 		return;
 		}
 
+    if( iServer.ShutdownInProgress() )
+        {
+        aMessage.Complete( KErrServerTerminated );
+        return;
+        }
+	
     TRAPD( err, ServiceFunctionL( aMessage ) );
     if( err != KErrNone )
         {
@@ -951,30 +957,42 @@ void CMdSServerSession::ListenL( const RMessage2& aMsg )
 
     CMdSNotifier::TEntry& entry = iServer.Notifier().FindEntryL( notifierId );
     entry.SetupForCallback( aMsg, 1 );
+
+    const TInt entryId = entry.Id();    
+
+    TInt low( 0 );
+    TInt high( iNotificationCache.Count() );
     
-	const TInt count = iNotificationCache.Count();
-	for( TInt i = 0; i < count; ++i )
-		{
-		const TInt notificationCacheId = iNotificationCache[i]->iId;
-		const TInt entryId = entry.Id();
+    while( low < high )
+        {
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( entryId - iNotificationCache[mid]->iId );
+        if( compare == 0 )
+            {
+            // The cache holds a new notification for this notifier, trigger it
+            CNotificationCacheItem* item = iNotificationCache[mid];
+            iNotificationCache.Remove(mid);
 
-		if( notificationCacheId == entryId )
-			{
-			// The cache holds a new notification for this notifier, trigger it
-			CNotificationCacheItem* item = iNotificationCache[i];
-			iNotificationCache.Remove(i);
+            CleanupStack::PushL( item );
 
-			CleanupStack::PushL( item );
-
-			entry.TriggerCachedL( item->iCode, item->iData );
-			
-			// take ownership of iData from item and delete it
-			item->iData = NULL;
-			CleanupStack::PopAndDestroy( item );
-			
-			return;
-			}
-		}
+            entry.TriggerCachedL( item->iCode, item->iData );
+        
+            // take ownership of iData from item and delete it
+            item->iData = NULL;
+            CleanupStack::PopAndDestroy( item );
+        
+            return;
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -1174,7 +1192,8 @@ void CMdSServerSession::CacheNotificationL(TInt aId, TUint32 aCompleteCode, CMdC
 	CleanupStack::Pop( aData );
 	CleanupStack::PushL( item );
 
-	iNotificationCache.AppendL( item );
+	iNotificationCache.InsertInOrderAllowRepeats( item, 
+	                              TLinearOrder<CNotificationCacheItem>(CMdSServerSession::ComparePropertiesCacheItem)); 
 
 	CleanupStack::Pop( item );
 	}
@@ -1633,4 +1652,9 @@ TInt CMdSServerSession::GetPendingL(const RMessage2& aMessage)
 
 	return KErrNone;
 	}
+
+TInt CMdSServerSession::ComparePropertiesCacheItem(const CNotificationCacheItem& aFirst, const CNotificationCacheItem& aSecond)
+    {
+    return aFirst.iId - aSecond.iId;
+    }
 

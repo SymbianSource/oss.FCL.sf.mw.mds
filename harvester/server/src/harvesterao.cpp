@@ -233,11 +233,14 @@ void CHarvesterAO::ConstructL()
 
 	User::LeaveIfError( iFs.Connect() );
 
+	// Pump up priority for getting the MDE session up as fast as possible for other
+	// initialization to continue
+    RProcess process;
+    process.SetPriority( EPriorityForeground );
+    process.Close();
+	
     // Setting up MdE Session
 	iMdESession = CMdESession::NewL( *this );
- 	
-    // Setting up context Engine (initialization is ready when ContextInitializationStatus -callback is called)
-    iCtxEngine = CContextEngine::GetInstanceL( this ); // Create the context engine
 
     iBackupSubscriber = CBackupSubscriber::NewL( *this );
 	
@@ -1259,6 +1262,12 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
 void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
     {
     WRITELOG( "HarvesterThread::HandleSessionOpened()" );
+    
+    // Revert back to default Harvester process priority when MDE Session is up and running
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
+    
     if ( KErrNone == aError )
         {
         TBool isTNMDaemonEnabled( EFalse );
@@ -1279,6 +1288,13 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
             WRITELOG( "CHarvesterAO::HandleSessionOpened() - error creating mde harvester session" );
         	}
 
+        // Setting up context Engine (initialization is ready when ContextInitializationStatus -callback is called)
+        TRAP( errorTrap, iCtxEngine = CContextEngine::GetInstanceL( this ) ); // Create the context engine 
+        if ( errorTrap != KErrNone )
+                {
+                WRITELOG( "CHarvesterAO::HandleSessionOpened() - Context Engine creation failed" );
+                }
+        
 #ifdef _DEBUG        
         TRAP( errorTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
         if ( errorTrap != KErrNone )
@@ -1313,11 +1329,6 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         TRAP_IGNORE( LoadMonitorPluginsL() );
         TRAP_IGNORE( StartComposersL() );        
 #endif
-
-        if ( iContextEngineInitialized )
-            {
-            iCtxEngine->SetMdeSession( iMdESession );
-            }
 
             // Starting monitor plugins
         StartMonitoring();

@@ -34,7 +34,7 @@ public:
     /**
      * 2-phased constructor.
      */
-    IMPORT_C static CLocationWrite* NewL( CLocationRecord& aLocRecord ) __SOFTFP;
+    IMPORT_C static CLocationWrite* NewL( CLocationRecord& aLocRecord );
     
     /**
      * C++ destructor.

@@ -34,13 +34,13 @@ const TInt KCurrentLocTimeoutCount = 48; // 48 * 10 sec -> 8 min timeout.
 
 const TInt KTrackLogBufSize = 10;
 
-const TInt KLocationTrailShutdownDelay = 60;
+const TInt KLocationTrailShutdownDelay = 30;
 
 const TInt KLocationTrailRemappingCheckDelay = 15;
 
-const TInt KLocationTrailRemapShutdownDelay = 360;
+const TInt KLocationTrailRemapShutdownDelay = 320;
 
-const TInt KLocationDelta = 20;
+const TInt KLocationDelta = 25;
 
 const TInt KRemappingTime = 480;
 

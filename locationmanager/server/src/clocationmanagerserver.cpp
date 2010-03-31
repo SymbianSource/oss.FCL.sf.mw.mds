@@ -345,8 +345,7 @@ void CLocationManagerServer::StopGPSPositioningL()
     
     RLocationTrail::TTrailState state;
     GetLocationTrailState( state );
-    
-    
+     
     if( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
         TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );
@@ -481,7 +480,7 @@ void CLocationManagerServer::CancelNotificationRequest( const TInt aHandle )
 //   
 void CLocationManagerServer::GetLocationByTimeL( const TTime& aTimeStamp, 
 												 TLocationData& aLocationData,
-                                                 TLocTrailState& aState ) __SOFTFP
+                                                 TLocTrailState& aState )
     {
     iLocationRecord->GetLocationByTimeL( aTimeStamp,
     									 aLocationData,
@@ -535,7 +534,7 @@ void CLocationManagerServer::CancelLocationRequest( const TInt aHandle )
 // CLocationManagerServer::GetCurrentCellId
 // --------------------------------------------------------------------------
 //    
-void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo ) __SOFTFP
+void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo )
     {
     iLocationRecord->GetNetworkInfo( aNetworkInfo );
     }    
@@ -544,7 +543,7 @@ void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& 
 // CLocationManagerServer::LocationTrailStateChange
 // --------------------------------------------------------------------------
 //    
-void CLocationManagerServer::LocationTrailStateChange() __SOFTFP
+void CLocationManagerServer::LocationTrailStateChange()
     {
     LOG( "CLocationManagerServer::LocationTrailStateChange(), begin" );
 
@@ -567,7 +566,7 @@ void CLocationManagerServer::LocationTrailStateChange() __SOFTFP
 //
 void CLocationManagerServer::CurrentLocation( const TPositionSatelliteInfo& aSatelliteInfo, 
 											  const CTelephony::TNetworkInfoV1& aNetworkInfo,
-                                              const TInt aError ) __SOFTFP
+                                              const TInt aError )
     {
     LOG( "CLocationManagerServer::CurrentLocation(), begin" );
     const TInt KParamLocationData = 0;
@@ -614,7 +613,7 @@ void CLocationManagerServer::CurrentLocation( const TPositionSatelliteInfo& aSat
     LOG( "CLocationManagerServer::CurrentLocation(), end" );    
     }
 
-void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo ) __SOFTFP
+void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo )
 	{
 	LOG( "CLocationManagerServer::GPSSignalQualityChanged" );
 	const TInt KFixParam = 0;
@@ -689,7 +688,7 @@ void CLocationManagerServer::CancelTrackLogNotificationRequest( const TInt aHand
 	}
 
 void CLocationManagerServer::CreateLocationObjectL( const TLocationData& aLocationData,
-													const TUint& aObjectId ) __SOFTFP
+													const TUint& aObjectId )
 	{
 	if ( !IsSessionReady() )
 		{
@@ -1049,7 +1048,7 @@ void CLocationManagerServer::IsTrackLogRecording( TBool &aRec )
 	}
 
 void CLocationManagerServer::GpxFileCreated( const TDesC& aFileName, TItemId aTagId,
-		TReal32 aLength, TTime aStart, TTime aEnd ) __SOFTFP
+		TReal32 aLength, TTime aStart, TTime aEnd )
 	{
 	TRAP_IGNORE( CreateTrackLogL( aTagId, aFileName, aLength, aStart, aEnd ) );
 	}
@@ -1137,7 +1136,7 @@ void CLocationManagerServer::CreateTrackLogL( TItemId aTagId, const TDesC& aUri,
     CleanupStack::PopAndDestroy( trackLog );
 	}
 
-TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality) __SOFTFP
+TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality)
 	{
 	if ( !iTrackLog )
 		{

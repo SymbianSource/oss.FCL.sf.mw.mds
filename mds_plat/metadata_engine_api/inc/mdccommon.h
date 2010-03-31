@@ -31,6 +31,7 @@ typedef TUint32 TDefId;
 typedef TUint32 TMdCOffset;
 
 const TItemId KNoId = 0;
+const TItemId KSystemCapturedAlbumId = 2;
 const TDefId KNoDefId = 0;
 
 // CONSTANTS

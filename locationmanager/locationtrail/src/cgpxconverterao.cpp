@@ -70,6 +70,12 @@ CGpxConverterAO::~CGpxConverterAO()
     
     iObservers.Reset();
     
+    iFileQueue.ResetAndDestroy();
+    iFileQueue.Close();
+    
+    iBoundQueue.ResetAndDestroy();
+    iBoundQueue.Close();
+    
     delete iWriteBuf;
     delete iFormatBuf;
     }
@@ -105,8 +111,10 @@ void CGpxConverterAO::AddToQueueL( const TDesC& aFileName, TBoundaries* aBoundar
 	{
 	LOG("CGpxConverterAO::AddToQueueL");
 	TFileName *filename = new (ELeave) TFileName(aFileName);
-	iFileQueue.Append(filename);
-	iBoundQueue.Append( aBoundaries );
+	CleanupStack::PushL( filename );
+	iFileQueue.AppendL( filename );
+	CleanupStack::Pop( filename );
+	iBoundQueue.AppendL( aBoundaries );
 	
 	if ( iState == EIdle )
 		{

@@ -55,30 +55,19 @@ EXPORT_C TInt RBlacklistClient::Connect()
     {
     WRITELOG( "RBlacklistClient::Connect - begin" );
 
-    TInt retryCount = 2;
-    TInt error = KErrNone;
-    
     iSessionOk = EFalse;
-    
-    while ( retryCount )
+      
+    TInt error = StartServer();
+
+    if ( error == KErrNone || error == KErrAlreadyExists )
         {
-        // try create session, if ok, then break out and return KErrNone
+        WRITELOG( "RBlacklistClient::Connect() - creating session" );
         error = CreateSession( KBlacklistServerName, Version() );
-        if( error != KErrNotFound && error != KErrServerTerminated )
-            {
-            iSessionOk = ETrue;
-            break;
-            }
-        
-        // Cannot create session, start server
-        error = StartServer();
-        
-        if ( error != KErrNone && error != KErrAlreadyExists )
-            {
-            break;
-            }
-       
-        --retryCount;
+        }
+    
+    if( error == KErrNone )
+        {
+        iSessionOk = ETrue;
         }
     
     WRITELOG( "RBlacklistClient::Connect - end" );
@@ -105,10 +94,8 @@ TVersion RBlacklistClient::Version() const
 //
 TInt RBlacklistClient::StartServer()
     {
-    WRITELOG( "RBlacklistClient::CustomSecurityCheckL - begin" );
-
-    const TUidType serverUid = ( KNullUid, KNullUid, KUidKBlacklistServer );
-
+    WRITELOG( "RBlacklistClient::StartServer - begin" );
+    
     RProcess server;
     TInt error = server.Create( KBlacklistServerExe, KNullDesC );
     if( error != KErrNone )
@@ -132,7 +119,7 @@ TInt RBlacklistClient::StartServer()
     error = server.ExitType() == EExitPanic ? KErrGeneral : status.Int();
     server.Close();
 
-    WRITELOG( "RBlacklistClient::Version - end" );
+    WRITELOG( "RBlacklistClient::StartServer - end" );
 
     return error;
     }

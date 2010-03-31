@@ -98,25 +98,36 @@ void CWatchdog::Start()
     // Double check that harvester server is not already running
     TFullName name;
     TInt res( KErrNone );
-        
-    // find Harvester Server
+   
+    // find really Harvester Server, using TFindServer to avoid logon a dead process
+    TFindServer findServer( KHarvesterServerProcess );
+    if ( findServer.Next(name) == KErrNone )
+        {
+        TFindProcess findProcess( KHarvesterServerProcess );
+        if ( findProcess.Next(name) == KErrNone )
+            {
+            PRINT(_L("CWatchdog::Start() - server already running, start listening"));
+            
+            iProcess.Close();
+            res = iProcess.Open(name);
+            if ( res != KErrNone )
+                {
+                PRINT(_L("CWatchdog::Start() - error in starting listening "));
+                return;
+                }
+            iState = EWaitingRendezvous;
+            SetActive();
+            return;
+            }
+        }  
+    
+    // close the panic process
     TFindProcess findProcess( KHarvesterServerProcess );
     if ( findProcess.Next(name) == KErrNone )
         {                
-        PRINT(_L("CWatchdog::Start() - server already running, start listening"));
-        
         iProcess.Close();
-        res = iProcess.Open(name);
-        if ( res != KErrNone )
-            {
-            PRINT(_L("CWatchdog::Start() - error in starting listening "));
-            return;
-            }
-        iState = EWaitingRendezvous;   
-        SetActive();
-        return;
-        }        
-    
+        }
+
     // Create the server process
     // KNullDesC param causes server's E32Main() to be run
     res = iProcess.Create( KHarvesterServerExe, KNullDesC );

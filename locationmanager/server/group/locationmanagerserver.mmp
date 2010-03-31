@@ -57,8 +57,4 @@ PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime
 
-#ifdef __VFP_HW_SUPPORT
-OPTION ARMCC --fpu vfpv2 --fpmode fast
-#endif
-
 EPOCPROCESSPRIORITY background

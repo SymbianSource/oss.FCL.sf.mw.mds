@@ -558,6 +558,11 @@ void CMdSFindSqlClause::AppendSelectObjectItemStatementL()
 		{
 		// No property filters so get all properties
 		
+	    if( !iObjectDef )
+	        {
+	        User::Leave( KErrMdEUnknownObjectDef );
+	        }
+	
 		// "SELECT BO.* "
 		iQueryBuf->AppendL( KSelectAllFromBaseObject );
 	

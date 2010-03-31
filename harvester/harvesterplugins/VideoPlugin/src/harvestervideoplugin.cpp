@@ -20,6 +20,7 @@
 #include <3gplibrary/mp4lib.h>
 #include <hxmetadatautil.h>
 #include <hxmetadatakeys.h>
+#include <caf/caf.h>
 
 #include "mdsutils.h"
 #include "harvestervideoplugin.h"
@@ -109,6 +110,7 @@ void CHarvesterVideoPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KGenreProperty );
 	iArtistPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KArtistProperty );
 	iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDescriptionProperty );
+    iDrmPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDRMProperty );
 	
 	iAudioFourCCDef = &mediaDef.GetPropertyDefL( MediaObject::KAudioFourCCProperty );
 
@@ -554,6 +556,19 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     	// doesn't own pointers to MIME types
     	RPointerArray<HBufC> mimes;
     	CleanupClosePushL( mimes );
+
+        TPtrC ext;
+        MdsUtils::GetExt( uri, ext );
+        
+        // Check for possibly protected content
+        if( ext.CompareF( KExtensionWmv ) == 0 )
+            {
+            ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
+            ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
+            
+            data->GetAttribute( ContentAccess::EIsProtected, aVHD.iDrmProtected );
+            CleanupStack::PopAndDestroy( 2 ); // content, data
+            }
     	
     	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
         CleanupStack::PushL( helixMetadata );
@@ -746,6 +761,77 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         
         // don't destory mime type pointers just clean array
         CleanupStack::PopAndDestroy( &mimes );
+        
+        // If parsing failed, check for possible protected content
+        if( error == KErrNotSupported || 
+            error == KErrAccessDenied ||
+            error == KErrPermissionDenied )
+            {
+            ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
+            ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
+        
+            if( !aVHD.iDrmProtected )
+                {
+                data->GetAttribute( ContentAccess::EIsProtected, aVHD.iDrmProtected );
+                }
+            if( aVHD.iDrmProtected )
+                {
+                ContentAccess::RStringAttributeSet attrSet;
+                CleanupClosePushL( attrSet );
+                
+                attrSet.AddL( ContentAccess::EDescription );
+                attrSet.AddL( ContentAccess::ETitle );
+                attrSet.AddL( ContentAccess::EAuthor );
+                attrSet.AddL( ContentAccess::EGenre );
+
+                if( data->GetStringAttributeSet(attrSet) == KErrNone )
+                    {
+                    TBuf<KMaxDataTypeLength> value;
+                    
+                    TInt err = attrSet.GetValue( ContentAccess::EDescription, value );
+                    if ( err != KErrNone)
+                        {
+                        WRITELOG1( "CHarvesterVideoPlugin::GatherDataL - ERROR: getting description failed %d", err );
+                        }
+                    else if( value.Length() > 0 )
+                        {
+                        aVHD.iDescription = value.Alloc();
+                        }
+                
+                    err = attrSet.GetValue( ContentAccess::ETitle, value );
+                    if ( err != KErrNone)
+                        {
+                        WRITELOG1( "CHarvesterVideoPlugin::GatherDataL - ERROR: getting title failed %d", err );
+                        }
+                    else if( value.Length() > 0 )
+                        {
+                        aVHD.iTitle = value.Alloc();
+                        }
+                
+                    err = attrSet.GetValue( ContentAccess::EAuthor, value );
+                    if ( err != KErrNone)
+                        {
+                        WRITELOG1( "CHarvesterVideoPlugin::GatherDataL - ERROR: getting author failed %d", err );
+                        }
+                    else if( value.Length() > 0 )
+                        {
+                        aVHD.iAuthor = value.Alloc();
+                        }
+
+                    err = attrSet.GetValue( ContentAccess::EGenre, value );
+                    if ( err != KErrNone)
+                        {
+                        WRITELOG1( "CHarvesterVideoPlugin::GatherDataL - ERROR: getting genre failed %d", err );
+                        }
+                    else if( value.Length() > 0 )
+                        {
+                        aVHD.iGenre = value.Alloc();
+                        }
+                    }
+                CleanupStack::PopAndDestroy(); // attrSet
+                }
+            CleanupStack::PopAndDestroy( 2 ); // content, data
+            }
         }
     else if( mapping->iHandler.iLibrary == TVideoMetadataHandling::EMp4LibHandling )
         {
@@ -946,11 +1032,17 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     	{
     	if( aVHD.iVideoObject )
     		{
-    		CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iBitratePropertyDef, &aVHD.iVideoBitrate, aIsAdd );
+    	    if( aVHD.iVideoBitrate != 0 )
+    	        {
+    		    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iBitratePropertyDef, &aVHD.iVideoBitrate, aIsAdd );
+    	        }
     		}
     	else // audio object
     		{
-    		CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iBitratePropertyDef, &aVHD.iAudioBitrate, aIsAdd );
+    	    if( aVHD.iAudioBitrate != 0 )
+    	        {
+    		    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iBitratePropertyDef, &aVHD.iAudioBitrate, aIsAdd );
+    	        }
     		}
     	}
 
@@ -994,6 +1086,12 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     if( aVHD.iTitle )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTitlePropertyDef, aVHD.iTitle, EFalse );
+        }
+    
+    // DRM protection
+    if( aVHD.iDrmProtected )
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDrmPropertyDef, &aVHD.iDrmProtected, aIsAdd );
         }
     }
 

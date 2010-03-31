@@ -48,11 +48,11 @@ MW_LAYER_SYSTEMINCLUDE
 LIBRARY       euser.lib
 LIBRARY       efsrv.lib
 LIBRARY       caf.lib
-LIBRARY	  cafutils.lib
+LIBRARY	      cafutils.lib
 LIBRARY       harvesterplugininterface.lib
 LIBRARY       mdeclient.lib
-LIBRARY	  harvesterdata.lib
-LIBRARY	  harvestercommon.lib
+LIBRARY	      harvesterdata.lib
+LIBRARY	      harvestercommon.lib
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

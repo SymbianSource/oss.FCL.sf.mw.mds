@@ -72,7 +72,6 @@ TInt LaunchServer()
 //
 EXPORT_C RLocationManager::RLocationManager()
     {
-    iNameBuf = NULL;
     }
 
 // --------------------------------------------------------------------------
@@ -104,8 +103,6 @@ EXPORT_C void RLocationManager::Close()
     {
     LOG( "RLocationManager::Close(), begin" );
     // close session    
-    delete iNameBuf;
-    iNameBuf = NULL;
     RSessionBase::Close();
     LOG( "RLocationManager::Close(), end" );
     }

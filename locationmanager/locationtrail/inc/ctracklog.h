@@ -66,7 +66,7 @@ public:
 	 * This method is used to notify about converted GPX files
 	 */
 	virtual void GpxFileCreated( const TDesC& aFileName, TItemId aTagId, TReal32 aLength,
-			TTime aStart, TTime aEnd ) __SOFTFP = 0;
+			TTime aStart, TTime aEnd ) = 0;
 	};    
 
 class CTrackLog : public CBase, public MLocationAddObserver
@@ -111,7 +111,7 @@ public:
 	/*
 	 * from MLocationAddObserver
 	 */
-	void LocationAdded( const TLocationTrailItem& aTrailItem, const TPositionSatelliteInfo& aSatellites ) __SOFTFP;
+	void LocationAdded( const TLocationTrailItem& aTrailItem, const TPositionSatelliteInfo& aSatellites );
 		
 	IMPORT_C void AddGpxObserver( MGpxConversionObserver* aObserver );
 	

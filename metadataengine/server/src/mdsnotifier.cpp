@@ -465,10 +465,10 @@ CMdSNotifier::TEntry& CMdSNotifier::CreateEntryL( TInt aId,
     TConditionType aType, CMdCSerializationBuffer* aSerializedBuffer,
     TDefId aNamespaceDefId, CMdSServerSession& aSession, TBool aConfidential )
     {
-
-    User::LeaveIfError( iEntries.Append(
-        TEntry( aId, aType, aSerializedBuffer, aNamespaceDefId, aSession, aConfidential ) ) );
-    return iEntries[ iEntries.Count() - 1 ];
+    TEntry entry = TEntry( aId, aType, aSerializedBuffer, aNamespaceDefId, aSession, aConfidential ); 
+    User::LeaveIfError( iEntries.InsertInOrder( entry, TLinearOrder<TEntry>(CMdSNotifier::Compare) ) ); 
+    
+    return FindEntryL( aId );
     }
 
 // ------------------------------------------------
@@ -478,17 +478,29 @@ CMdSNotifier::TEntry& CMdSNotifier::CreateEntryL( TInt aId,
 CMdSNotifier::TEntry& CMdSNotifier::FindEntryL( TInt aId )
     {
     CMdSNotifier::TEntry* entry = NULL;
+
+    TInt low( 0 );
+    TInt high( iEntries.Count() );
     
-    const TInt count = iEntries.Count();
-    
-    for ( TInt i = 0; i < count; ++i )
+    while( low < high )
         {
-        if ( iEntries[i].iId == aId )
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( aId - iEntries[mid].Id() );
+        if( compare == 0 )
             {
-            entry = &iEntries[i];
+            entry = &iEntries[mid];
             break;
             }
-        }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }    
 
     if( !entry )
     	{
@@ -504,33 +516,55 @@ CMdSNotifier::TEntry& CMdSNotifier::FindEntryL( TInt aId )
 //
 void CMdSNotifier::RemoveEntryL( TInt aId )
     {
-    const TInt count = iEntries.Count();
+    CMdSNotifier::TEntry* e = NULL;
+
+    TInt low( 0 );
+    TInt mid( 0 );
+    TInt high( iEntries.Count() );
     
-    for ( TInt i = 0; i < count; ++i )
+    while( low < high )
         {
-        TEntry& e = iEntries[i];
-        if ( e.iId == aId )
+        mid = (low+high)>>1;
+        
+        const TInt compare( aId - iEntries[mid].Id() );
+        if( compare == 0 )
             {
-            if ( e.IsPending() )
-                {
-                e.TriggerError( KErrCancel );
-                }
-            
-            if ( e.iSerializedCondition )
-            	{
-            	delete e.iSerializedCondition;
-            	e.iSerializedCondition = NULL;
-            	}
-            if ( e.iDataBuffer )
-            	{
-            	delete e.iDataBuffer;
-            	e.iDataBuffer = NULL;
-            	}
-            iEntries.Remove( i );
-            return;
+            e = &iEntries[mid];
+            break;
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
             }
         }
-    User::Leave( KErrNotFound );
+    
+    if( e )
+        {
+        if ( e->IsPending() )
+            {
+            e->TriggerError( KErrCancel );
+            }
+    
+        if ( e->iSerializedCondition )
+            {
+            delete e->iSerializedCondition;
+            e->iSerializedCondition = NULL;
+            }
+        if ( e->iDataBuffer )
+            {
+            delete e->iDataBuffer;
+            e->iDataBuffer = NULL;
+            }
+        iEntries.Remove( mid );
+        }
+    else
+        {
+        User::Leave( KErrNotFound );
+        }
     }
 
 // ------------------------------------------------
@@ -637,12 +671,9 @@ void CMdSNotifier::NotifyAddedL(CMdCSerializationBuffer& aSerializedItems,
                              matchingItemIdArray, matchingItemUriArray ) );    
                     }
             	}
-            // Copy of each uri is made to each client, which will own the returned uri
-            // Thus URI ownership is transferred and original array can be destroyed
-            matchingItemUriArray.ResetAndDestroy();
             }
 
-   		CleanupStack::PopAndDestroy( 2, &matchingItemIdArray );
+   		CleanupStack::PopAndDestroy( 2, &matchingItemIdArray ); // matchingItemIdArray, matchingItemUriArray
         }
     CleanupStack::PopAndDestroy( 2, &allItemsIdArray ); // allItemsIdArray, allItemsUriArray
     }
@@ -971,11 +1002,8 @@ void CMdSNotifier::NotifyModifiedL(CMdCSerializationBuffer& aSerializedItems,
                             matchingObjectIdArray, matchingItemUriArray ) );    
                     }
                 }
-            // Copy of each uri is made to each client, which will own the returned uri
-            // Thus URI ownership is transferred and original array can be destroyed
-            matchingItemUriArray.ResetAndDestroy();
             }
-		CleanupStack::PopAndDestroy( 2, &matchingObjectIdArray );
+		CleanupStack::PopAndDestroy( 2, &matchingObjectIdArray ); // matchingItemIdArray, matchingItemUriArray
         }
     CleanupStack::PopAndDestroy( 2, &allItemsIdArray ); // allItemsIdArray, allItemsUriArray
     }
@@ -1341,6 +1369,10 @@ void CMdSNotifier::NotifyRemovedRelationItemsL(
             	}
 	        }
 		}
-
 	}
+
+TInt CMdSNotifier::Compare( const TEntry& aFirst, const TEntry& aSecond )
+    {
+    return aFirst.Id() - aSecond.Id();
+    }
 
