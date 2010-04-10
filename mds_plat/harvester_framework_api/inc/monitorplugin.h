@@ -59,7 +59,7 @@ class TMountData
  * class MMonitorNotifier
  *	{
  *   public:
- *   	/**
+ *
  *	    * Called when we notice a new file/item
  *	    *
  *	    * @param aHarvesterData  Pointer to harvesting related data/harvesting request data
