@@ -55,11 +55,10 @@ CHarvesterData* CMoveTimer::CheckUriL( const TDesC& aUri )
 	TPtrC nameExt;
 	
 	if( MdsUtils::GetNameExt( aUri, nameExt ) )
-		{
-		
+		{		
 		// check if harvester queue contains harvesting request 
 		// with same file name and extension 
-		for (int i = iHDArray.Count(); --i >= 0; )
+		for (TInt i = iHDArray.Count(); --i >= 0; )
 			{
 			CHarvesterData* hd = iHDArray[i];
 			

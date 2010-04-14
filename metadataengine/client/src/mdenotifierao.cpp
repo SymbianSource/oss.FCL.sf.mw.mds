@@ -126,7 +126,6 @@ TInt CMdENotifierAO::Id()
 void CMdENotifierAO::DoCancel()
     {
     TRAP_IGNORE( iSession.DoUnregisterL( Id() ) );
-    // the current pending call will return with KErrCancel
     }
 
 void CMdENotifierAO::RunL()

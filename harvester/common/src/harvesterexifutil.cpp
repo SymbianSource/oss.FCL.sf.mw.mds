@@ -1817,7 +1817,7 @@ void CHarvesterExifUtil::ReadGPSAltitudeL( CHarvestData& aHd, CExifRead* aReader
     
         const CExifTag* refTag = aReader->GetTagL(
                 EIfdGps, KIdGpsAltitudeRef );
-        TBuf8<1> altitudeRef = refTag->Data();
+        TBuf8<2> altitudeRef = refTag->Data();
         const CExifTag* altitudeTag = aReader->GetTagL(
                 EIfdGps, KIdGpsAltitude );
         TBuf8<KAltitudeBufferSize> altitudeBuf = altitudeTag->Data();

@@ -199,7 +199,7 @@ void CReHarvesterAO::CheckItem( CHarvesterData& aItem )
     for( TInt i = iItems.Count(); --i >= 0; )
         {
         CHarvesterData* item = iItems[i];
-        if ( aItem.Uri().CompareC( item->Uri(), 1, NULL ) != 0 )
+        if ( aItem.Uri().CompareF( item->Uri() ) != 0 )
             {
             continue;
             }

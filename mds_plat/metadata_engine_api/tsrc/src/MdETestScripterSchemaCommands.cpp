@@ -68,6 +68,28 @@ TInt CMdETestScripter::RemoveObjectObserverL( CStifItemParser& /* aItem */ )
     }
 
 // -----------------------------------------------------------------------------
+// CMdETestScripter::AddObjectObserverWithUriL
+// -----------------------------------------------------------------------------
+//
+TInt CMdETestScripter::AddObjectObserverWithUriL( CStifItemParser& /* aItem */ )
+    {
+    iMdeSession->AddObjectObserverWithUriL( *this );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CMdETestScripter::RemoveObjectObserverWithUriL
+// -----------------------------------------------------------------------------
+//
+TInt CMdETestScripter::RemoveObjectObserverWithUriL( CStifItemParser& /* aItem */ )
+    {
+    iMdeSession->RemoveObjectObserverWithUriL( *this );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
 // CMdETestScripter::AddObjectPresentObserverL
 // -----------------------------------------------------------------------------
 //

@@ -155,6 +155,8 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
 
 	private:
 		CHarvesterOmaDrmPluginPropertyDefs* iPropDefs;
+		
+		TInt iMaxTextLength;
 	};
 
 #endif // __CHarvesterOMADRMPlugin_H__

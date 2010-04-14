@@ -69,7 +69,6 @@ CMdSServerSession* CMdSServerSession::NewLC( CMdSServer& aServer )
 //
 void CMdSServerSession::ConstructL()
     {
-    iServer.IncrementSessions();
     }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +91,6 @@ CMdSServerSession::~CMdSServerSession()
 
 	iServer.LockList().UnlockBySession( *this );
 	iServer.Notifier().RemoveEntriesBySession( *this );
-    iServer.DecrementSessions();
     
     // purge any pending notifications
 	iNotificationCache.ResetAndDestroy();
@@ -105,12 +103,25 @@ CMdSServerSession::~CMdSServerSession()
 //
 void CMdSServerSession::ServiceL( const RMessage2& aMessage )
     {
-    __LOG2( ELogServer, "ServiceL message: %d uid: %.8x", 
+    __LOG2( ELogServer, "ServiceL message: %d uid: %d", 
     		aMessage.Function(),
-    		aMessage.Identity());
-
+    		aMessage.Identity().iUid);
+    
 	if( iServer.BackupOrRestoreRunning() )
 		{
+        // Open client applications are closed during backup/restore,
+        // thus registered observers that would be removed during
+        // shutdown on clients, must be allowed to be removed even
+        // if backup/restore is running
+	    if( aMessage.Function() == EUnregister )
+	        {
+            TRAPD( err, ServiceFunctionL( aMessage ) );
+            if( err != KErrNone )
+                {
+                aMessage.Complete( err );
+                }
+            return;
+	        }
 		aMessage.Complete( KErrServerBusy );
 		return;
 		}

@@ -22,6 +22,7 @@
 #include "harvesterplugin.h"
 
 #include "mimetypemapping.h"
+#include "harvestermediaidutil.h"
 
 // FORWARD DECLARATION
 class CMdEObjectDef;
@@ -228,6 +229,11 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		RArray<THarvestingHandling> iMimeTypeMappings;
 		
 		CHarvesterVideoPluginPropertyDefs* iPropDefs;
+		
+		TInt iMaxTextLength;
+		
+		// not own
+		CHarvesterMediaIdUtil* iMediaIdUtil;
 	};
 
 #endif // __CHARVESTERVIDEOPLUGIN_H__

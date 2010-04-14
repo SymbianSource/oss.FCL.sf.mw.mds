@@ -32,12 +32,10 @@
 TInt LaunchServer()
     {
     LOG( "RLocationManager::LaunchServer begin" );
-    TParse parser;
-    parser.Set( KLocServerFileName, &KDC_PROGRAMS_DIR, NULL );
 
     // DLL launch
     RProcess server;
-    const TInt ret = server.Create( parser.FullName(), KNullDesC );
+    TInt ret = server.Create( KLocServerFileName, KNullDesC );
 
     if ( ret != KErrNone )  // Loading failed.
         {
@@ -51,18 +49,20 @@ TInt LaunchServer()
         {
         LOG( "RLocationManager::LaunchServer Failed" );
         server.Kill( 0 );     // Abort startup.
-        server.Close();
-        return KErrGeneral;
         }
     else
         {
         server.Resume();    // Logon OK - start the server.
         }
         
-    User::WaitForRequest( status );
+    User::WaitForRequest( status ); // wait for start or death
+    // we can't use the 'exit reason' if the server panicked as this
+    // is the panic 'reason' and may be '0' wehich cannot be distinguished
+    // from KErrNone
+    ret = ( server.ExitType() == EExitPanic ) ? KErrCommsBreak : status.Int();
     server.Close();
     LOG( "RLocationManager::LaunchServer end" );
-    return status.Int();    
+    return ret;    
     }
 
 // --------------------------------------------------------------------------
@@ -82,17 +82,17 @@ EXPORT_C RLocationManager::RLocationManager()
 EXPORT_C TInt RLocationManager::Connect()
     {
     LOG( "RLocationManager::Connect(), begin" );
-    TInt ret = CreateSession( KLocServerName, Version(), KSessionSlotCount);
-    if ( ret != KErrNone )
+      
+    TInt error = LaunchServer();
+
+    if ( error == KErrNone || error == KErrAlreadyExists )
         {
-        ret = LaunchServer();
-        if ( ret == KErrNone )
-            {
-            ret = CreateSession( KLocServerName, Version() );    
-            }       
+        error = CreateSession( KLocServerName, Version(), KSessionSlotCount );
         }
+    
     LOG( "RLocationManager::Connect(), end" );
-    return ret;
+
+    return error;
     }
     
 // --------------------------------------------------------------------------

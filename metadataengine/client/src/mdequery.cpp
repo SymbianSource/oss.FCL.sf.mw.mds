@@ -409,10 +409,8 @@ void CMdEQuery::NotifyNewResultsL(const RPointerArray<CMdEInstanceItem>& aNewRes
         {
         iResults[firstNewItemIndex + i].iOwned = ETrue;
         }
-
-    const TInt observerCount = iObservers.Count();
     
-	for (i = 0; i < observerCount; i++)
+    for( TInt i = iObservers.Count() - 1; i >=0; i-- )
 		{
 		MMdEQueryObserver* observer = iObservers[i];
 		observer->HandleQueryNewResults( *this, firstNewItemIndex, newCount );
@@ -426,7 +424,6 @@ void CMdEQuery::NotifyNewResultsL(const RArray<TItemId>& aNewResults)
                     TMdEPanic::Panic(TMdEPanic::EInternal));
 
 	TInt firstNewItemIndex = iIdResults.Count();
-	TInt i = 0;
 
     const TInt oldCount = iIdResults.Count();
 
@@ -441,10 +438,8 @@ void CMdEQuery::NotifyNewResultsL(const RArray<TItemId>& aNewResults)
         // Leave with the same error.
         User::Leave(err);
         }
-
-    const TInt observerCount = iObservers.Count();
     
-	for (i = 0; i < observerCount; i++)
+    for( TInt i = iObservers.Count() - 1; i >=0; i-- )
 		{
 		MMdEQueryObserver* observer = iObservers[i];
 		observer->HandleQueryNewResults(*this, firstNewItemIndex, 
@@ -455,7 +450,6 @@ void CMdEQuery::NotifyNewResultsL(const RArray<TItemId>& aNewResults)
 void CMdEQuery::NotifyNewResultsL( const CDesCArray& aNewResults )
     {
 	TInt firstNewItemIndex = aNewResults.Count();
-	TInt i = 0;
 
 	TInt oldCount = 0;
 	if( iDistinctResults )
@@ -479,9 +473,7 @@ void CMdEQuery::NotifyNewResultsL( const CDesCArray& aNewResults )
         User::Leave(err);
         }
 
-    const TInt observerCount = iObservers.Count();
-    
-	for (i = 0; i < observerCount; i++)
+    for( TInt i = iObservers.Count() - 1; i >=0; i-- )
 		{
 		MMdEQueryObserver* observer = iObservers[i];
 		observer->HandleQueryNewResults( *this, firstNewItemIndex, 

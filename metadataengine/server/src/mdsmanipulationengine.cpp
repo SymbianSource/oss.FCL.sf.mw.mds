@@ -812,7 +812,7 @@ void CMdSManipulationEngine::SetFilesToPresentL(TUint32 aMediaId, TUint32 aFileC
 
     	TFilePresentStates placeHolder;
     	TBool notPresentState( EFalse );
-    	const TItemId objectId = iManipulate->SearchNotPresentFileL( /*reservation(), */
+    	const TItemId objectId = iManipulate->SearchNotPresentFileL( 
     			aMediaId, uri, fileInfo, placeHolder, notPresentState );
     	if ( placeHolder != EMdsNotFound )
     		{

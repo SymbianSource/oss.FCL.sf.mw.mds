@@ -2276,8 +2276,8 @@ void CMdESessionImpl::AddObjectObserverL( MMdEObjectObserver& aObserver,
     CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
-    CleanupStack::Pop( notifier );
     iNotifiers.AppendL( notifier );
+    CleanupStack::Pop( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }
@@ -2303,8 +2303,8 @@ void CMdESessionImpl::AddObjectPresentObserverL(
     notifier->RegisterL( EObjectNotifyPresent | EObjectNotifyNotPresent,
     		&aObserver, NULL, namespaceDef );
 
-    CleanupStack::Pop( notifier );
     iNotifiers.AppendL( notifier );
+    CleanupStack::Pop( notifier );
 	}
 
 void CMdESessionImpl::AddRelationObserverL( MMdERelationObserver& aObserver,
@@ -2359,8 +2359,8 @@ void CMdESessionImpl::AddRelationObserverL( MMdERelationObserver& aObserver,
     CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
-    CleanupStack::Pop( notifier );
     iNotifiers.AppendL( notifier );
+    CleanupStack::Pop( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }
@@ -2416,8 +2416,8 @@ void CMdESessionImpl::AddRelationItemObserverL(
 	CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
 	notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 	
-	CleanupStack::Pop( notifier );
 	iNotifiers.AppendL( notifier );
+	CleanupStack::Pop( notifier );
 	
     CleanupStack::PopAndDestroy( aCondition );
 	}
@@ -2445,8 +2445,8 @@ void CMdESessionImpl::AddRelationPresentObserverL(
     notifier->RegisterL( ERelationNotifyPresent | ERelationNotifyNotPresent,
     		&aObserver, NULL, namespaceDef );
 
-    CleanupStack::Pop( notifier );
     iNotifiers.AppendL( notifier );
+    CleanupStack::Pop( notifier );
 	}
 
 void CMdESessionImpl::AddEventObserverL( MMdEEventObserver& aObserver,
@@ -2502,8 +2502,8 @@ void CMdESessionImpl::AddEventObserverL( MMdEEventObserver& aObserver,
     CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
-    CleanupStack::Pop( notifier );
     iNotifiers.AppendL( notifier );
+    CleanupStack::Pop( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }
@@ -2996,8 +2996,8 @@ void CMdESessionImpl::AddObjectObserverWithUriL( MMdEObjectObserverWithUri& aObs
     CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
     notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
 
+    iNotifiers.AppendL( notifier );
     CleanupStack::Pop( notifier );
-    iNotifiers.Append( notifier );
     
     CleanupStack::PopAndDestroy( aCondition );
     }

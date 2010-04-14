@@ -281,6 +281,8 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
 		{
 		CMdEObjectDef& objectDef = mdeObject.Def();
 		iPropDefs = CHarvesterWmvPluginPropertyDefs::NewL( objectDef );
+		// Prefetch max text lengt for validity checking
+		iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
 		}
     
     if( ! mdeObject.Placeholder() )
@@ -308,25 +310,25 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
                 *iPropDefs->iDrmPropertyDef, &aClipDetails.iDrmProtected, aIsAdd );
         } 
     // Title (is set from URI by default)
-    if(aClipDetails.iTitle.Length() > 0)
+    if( aClipDetails.iTitle.Length() > 0 && aClipDetails.iTitle.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iTitlePropertyDef, &aClipDetails.iTitle, EFalse );
         }
     // Description
-    if(aClipDetails.iDescription.Length() > 0)
+    if( aClipDetails.iDescription.Length() > 0 && aClipDetails.iDescription.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iDescriptionPropertyDef, &aClipDetails.iDescription, aIsAdd );
         }   
     // Author
-    if(aClipDetails.iAuthor.Length() > 0)
+    if( aClipDetails.iAuthor.Length() > 0 && aClipDetails.iAuthor.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iAuthorPropertyDef, &aClipDetails.iAuthor, aIsAdd );
         }
     // Genre
-    if(aClipDetails.iGenre.Length() > 0)
+    if( aClipDetails.iGenre.Length() > 0 && aClipDetails.iGenre.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iGenrePropertyDef, &aClipDetails.iGenre, aIsAdd );

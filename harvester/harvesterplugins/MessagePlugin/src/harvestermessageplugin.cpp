@@ -30,7 +30,6 @@
 #include <mdetextproperty.h>
 
 #include "harvestermessageplugin.h"
-#include "harvestercommon.h"
 #include "harvesterlog.h"
 #include "mdsutils.h"
 #include "mdeobjectdef.h"

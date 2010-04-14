@@ -1067,9 +1067,8 @@ void CMdSSqlObjectManipulate::CheckMassStorageMediaIdL( const TUint32 aMediaId )
         CleanupClosePushL( objectIds );
         MMdsPreferences::UpdateL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet, (TUint32) aMediaId );
         SetFilesToNotPresentL( oldMediaId, EFalse, objectIds );
-        objectIds.Reset();
-        RemoveFilesNotPresentL( oldMediaId, &objectIds );
         CleanupStack::PopAndDestroy( &objectIds );
+        RemoveFilesNotPresentL( oldMediaId, NULL );
         }
     }
 

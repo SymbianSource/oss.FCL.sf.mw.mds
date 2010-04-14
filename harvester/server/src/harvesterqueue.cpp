@@ -148,6 +148,11 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
         		aItem->Uri(), mediaId, time ) )
             {
             WRITELOG( "CHarvesterQueue::Append() - found a blacklisted file" );
+            if( aItem->EventType() == EHarvesterEdit )
+                {
+                // Remove possible placeholder items from DB if file was blacklisted during harvesting
+                iHarvesterAO->RemoveBlacklistedFile( aItem );
+                }
             delete aItem;
             aItem = NULL;
             return;

@@ -197,6 +197,8 @@ class CHarvesterImagePlugin : public CHarvesterPlugin
         RArray< TMimeTypeMapping<TImageMetadataHandling> > iMimeTypeMappings;
         
         CHarvesterImagePluginPropertyDefs* iPropDefs;
+        
+        TInt iMaxTextLength;
 	};
 
 #endif

@@ -232,12 +232,6 @@ void CHarvesterAO::ConstructL()
     CActiveScheduler::Add( this );
 
 	User::LeaveIfError( iFs.Connect() );
-
-	// Pump up priority for getting the MDE session up as fast as possible for other
-	// initialization to continue
-    RProcess process;
-    process.SetPriority( EPriorityForeground );
-    process.Close();
 	
     // Setting up MdE Session
 	iMdESession = CMdESession::NewL( *this );
@@ -1263,11 +1257,6 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
     {
     WRITELOG( "HarvesterThread::HandleSessionOpened()" );
     
-    // Revert back to default Harvester process priority when MDE Session is up and running
-    RProcess process;
-    process.SetPriority( EPriorityBackground );
-    process.Close();
-    
     if ( KErrNone == aError )
         {
         TBool isTNMDaemonEnabled( EFalse );
@@ -1424,7 +1413,7 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
 // ---------------------------------------------------------------------------
 //
 void CHarvesterAO::HandleSessionError( CMdESession& /*aSession*/, TInt aError )
-    {    
+    {       
     if ( KErrNone != aError )
         {
         WRITELOG1( "HarvesterThread::HandleSessionError() - Error: %d!", aError );        
@@ -2832,5 +2821,13 @@ TBool CHarvesterAO::CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef )
             }
         }
     return EFalse;
+    }
+
+void CHarvesterAO::RemoveBlacklistedFile( CHarvesterData* aItem )
+    {
+    if( iMdeSessionInitialized )
+        {
+        TRAP_IGNORE( iMdESession->RemoveObjectL( aItem->Uri() ) );
+        }
     }
 

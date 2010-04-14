@@ -119,6 +119,12 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
     __LOG1( ELogAlways, "Trying to validate MDS DB, error expected if not created(first boot): %d", 0 );
     if ( !(iMaintenance->ValidateL( ) ) )
         {
+        // Pump up priority to load the MDS DB up as fast as possible to
+        // enable client side session connections
+        RProcess process;
+        process.SetPriority( EPriorityForeground );
+    
+        __LOG1( ELogAlways, "MDS DB not valid, creating tables: %d", 0 );
         // first-time init: re-form the database completely
     	iMaintenance->CreateDatabaseL( );
 		const TUint KMdSServerUid = 0x0320e65f; // temporal uid
@@ -156,6 +162,12 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
        		TRAP_IGNORE( ImportMetadataL( aManipulate, aSchema, KMdsDefaultRomImportFile ) );
        		}
        	
+       	__LOG1( ELogAlways, "MDS DB tables created %d", 0 );
+
+        // Revert back to default MDS server priority when server is up and running
+        process.SetPriority( EPriorityBackground );
+        process.Close();
+       	
        	StoreDriveMediaIdsL();
         }
     else
@@ -168,6 +180,7 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 			User::Leave( err );
         	}
         }
+    __LOG1( ELogAlways, "CMdSMaintenanceEngine::InstallL complete: %d", 0 );
     }
 
 // ------------------------------------------------
@@ -247,17 +260,22 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     if( massStorageError == KErrNone )
         {
         TVolumeInfo massStorageVolumeInfo;
-        User::LeaveIfError( fs.Volume( massStorageVolumeInfo, drive ) );
-        const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
-        massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+        massStorageError = fs.Volume( massStorageVolumeInfo, drive );
         if( massStorageError == KErrNone )
             {
-            User::LeaveIfError( fs.Volume( massStorageVolumeInfo, drive ) );
-            // Update mass storage media id if the mass storage is not memory card
-            if( massStorageVolumeInfo.iUniqueID != massStorageMediaId && massStorageMediaId != 0 )
+            const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
+            massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+            if( massStorageError == KErrNone )
                 {
-                MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
-                        (TUint32) massStorageMediaId );
+                massStorageError = fs.Volume( massStorageVolumeInfo, drive );
+                // Update mass storage media id if the mass storage is not memory card
+                if( massStorageError == KErrNone &&
+                    massStorageVolumeInfo.iUniqueID != massStorageMediaId &&
+                    massStorageMediaId != 0 )
+                    {
+                    MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
+                            (TUint32) massStorageMediaId );
+                    }        
                 }
             }
         }

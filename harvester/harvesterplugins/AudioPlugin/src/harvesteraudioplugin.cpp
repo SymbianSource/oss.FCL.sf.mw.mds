@@ -279,6 +279,8 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
 		{
 		CMdEObjectDef& objectDef = mdeObject.Def();
 		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
+		// Prefetch max text lengt for validity checking
+		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
 		}
 	
 	CMdeObjectWrapper::HandleObjectPropertyL(
@@ -312,6 +314,8 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
     		{
     		CMdEObjectDef& objectDef = mdeObject.Def();
     		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
+    		// Prefetch max text lengt for validity checking
+    		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
     		}
         
     	CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
@@ -342,6 +346,8 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         {
         CMdEObjectDef& audioObjectDef = mdeObject.Def();
         iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( audioObjectDef );
+        // Prefetch max text lengt for validity checking
+        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
         }
     
     TPtrC ext;
@@ -393,35 +399,35 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
 	
     if ( song.Length() > 0
-        && song.Length() < iPropDefs->iTitlePropertyDef->MaxTextLengthL() )
+        && song.Length() < iMaxTextLength )
         {    
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iTitlePropertyDef, &song, EFalse );
         }
 
     if ( artist.Length() > 0
-        && artist.Length() < iPropDefs->iArtistPropertyDef->MaxTextLengthL() )
+        && artist.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iArtistPropertyDef, &artist, aIsAdd );
         }
 
     if ( album.Length() > 0
-        && album.Length() < iPropDefs->iAlbumPropertyDef->MaxTextLengthL() )
+        && album.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iAlbumPropertyDef, &album, aIsAdd );
         }
  
     if ( genre.Length() > 0
-        && genre.Length() < iPropDefs->iGenrePropertyDef->MaxTextLengthL() )
+        && genre.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iGenrePropertyDef, &genre, aIsAdd );
         }
 
     if ( composer.Length() > 0
-        && composer.Length() < iPropDefs->iComposerPropertyDef->MaxTextLengthL() )
+        && composer.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iComposerPropertyDef, &composer, aIsAdd );
@@ -440,7 +446,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         }
     
     if ( orgArtist.Length() > 0
-        && orgArtist.Length() < iPropDefs->iOriginalArtistPropertyDef->MaxTextLengthL() )
+        && orgArtist.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iOriginalArtistPropertyDef, &orgArtist, aIsAdd );
@@ -471,7 +477,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         }
     
     if ( copyright.Length() > 0
-        && copyright.Length() < iPropDefs->iCopyrightPropertyDef->MaxTextLengthL() )
+        && copyright.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iCopyrightPropertyDef, &copyright, aIsAdd );

@@ -116,7 +116,7 @@ TInt RBlacklistClient::StartServer()
         }
 
     User::WaitForRequest( status );
-    error = server.ExitType() == EExitPanic ? KErrGeneral : status.Int();
+    error = server.ExitType() == EExitPanic ? KErrCommsBreak : status.Int();
     server.Close();
 
     WRITELOG( "RBlacklistClient::StartServer - end" );
@@ -287,7 +287,7 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
             {
             if ( modified == aLastModifiedTime.Int64() )
                 {
-                WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is different" );
+                WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is the same" );
                 return ETrue;
                 }
             else

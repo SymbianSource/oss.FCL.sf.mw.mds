@@ -299,6 +299,8 @@ class CHarvesterAO : public CActive,
          * From MHarvesterOomObserver
          */
         void MemoryGood();
+        
+        void RemoveBlacklistedFile( CHarvesterData* aItem );
 		
     private:
         

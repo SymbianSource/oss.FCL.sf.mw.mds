@@ -466,7 +466,7 @@ CMdSNotifier::TEntry& CMdSNotifier::CreateEntryL( TInt aId,
     TDefId aNamespaceDefId, CMdSServerSession& aSession, TBool aConfidential )
     {
     TEntry entry = TEntry( aId, aType, aSerializedBuffer, aNamespaceDefId, aSession, aConfidential ); 
-    User::LeaveIfError( iEntries.InsertInOrder( entry, TLinearOrder<TEntry>(CMdSNotifier::Compare) ) ); 
+    User::LeaveIfError( iEntries.InsertInOrderAllowRepeats( entry, TLinearOrder<TEntry>(CMdSNotifier::Compare) ) ); 
     
     return FindEntryL( aId );
     }
@@ -548,7 +548,6 @@ void CMdSNotifier::RemoveEntryL( TInt aId )
             {
             e->TriggerError( KErrCancel );
             }
-    
         if ( e->iSerializedCondition )
             {
             delete e->iSerializedCondition;

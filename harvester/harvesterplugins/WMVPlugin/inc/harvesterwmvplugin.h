@@ -182,6 +182,8 @@ private:
 
 private: // data
 	CHarvesterWmvPluginPropertyDefs* iPropDefs;
+	
+	TInt iMaxTextLength;
     };
 
 #endif // C_HARVESTERWMVPLUGIN_H

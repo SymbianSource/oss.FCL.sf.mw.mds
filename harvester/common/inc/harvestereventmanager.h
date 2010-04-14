@@ -129,6 +129,8 @@ private:
 			HarvesterEventObserverType aObserverType, 
 			HarvesterEventState aEventState, TUint aItemsLeft );
 
+	static TInt CompareProperties(const THarvesterEventQueue& aFirst, const THarvesterEventQueue& aSecond);
+	
 private:
 
 	RArray<TEventStatus> iEventStatuses;

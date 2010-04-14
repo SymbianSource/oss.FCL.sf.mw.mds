@@ -154,13 +154,8 @@ void CBlacklistServer::ConstructL()
     {
     WRITELOG( "CBlacklistServer::ConstructL - begin" );
 
-    const TInt error = Start( KBlacklistServerName );
+    StartL( KBlacklistServerName );
 
-    if ( error != KErrNone )
-        {
-        __ASSERT_DEBUG( EFalse, User::Panic( KBlacklistServerName, error ));
-        }
-    
     iSqLiteConnection = CMdSSqLiteConnection::NewL();
     
     WRITELOG( "CBlacklistServer::ConstructL - end" );
@@ -232,21 +227,25 @@ void CBlacklistServer::CloseDB()
 void CBlacklistServer::ExeMainL()
     {
     WRITELOG( "CBlacklistServer::ExeMainL - begin" );
+    User::LeaveIfError( User::RenameThread(KBlacklistServerName) );
+    // Construct active scheduler
+    CActiveScheduler* activeScheduler = new ( ELeave ) CActiveScheduler;
+    CleanupStack::PushL( activeScheduler );
 
     // Install active scheduler
-    CActiveScheduler* scheduler = new( ELeave ) CActiveScheduler;
-    CleanupStack::PushL( scheduler );
-    CActiveScheduler::Install( scheduler );
+    // We don't need to check whether an active scheduler is already installed
+    // as this is a new thread, so there won't be one
+    CActiveScheduler::Install( activeScheduler );
 
-    CBlacklistServer::NewLC();
+    // Construct our server
+    CBlacklistServer::NewLC();    // Anonymous
 
-    User::LeaveIfError( User::RenameThread( KBlacklistServerName ) );
     RProcess::Rendezvous( KErrNone );
 
+    // Start handling requests
     CActiveScheduler::Start();
 
-    CleanupStack::PopAndDestroy( 2, scheduler );  
-
+    CleanupStack::PopAndDestroy( 2, activeScheduler );  
     WRITELOG( "CBlacklistServer::ExeMainL - end" );
     }
 
@@ -256,21 +255,18 @@ void CBlacklistServer::ExeMainL()
 //
 TInt E32Main()
     {
-    WRITELOG( "CBlacklistServer::E32Main - begin" );
- 
+    WRITELOG( "CBlacklistServer::E32Main - begin" );   
     __UHEAP_MARK;
-
-    CTrapCleanup* cleanup = CTrapCleanup::New();
-    
-    TRAPD( error, CBlacklistServer::ExeMainL() );
-    __ASSERT_ALWAYS( !error, User::Panic( KBlacklistServerName, error ) );
-
-    delete cleanup;
+    CTrapCleanup* cleanup=CTrapCleanup::New();
+    TInt result = KErrNoMemory;
+    if (cleanup)
+        {
+        TRAP(result, CBlacklistServer::ExeMainL());
+        delete cleanup;
+        }
     __UHEAP_MARKEND;
-
     WRITELOG( "CBlacklistServer::E32Main - end" );
-
-    return 0;
+    return result;
     }
 
 

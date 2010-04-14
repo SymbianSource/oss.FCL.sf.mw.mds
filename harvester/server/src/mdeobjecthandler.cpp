@@ -187,7 +187,7 @@ CMdEObject* CMdeObjectHandler::GetMetadataObjectL( CHarvesterData& aHD, const TD
                 if( error != KErrNone )
                     {
 #ifdef _DEBUG
-                    if( error == KErrInUse || error || KErrLocked )
+                    if( error == KErrInUse || error == KErrLocked )
                         {
                         TPtrC fileName( aHD.Uri().Mid(2) );
                         WRITELOG1( "CMdeObjectHandler :: Checking open file handles to %S", &fileName );

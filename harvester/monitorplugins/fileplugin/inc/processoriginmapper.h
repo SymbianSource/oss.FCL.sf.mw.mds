@@ -162,6 +162,8 @@ class CProcessOriginMapper : public CBase,
          */
         void WriteProcessOriginPairL( TUid& aProcessId, TOrigin& aOrigin );
 
+        static TInt Compare(const TProcessOriginPair& aFirst, const TProcessOriginPair& aSecond);
+        
     private: // data
 
         /**

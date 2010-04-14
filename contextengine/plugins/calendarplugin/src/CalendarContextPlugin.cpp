@@ -240,6 +240,14 @@ void CCalendarContextPlugin::AddMetaDataL( CMdEObject& aMdEObject ) const
 
 	WRITELOG1( "CCalendarContextPlugin::AddMetaDataL -- instanceCount: %d", instanceCount );
 
+	if( instanceCount == 0 )
+	    {
+        CleanupStack::PopAndDestroy( &instances );
+
+        WRITELOG( "CCalendarContextPlugin::AddMetaDataL - no calendar items found -- RETURN" );	
+        return;
+	    }
+	
 	// required object properties
 	WRITELOG( "CCalendarContextPlugin::AddMetaDataL" );
 	User::LeaveIfNull( iMdeSession );

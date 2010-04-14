@@ -188,6 +188,8 @@ TInt CMdETestScripter::RunMethodL( CStifItemParser& aItem )
         ENTRY( "RemoveSchemaObserverL", CMdETestScripter::RemoveSchemaObserverL ),
         ENTRY( "AddObjectObserverL", CMdETestScripter::AddObjectObserverL ),
         ENTRY( "RemoveObjectObserverL", CMdETestScripter::RemoveObjectObserverL ),
+        ENTRY( "AddObjectObserverWithUriL", CMdETestScripter::AddObjectObserverWithUriL ),
+        ENTRY( "RemoveObjectObserverWithUriL", CMdETestScripter::RemoveObjectObserverWithUriL ),
         ENTRY( "AddObjectPresentObserverL", CMdETestScripter::AddObjectPresentObserverL ),
         ENTRY( "RemoveObjectPresentObserverL", CMdETestScripter::RemoveObjectPresentObserverL ),
         ENTRY( "AddRelationObserverL", CMdETestScripter::AddRelationObserverL ),
@@ -409,6 +411,27 @@ void CMdETestScripter::HandleObjectNotification( CMdESession& aSession,
     const RArray<TItemId>& aObjectIdArray )
     {
     iLog->Log(_L( "HandleObjectNotification" ));
+    
+    iNotificationSession = &aSession;
+    iNotificationType = aType;
+    for ( TInt i = 0; i < aObjectIdArray.Count(); ++i )
+        {
+        iNotificationItemIdArray.Append( aObjectIdArray[ i ] );
+        }
+
+    Signal();
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterPluginTestScripter::HandleUriObjectNotification
+// -----------------------------------------------------------------------------
+//
+void CMdETestScripter::HandleUriObjectNotification( CMdESession& aSession, 
+    TObserverNotificationType aType,
+    const RArray<TItemId>& aObjectIdArray,
+    const RPointerArray<HBufC>& /* aObjectUriArray */ )
+    {
+    iLog->Log(_L( "HandleUriObjectNotification" ));
     
     iNotificationSession = &aSession;
     iNotificationType = aType;

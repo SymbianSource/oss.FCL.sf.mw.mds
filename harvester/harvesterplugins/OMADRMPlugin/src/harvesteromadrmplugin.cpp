@@ -264,6 +264,8 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     	{
     	CMdEObjectDef& objectDef = mdeObject.Def();
     	iPropDefs = CHarvesterOmaDrmPluginPropertyDefs::NewL( objectDef );
+    	// Prefetch max text lengt for validity checking
+    	iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
     	}
     
     TTimeIntervalSeconds timeOffset = User::UTCOffset();
@@ -301,25 +303,25 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     		*iPropDefs->iDrmPropertyDef, &aVHD.iDrmProtected, aIsAdd );
     
     // Title (is set from URI by default)
-    if(aVHD.iTitle.Length() > 0)
+    if( aVHD.iTitle.Length() > 0 && aVHD.iTitle.Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iTitlePropertyDef, &aVHD.iTitle, EFalse );
     	}
     // Description
-    if(aVHD.iDescription.Length() > 0)
+    if( aVHD.iDescription.Length() > 0 && aVHD.iDescription.Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iDescriptionPropertyDef, &aVHD.iDescription, aIsAdd );
     	}   
     // Author
-    if(aVHD.iAuthor.Length() > 0)
+    if( aVHD.iAuthor.Length() > 0 && aVHD.iAuthor.Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iAuthorPropertyDef, &aVHD.iAuthor, aIsAdd );
     	}
     // Genre
-    if(aVHD.iGenre.Length() > 0)
+    if( aVHD.iGenre.Length() > 0 && aVHD.iGenre.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iGenrePropertyDef, &aVHD.iGenre, aIsAdd );
