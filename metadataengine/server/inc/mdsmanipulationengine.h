@@ -292,6 +292,14 @@ class CMdSManipulationEngine : public CBase, public MMdSGarbageCollectorObserver
 		TInt GetPendingL( TDefId aObjectDefId, TInt aBufferSize, 
 				RArray<TItemId>& aObjectIds );
 		
+	      /**
+	         * Fetches object uris based on id array
+	         * @param aObjectIds list of object ids.
+	         * @param aObjectUris array for object uris.
+	         */
+		void GetObjectUrisByIdsL( const RArray<TItemId>& aObjectIds, 
+		                                         RPointerArray<HBufC>& aUriArray );
+		
 	protected:
 		TBool StartGarbageCollectionL();
 

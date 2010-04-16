@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2007 Nokia Corporation and/or its subsidiary(-ies).
+* Copyright (c) 2008-2009 Nokia Corporation and/or its subsidiary(-ies). 
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -15,11 +15,14 @@
 *
 */
 
-
-// INCLUDES
-#include "T_CLFApiModuleTests.h"
-#include <s32mem.h> 
-#include <eunitmacros.h>
+// [INCLUDE FILES] - do not remove
+#include <e32svr.h>
+#include <s32mem.h>
+#include <ecom.h>
+#include <StifParser.h>
+#include <StifTestEventInterface.h>
+#include <Stiftestinterface.h>
+#include "ContentListingFrameworkTest.h"
 
 // the header for the tested class
 #include <ContentListingFactory.h>
@@ -33,17 +36,17 @@
 #include <MCLFOperationObserver.h>
 #include <MCLFPostFilter.h>
 #include <MCLFSortingStyle.h>
-#include <T_ContentListingFramework.rsg>
+#include <ContentListingFrameworkTest.rsg>
 #include <collate.h>
 #include <pathInfo.h>
 #include <MCLFProcessObserver.h>
 #include <CLFContentListingExtended.hrh>
 
-//CONSTS
+// CONSTANTS
 #ifdef __WINSCW__
-_LIT( KTestResourceFile, "z:\\resource\\T_ContentListingFramework.rsc" );
+_LIT( KTestResourceFile, "z:\\resource\\ContentListingFrameworkTest.rsc" );
 #else
-_LIT( KTestResourceFile, "c:\\sys\\bin\\T_ContentListingFramework.rsc" );
+_LIT( KTestResourceFile, "c:\\resource\\ContentListingFrameworkTest.rsc" );
 #endif
 _LIT( KTestFileNameBase, "CLFTestFiles\\TestFile" );
 _LIT( KTestFileExt, ".txt" );
@@ -193,7 +196,7 @@ class TTestCustomGrouper : public MCLFCustomGrouper
 class TTestPostFilter : public MCLFPostFilter
     {
     public:
-        TTestPostFilter() : iShouldFilterCount( 5 ), iAllFilter( EFalse )
+        TTestPostFilter() : iShouldFilterCount( 5 ), iAllFilter( EFalse ), iFilteredCount( 0 )
             {
             }
 
@@ -324,39 +327,82 @@ void SerializeL( const MDesCArray& aDataArray, CBufBase& aBuffer )
     CleanupStack::PopAndDestroy( &writeStream );
     }
 
-// ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::NewLC()
-// Create the testing class
-// ---------------------------------------------------------------------------
-//
-T_CLFApiModuleTests* T_CLFApiModuleTests::NewLC()
-    {
-    T_CLFApiModuleTests* self = new(ELeave) T_CLFApiModuleTests;
+// ============================ MEMBER FUNCTIONS ===============================
 
-    CleanupStack::PushL( self );
-    // need to generate the table, so call base classes
-    // second phase constructor
-    self->ConstructL();
-    return self;
+// -----------------------------------------------------------------------------
+// CContentListingFrameworkTest::Delete
+// Delete here all resources allocated and opened from test methods. 
+// Called from destructor. 
+// -----------------------------------------------------------------------------
+//
+void CContentListingFrameworkTest::Delete() 
+    {
     }
 
-
-// ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ConstructL()
-// ---------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// CCollectionManagerTest::RunMethodL
+// Run specified method. Contains also table of test mothods and their names.
+// -----------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::ConstructL()
+TInt CContentListingFrameworkTest::RunMethodL( 
+    CStifItemParser& aItem ) 
     {
-    CEUnitTestSuiteClass::ConstructL();
-    }
 
-// ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::~T_CLFApiModuleTests()
-// ---------------------------------------------------------------------------
-//
-T_CLFApiModuleTests::~T_CLFApiModuleTests()
-    {
-    Teardown();
+    static TStifFunctionInfo const KFunctions[] =
+        {  
+        // Copy this line for every implemented function.
+        // First string is the function name used in TestScripter script file.
+        // Second is the actual implementation member function. 
+
+        // engine		
+        ENTRY( "BaseSetup", CContentListingFrameworkTest::BaseSetupL ),
+        ENTRY( "SortingStyleResourceSetup", CContentListingFrameworkTest::SortingStyleResourceSetupL ),
+        ENTRY( "CreateModelSetup", CContentListingFrameworkTest::CreateModelSetupL ),
+        ENTRY( "CreateModelFromResourceSetup", CContentListingFrameworkTest::CreateModelFromResourceSetupL ),
+        ENTRY( "ListModelSetup", CContentListingFrameworkTest::ListModelSetupL ),
+        ENTRY( "ListModelSetupFromResource", CContentListingFrameworkTest::ListModelSetupFromResourceL ),
+        ENTRY( "ListModelAllFileItemsSetup", CContentListingFrameworkTest::ListModelAllFileItemsSetupL ),
+        ENTRY( "EngineTestSetup", CContentListingFrameworkTest::EngineTestSetupL ),
+        ENTRY( "SortingStyleTestSetup", CContentListingFrameworkTest::SortingStyleTestSetupL ),
+        ENTRY( "SortingStyleResourceTestSetup", CContentListingFrameworkTest::SortingStyleResourceTestSetupL ),
+        ENTRY( "ModifiableItemTestSetup", CContentListingFrameworkTest::ModifiableItemTestSetupL ),
+        ENTRY( "ItemTestSetup", CContentListingFrameworkTest::ItemTestSetupL ),
+        ENTRY( "MultibleSortingSetup", CContentListingFrameworkTest::MultibleSortingSetupL ),
+        ENTRY( "MultibleSortingResourceSetup", CContentListingFrameworkTest::MultibleSortingResourceSetupL ),
+        ENTRY( "Teardown", CContentListingFrameworkTest::Teardown ),
+        ENTRY( "CreateEngineTest", CContentListingFrameworkTest::CreateEngineTestL ),
+        ENTRY( "CreateModifiableItemTest", CContentListingFrameworkTest::CreateModifiableItemTestL ),
+        ENTRY( "CreateSortignStyleTest", CContentListingFrameworkTest::CreateSortignStyleTestL ),
+        ENTRY( "CreateSortignStyleFromResourceTest", CContentListingFrameworkTest::CreateSortignStyleFromResourceTestL ),
+        ENTRY( "CreateListModelTest", CContentListingFrameworkTest::CreateListModelTestL ),
+        ENTRY( "CreateListModelFromResourceTest", CContentListingFrameworkTest::CreateListModelFromResourceTestL ),
+        ENTRY( "UpdateItemsTest", CContentListingFrameworkTest::UpdateItemsTestL ),
+        ENTRY( "UpdateItemsWithIdTest", CContentListingFrameworkTest::UpdateItemsWithIdTestL ),
+        ENTRY( "UpdateItemsWithOpaqueDataFolderTest", CContentListingFrameworkTest::UpdateItemsWithOpaqueDataFolderTestL ),
+        ENTRY( "SortingStyleResourceTest", CContentListingFrameworkTest::SortingStyleResourceTestL ),
+        ENTRY( "SortingStyleOrderingTest", CContentListingFrameworkTest::SortingStyleOrderingTestL ),
+        ENTRY( "SortingStyleDataTypeTest", CContentListingFrameworkTest::SortingStyleDataTypeTestL ),
+        ENTRY( "SortingStyleUndefinedItemPositionTest", CContentListingFrameworkTest::SortingStyleUndefinedItemPositionTestL ),
+        ENTRY( "SortingStyleFieldTest", CContentListingFrameworkTest::SortingStyleFieldTestL ),
+        ENTRY( "RefreshTest", CContentListingFrameworkTest::RefreshTestL ),
+        ENTRY( "SetSortingStyleTest", CContentListingFrameworkTest::SetSortingStyleTestL ),
+        ENTRY( "SetCustomSorterTest", CContentListingFrameworkTest::SetCustomSorterTestL ),
+        ENTRY( "GroupingTest", CContentListingFrameworkTest::GroupingTestL ),
+        ENTRY( "SetPostFilterTest", CContentListingFrameworkTest::SetPostFilterTestL ),
+        ENTRY( "SetWantedMimeTypesTest", CContentListingFrameworkTest::SetWantedMimeTypesTestL ),
+        ENTRY( "SetWantedMediaTypesTest", CContentListingFrameworkTest::SetWantedMediaTypesTestL ),
+        ENTRY( "SetWantedMediaAndMimeTypesTest", CContentListingFrameworkTest::SetWantedMediaAndMimeTypesTestL ),
+        ENTRY( "MultibleSortingTest", CContentListingFrameworkTest::MultibleSortingTestL ),
+        ENTRY( "ModelItemsChangedTest", CContentListingFrameworkTest::ModelItemsChangedTestL ),
+        ENTRY( "ItemFieldTest", CContentListingFrameworkTest::ItemFieldTestL ),
+        ENTRY( "MIFieldTest", CContentListingFrameworkTest::MIFieldTestL ),
+        };
+    
+    const TInt count = sizeof( KFunctions ) / 
+                        sizeof( TStifFunctionInfo );
+
+    return RunInternalL( KFunctions, count, aItem );
+
     }
 
 /**
@@ -364,10 +410,10 @@ T_CLFApiModuleTests::~T_CLFApiModuleTests()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ResourceL
+// CContentListingFrameworkTest::ResourceL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::ResourceL( TInt aResourceId )
+void CContentListingFrameworkTest::ResourceL( TInt aResourceId )
     {
     delete iDataBuffer;
     iDataBuffer = NULL;
@@ -376,28 +422,28 @@ void T_CLFApiModuleTests::ResourceL( TInt aResourceId )
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleResourceL
+// CContentListingFrameworkTest::SortingStyleResourceL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SortingStyleResourceL()
+void CContentListingFrameworkTest::SortingStyleResourceL()
     {
     ResourceL( R_SORTING_STYLE );
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ListModelResourceL
+// CContentListingFrameworkTest::ListModelResourceL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::ListModelResourceL()
+void CContentListingFrameworkTest::ListModelResourceL()
     {
     ResourceL( R_LIST_MODEL );
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateNewFileL
+// CContentListingFrameworkTest::CreateNewFileL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::CreateNewFileL( TInt aNumber, TDes& aFileName )
+void CContentListingFrameworkTest::CreateNewFileL( TInt aNumber, TDes& aFileName )
     {
     aFileName.Copy( PathInfo::PhoneMemoryRootPath() );
     aFileName.Append( KTestFileNameBase );
@@ -418,15 +464,15 @@ void T_CLFApiModuleTests::CreateNewFileL( TInt aNumber, TDes& aFileName )
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::FindTestFileIdL
+// CContentListingFrameworkTest::FindTestFileIdL
 // ---------------------------------------------------------------------------
 //
-TCLFItemId T_CLFApiModuleTests::FindTestFileIdL( TInt aNumber )
+TCLFItemId CContentListingFrameworkTest::FindTestFileIdL( TInt aNumber )
     {
     TCLFItemId id( 0 );
     MCLFItemListModel* model = iEngine->CreateListModelLC( *iTestObserver );
     iMimeTypeArray->AppendL( _L("*") );
-
+    
     iTestObserver->iWait = &iWait;
     model->SetWantedMimeTypesL( *iMimeTypeArray );
     model->RefreshL();
@@ -457,10 +503,10 @@ TCLFItemId T_CLFApiModuleTests::FindTestFileIdL( TInt aNumber )
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckFileNameShortingL
+// CContentListingFrameworkTest::CheckFileNameShortingL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckFileNameShortingL()
+TBool CContentListingFrameworkTest::CheckFileNameShortingL()
     {
     TCollationMethod m = *Mem::CollationMethodByIndex( 0 );
     m.iFlags |= TCollationMethod::EIgnoreNone | TCollationMethod::EFoldCase;
@@ -486,10 +532,10 @@ TBool T_CLFApiModuleTests::CheckFileNameShortingL()
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckFileSizeShortingL
+// CContentListingFrameworkTest::CheckFileSizeShortingL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckFileSizeShortingL()
+TBool CContentListingFrameworkTest::CheckFileSizeShortingL()
     {
     for( TInt i = 0 ; i < iListModel->ItemCount() -1 ; ++i )
         {
@@ -511,10 +557,10 @@ TBool T_CLFApiModuleTests::CheckFileSizeShortingL()
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckMultibleSortingShortingL
+// CContentListingFrameworkTest::CheckMultibleSortingShortingL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckMultibleSortingShortingL()
+TBool CContentListingFrameworkTest::CheckMultibleSortingShortingL()
     {
     const MCLFItem* item = &( iListModel->Item( 0 ) );
     TInt32 data( 0 );
@@ -632,10 +678,10 @@ TBool T_CLFApiModuleTests::CheckMultibleSortingShortingL()
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckMultibleSortingShorting2L
+// CContentListingFrameworkTest::CheckMultibleSortingShorting2L
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckMultibleSortingShorting2L()
+TBool CContentListingFrameworkTest::CheckMultibleSortingShorting2L()
     {
 // check sorted
     const MCLFItem* item = &( iListModel->Item( 0 ) );
@@ -702,10 +748,10 @@ TBool T_CLFApiModuleTests::CheckMultibleSortingShorting2L()
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckFileDateShortingL
+// CContentListingFrameworkTest::CheckFileDateShortingL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckFileDateShortingL()
+TBool CContentListingFrameworkTest::CheckFileDateShortingL()
     {
     for( TInt i = 0 ; i < iListModel->ItemCount() -1 ; ++i )
         {
@@ -727,10 +773,10 @@ TBool T_CLFApiModuleTests::CheckFileDateShortingL()
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckFileTypesL
+// CContentListingFrameworkTest::CheckFileTypesL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckFileTypesL( const MDesCArray& aMimeTypeArray,
+TBool CContentListingFrameworkTest::CheckFileTypesL( const MDesCArray& aMimeTypeArray,
                                             const TArray<TInt>& aMediaTypes )
     {
     for( TInt i = 0 ; i < iListModel->ItemCount() ; ++i )
@@ -758,10 +804,10 @@ TBool T_CLFApiModuleTests::CheckFileTypesL( const MDesCArray& aMimeTypeArray,
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckMimeTypesL
+// CContentListingFrameworkTest::CheckMimeTypesL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckMimeTypesL( const MDesCArray& aMimeTypeArray,
+TBool CContentListingFrameworkTest::CheckMimeTypesL( const MDesCArray& aMimeTypeArray,
                                             const TDesC& aMimeType )
     {
     for( TInt j = 0 ; j < aMimeTypeArray.MdcaCount() ; ++j )
@@ -775,10 +821,10 @@ TBool T_CLFApiModuleTests::CheckMimeTypesL( const MDesCArray& aMimeTypeArray,
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CheckMediaTypesL
+// CContentListingFrameworkTest::CheckMediaTypesL
 // ---------------------------------------------------------------------------
 //
-TBool T_CLFApiModuleTests::CheckMediaTypesL( const TArray<TInt>& aMediaTypes,
+TBool CContentListingFrameworkTest::CheckMediaTypesL( const TArray<TInt>& aMediaTypes,
                                              TCLFMediaType aMediaType )
     {
     for( TInt j = 0 ; j < aMediaTypes.Count() ; ++j )
@@ -792,10 +838,10 @@ TBool T_CLFApiModuleTests::CheckMediaTypesL( const TArray<TInt>& aMediaTypes,
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MakeOpaqueDataL
+// CContentListingFrameworkTest::MakeOpaqueDataL
 // ---------------------------------------------------------------------------
 //
-HBufC8* T_CLFApiModuleTests::MakeOpaqueDataL( const MDesCArray& aFiles )
+HBufC8* CContentListingFrameworkTest::MakeOpaqueDataL( const MDesCArray& aFiles )
     {
     CDesCArray* folderArray = new ( ELeave ) CDesCArraySeg( 8 );
     CleanupStack::PushL( folderArray );
@@ -820,17 +866,17 @@ HBufC8* T_CLFApiModuleTests::MakeOpaqueDataL( const MDesCArray& aFiles )
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MakeMultibleSortingItemsL
+// CContentListingFrameworkTest::MakeMultibleSortingItemsL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::MakeMultibleSortingItemsL(
+void CContentListingFrameworkTest::MakeMultibleSortingItemsL(
                         RPointerArray<MCLFModifiableItem>& aItemArray )
     {
     for( TInt i = 0 ; i < 18 ; ++i )
         {
         MCLFModifiableItem* item = ContentListingFactory::NewModifiableItemLC();
         aItemArray.AppendL( item );
-        CleanupStack::Pop();
+        CleanupStack::Pop(); //item
 
         if( i < 3 )
             {
@@ -860,10 +906,10 @@ void T_CLFApiModuleTests::MakeMultibleSortingItemsL(
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::FindItem
+// CContentListingFrameworkTest::FindItem
 // ---------------------------------------------------------------------------
 //
-const MCLFItem* T_CLFApiModuleTests::FindItem( MCLFItemListModel& aModel, TCLFItemId aItemId )
+const MCLFItem* CContentListingFrameworkTest::FindItem( MCLFItemListModel& aModel, TCLFItemId aItemId )
     {
     for( TInt i = 0 ; i < aModel.ItemCount() ; ++i )
         {
@@ -881,10 +927,10 @@ const MCLFItem* T_CLFApiModuleTests::FindItem( MCLFItemListModel& aModel, TCLFIt
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::BaseSetupL
+// CContentListingFrameworkTest::BaseSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::BaseSetupL()
+TInt CContentListingFrameworkTest::BaseSetupL( CStifItemParser& /* aItem */ )
     {
     iFs.Close();
     iResourceFile.Close();
@@ -894,59 +940,66 @@ void T_CLFApiModuleTests::BaseSetupL()
     BaflUtils::NearestLanguageFile( iFs, fileName );
     iResourceFile.OpenL( iFs, KTestResourceFile );
     iResourceFile.ConfirmSignatureL( 0 );
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleResourceSetupL
+// CContentListingFrameworkTest::SortingStyleResourceSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleResourceSetupL()
+TInt CContentListingFrameworkTest::SortingStyleResourceSetupL( CStifItemParser& aItem )
     {
-    BaseSetupL();
+    BaseSetupL( aItem );
     SortingStyleResourceL();
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateModelSetupL
+// CContentListingFrameworkTest::CreateModelSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateModelSetupL()
+TInt CContentListingFrameworkTest::CreateModelSetupL( CStifItemParser& /* aItem */ )
     {
     iEngine = ContentListingFactory::NewContentListingEngineLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //engine
     iTestObserver  = new (ELeave) TTestOperationObserver;
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateModelFromResourceSetupL
+// CContentListingFrameworkTest::CreateModelFromResourceSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateModelFromResourceSetupL()
+TInt CContentListingFrameworkTest::CreateModelFromResourceSetupL( CStifItemParser& aItem )
     {
-    BaseSetupL();
-    CreateModelSetupL();
+    BaseSetupL( aItem );
+    CreateModelSetupL( aItem );
     ListModelResourceL();
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ListModelSetupL
+// CContentListingFrameworkTest::ListModelSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ListModelSetupL()
+TInt CContentListingFrameworkTest::ListModelSetupL( CStifItemParser& aItem )
     {
-    BaseSetupL();
-    CreateModelSetupL();
+    BaseSetupL( aItem );
+    CreateModelSetupL( aItem );
     iListModel = iEngine->CreateListModelLC( *iTestObserver );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //listModel
 
     iSortingStyle = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
     iSortingStyle1 = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
     iSortingStyle2 = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
     iSortingStyle3 = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
 
     iTestSorter = new (ELeave) TTestCustomSorter;
     iTestSorter1 = new (ELeave) TTestCustomSorter;
@@ -956,15 +1009,17 @@ void T_CLFApiModuleTests::ListModelSetupL()
     iTestFilter1 = new (ELeave) TTestPostFilter;
     iMimeTypeArray = new (ELeave) CDesCArrayFlat( 8 );
     iMimeTypeArray1 = new (ELeave) CDesCArrayFlat( 8 );
+    
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MultibleSortingSetupL
+// CContentListingFrameworkTest::MultibleSortingSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::MultibleSortingSetupL()
+TInt CContentListingFrameworkTest::MultibleSortingSetupL( CStifItemParser& aItem )
     {
-    ListModelSetupL();
+    ListModelSetupL( aItem );
     MakeMultibleSortingItemsL( iModifiableItems );
 
 // use custom grouper to make own items
@@ -999,20 +1054,22 @@ void T_CLFApiModuleTests::MultibleSortingSetupL()
     iListModel->AppendSecondarySortingStyleL( *iSortingStyle1 );
     iListModel->AppendSecondarySortingStyleL( *iSortingStyle2 );
     iListModel->AppendSecondarySortingStyleL( *iSortingStyle3 );
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MultibleSortingResourceSetupL
+// CContentListingFrameworkTest::MultibleSortingResourceSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::MultibleSortingResourceSetupL()
+TInt CContentListingFrameworkTest::MultibleSortingResourceSetupL( CStifItemParser& aItem )
     {
-    ListModelSetupL();
+    ListModelSetupL( aItem );
     delete iListModel;
     iListModel = NULL;
     ResourceL( R_LIST_MODEL_MULTIBLE );
     iListModel = iEngine->CreateListModelLC( *iTestObserver, iResourceReader );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //listModel
 
 // use custom grouper to make own items
     MakeMultibleSortingItemsL( iModifiableItems );
@@ -1020,15 +1077,16 @@ void T_CLFApiModuleTests::MultibleSortingResourceSetupL()
     iTestGrouper->iCopyItems = ETrue;
     iListModel->SetCustomGrouper( iTestGrouper );
 
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ListModelAllFileItemsSetupL
+// CContentListingFrameworkTest::ListModelAllFileItemsSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ListModelAllFileItemsSetupL()
+TInt CContentListingFrameworkTest::ListModelAllFileItemsSetupL( CStifItemParser& aItem )
     {
-    ListModelSetupL();
+    ListModelSetupL( aItem );
     iMediaTypeArray.AppendL( ECLFMediaTypeVideo );
     iMediaTypeArray.AppendL( ECLFMediaTypeImage );
     iMediaTypeArray.AppendL( ECLFMediaTypeSound );
@@ -1040,84 +1098,98 @@ void T_CLFApiModuleTests::ListModelAllFileItemsSetupL()
     iListModel->RefreshL();
     iWait.Start();
     iItemCount = iListModel->ItemCount();
+    
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ListModelSetupFromResourceL
+// CContentListingFrameworkTest::ListModelSetupFromResourceL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ListModelSetupFromResourceL()
+TInt CContentListingFrameworkTest::ListModelSetupFromResourceL( CStifItemParser& aItem )
     {
-    BaseSetupL();
-    CreateModelSetupL();
+    BaseSetupL( aItem );
+    CreateModelSetupL( aItem );
     ListModelResourceL();
     iListModel = iEngine->CreateListModelLC( *iTestObserver, iResourceReader );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //listModel
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::EngineTestSetupL
+// CContentListingFrameworkTest::EngineTestSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::EngineTestSetupL()
+TInt CContentListingFrameworkTest::EngineTestSetupL( CStifItemParser& /* aItem */ )
     {
     User::LeaveIfError( iFs.Connect() );
     iTestObserver  = new (ELeave) TTestOperationObserver;
     iMimeTypeArray = new (ELeave) CDesCArrayFlat( 8 );
     iEngine = ContentListingFactory::NewContentListingEngineLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //engine
     iChangedItemObserver = new (ELeave) TTestChangedItemObserver;
     iChangedItemObserver1 = new (ELeave) TTestChangedItemObserver;
     iTestCLFProcessObserver = new (ELeave) TTestCLFProcessObserver;
     iTestCLFProcessObserver1 = new (ELeave) TTestCLFProcessObserver;
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleTestSetupL
+// CContentListingFrameworkTest::SortingStyleTestSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleTestSetupL()
+TInt CContentListingFrameworkTest::SortingStyleTestSetupL( CStifItemParser& /* aItem */ )
     {
     iSortingStyle = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleResourceTestSetupL
+// CContentListingFrameworkTest::SortingStyleResourceTestSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleResourceTestSetupL()
+TInt CContentListingFrameworkTest::SortingStyleResourceTestSetupL( CStifItemParser& aItem )
     {
-    SortingStyleResourceSetupL();
+    SortingStyleResourceSetupL( aItem );
     iSortingStyle1 = ContentListingFactory::NewSortingStyleLC( iResourceReader );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
 
     ResourceL( R_SORTING_STYLE_EMPTY );
     iSortingStyle = ContentListingFactory::NewSortingStyleLC( iResourceReader );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
 
     ResourceL( R_SORTING_STYLE_UNDEFINEDITEM );
     iSortingStyle2 = ContentListingFactory::NewSortingStyleLC( iResourceReader );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // sortingStyle
+
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ModifiableItemTestSetupL
+// CContentListingFrameworkTest::ModifiableItemTestSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ModifiableItemTestSetupL()
+TInt CContentListingFrameworkTest::ModifiableItemTestSetupL( CStifItemParser& /* aItem */ )
     {
     iModifiableItem = ContentListingFactory::NewModifiableItemLC();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //item
+    
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ItemTestSetupL
+// CContentListingFrameworkTest::ItemTestSetupL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ItemTestSetupL()
+TInt CContentListingFrameworkTest::ItemTestSetupL( CStifItemParser& aItem )
     {
-    ListModelSetupL();
+    TInt ret = KErrNone;
+
+    ListModelSetupL( aItem );
     CreateNewFileL( 12, iFileName );
     iEngine->UpdateItemsL();
     iMimeTypeArray->Reset();
@@ -1139,8 +1211,11 @@ void T_CLFApiModuleTests::ItemTestSetupL()
             }
         }
 
-    EUNIT_ASSERT( iItem ); // Item should be in model
-
+    if (!iItem)
+        {
+        ret = KErrUnknown;
+        }
+    return ret;
     }
 
 /**
@@ -1148,10 +1223,10 @@ void T_CLFApiModuleTests::ItemTestSetupL()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::Teardown
+// CContentListingFrameworkTest::Teardown
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::Teardown()
+TInt CContentListingFrameworkTest::Teardown( CStifItemParser& /* aItem */ )
     {
     iResourceFile.Close();
     iFs.Close();
@@ -1213,6 +1288,8 @@ void T_CLFApiModuleTests::Teardown()
     
     TTimeIntervalMicroSeconds32 time = 1000000;
     TRAP_IGNORE( CCLFAsyncCallback::AfterL( time ) );
+
+    return KErrNone;
     }
 
 /**
@@ -1220,126 +1297,190 @@ void T_CLFApiModuleTests::Teardown()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateEngineTestL
+// CContentListingFrameworkTest::CreateEngineTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateEngineTestL()
+TInt CContentListingFrameworkTest::CreateEngineTestL( CStifItemParser& /* aItem */ )
     {
-    MCLFContentListingEngine* engine = NULL;
-    engine = ContentListingFactory::NewContentListingEngineLC();
-    EUNIT_ASSERT( engine );
-    CleanupStack::PopAndDestroy();
-    engine = NULL;
-    engine = ContentListingFactory::NewContentListingEngineLC();
-    CleanupStack::Pop();
-    EUNIT_ASSERT( engine );
-    delete engine;
+    TInt ret = KErrNone;
+
+    iEngine = ContentListingFactory::NewContentListingEngineLC();
+    if (!iEngine)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy(); //engine
+    iEngine = NULL;
+    iEngine = ContentListingFactory::NewContentListingEngineLC();
+    if (!iEngine)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // engine
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateModifiableItemTestL
+// CContentListingFrameworkTest::CreateModifiableItemTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateModifiableItemTestL()
+TInt CContentListingFrameworkTest::CreateModifiableItemTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     MCLFModifiableItem* item = NULL;
     item = ContentListingFactory::NewModifiableItemLC();
-    EUNIT_ASSERT( item );
-    CleanupStack::PopAndDestroy();
+    if (!item)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy(); // item
     item = NULL;
     item = ContentListingFactory::NewModifiableItemLC();
-    CleanupStack::Pop();
-    EUNIT_ASSERT( item );
+    if (!item)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // item
     delete item;
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateSortignStyleTestL
+// CContentListingFrameworkTest::CreateSortignStyleTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateSortignStyleTestL()
+TInt CContentListingFrameworkTest::CreateSortignStyleTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     MCLFSortingStyle* sortingStyle = NULL;
     sortingStyle = ContentListingFactory::NewSortingStyleLC();
-    EUNIT_ASSERT( sortingStyle );
-    CleanupStack::PopAndDestroy();
+    if (!sortingStyle)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy(); // sortingStyle
     sortingStyle = NULL;
     sortingStyle = ContentListingFactory::NewSortingStyleLC();
-    CleanupStack::Pop();
-    EUNIT_ASSERT( sortingStyle );
+    if (!sortingStyle)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // sortingStyle
     delete sortingStyle;
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateSortignStyleFromResourceTestL
+// CContentListingFrameworkTest::CreateSortignStyleFromResourceTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateSortignStyleFromResourceTestL()
+TInt CContentListingFrameworkTest::CreateSortignStyleFromResourceTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     MCLFSortingStyle* sortingStyle = NULL;
     sortingStyle = ContentListingFactory::NewSortingStyleLC( iResourceReader );
-    EUNIT_ASSERT( sortingStyle );
-    CleanupStack::PopAndDestroy();
+    if (!sortingStyle)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy(); // sortingStyle
     sortingStyle = NULL;
 
     SortingStyleResourceL(); // refresh resource reader
     sortingStyle = ContentListingFactory::NewSortingStyleLC( iResourceReader );
-    CleanupStack::Pop();
-    EUNIT_ASSERT( sortingStyle );
+    if (!sortingStyle)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // sortingStyle
     delete sortingStyle;
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateListModelTestL
+// CContentListingFrameworkTest::CreateListModelTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateListModelTestL()
+TInt CContentListingFrameworkTest::CreateListModelTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     MCLFItemListModel* model = NULL;
     model = iEngine->CreateListModelLC( *iTestObserver );
-    EUNIT_ASSERT( model );
-    CleanupStack::PopAndDestroy();
+    if (!model)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy();  //listModel
     model = NULL;
 
     model = iEngine->CreateListModelLC( *iTestObserver );
-    CleanupStack::Pop();
-    EUNIT_ASSERT( model );
+    if (!model)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // listModel
     delete model;
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::CreateListModelFromResourceTestL
+// CContentListingFrameworkTest::CreateListModelFromResourceTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::CreateListModelFromResourceTestL()
+TInt CContentListingFrameworkTest::CreateListModelFromResourceTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     MCLFItemListModel* model = NULL;
     model = iEngine->CreateListModelLC( *iTestObserver, iResourceReader );
-    EUNIT_ASSERT( model );
-    CleanupStack::PopAndDestroy();
+    if (!model)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::PopAndDestroy(); //listModel
     model = NULL;
 
     ListModelResourceL();
     model = iEngine->CreateListModelLC( *iTestObserver, iResourceReader );
-    CleanupStack::Pop();
-    EUNIT_ASSERT( model );
+    if (!model)
+        {
+        ret = KErrUnknown;
+        }
+    CleanupStack::Pop(); // listModel
     delete model;
 
-
     ResourceL( R_LIST_MODEL_INCORRECT_VERSION );
-    EUNIT_ASSERT_SPECIFIC_LEAVE( iEngine->CreateListModelLC( *iTestObserver, iResourceReader ), KErrNotSupported );
-   }
+    TRAPD(error, iEngine->CreateListModelLC( *iTestObserver, iResourceReader ));
+    if (error != KErrNotSupported)
+        {
+        ret = KErrUnknown;
+        CleanupStack::Pop(); // listModel
+        }
+
+    return ret;
+    }
 
 /**
  * Tests, engine
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::UpdateItemsTestL
+// CContentListingFrameworkTest::UpdateItemsTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::UpdateItemsTestL()
+TInt CContentListingFrameworkTest::UpdateItemsTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     // MDS will do the updating automatically in the background,
     // thus only checking that the methods return correctly
     iChangedItemObserver->iWait = &iWait;
@@ -1356,11 +1497,11 @@ void T_CLFApiModuleTests::UpdateItemsTestL()
     CreateNewFileL( 5, iFileName );
 
 // update server
-// to avoid incorrect test result
+// to aTInt incorrect test result
     CreateNewFileL( 0, iFileName );
     iEngine->UpdateItemsL();
 
-    EUNIT_ASSERT( iChangedItemObserver->iLastError == KErrNone );
+    ret = iChangedItemObserver->iLastError;
 
     iChangedArray.Reset();
     iEngine->RemoveCLFProcessObserver( *iTestCLFProcessObserver1 );
@@ -1369,14 +1510,18 @@ void T_CLFApiModuleTests::UpdateItemsTestL()
     iTestCLFProcessObserver->Reset();
     iTestCLFProcessObserver1->Reset();
     iEngine->UpdateItemsL();
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::UpdateItemsWithIdTestL
+// CContentListingFrameworkTest::UpdateItemsWithIdTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::UpdateItemsWithIdTestL()
+TInt CContentListingFrameworkTest::UpdateItemsWithIdTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     // MDS will do the updating automatically in the background,
     // thus only checking that the methods return correctly
     iChangedItemObserver->iWait = &iWait;
@@ -1385,32 +1530,38 @@ void T_CLFApiModuleTests::UpdateItemsWithIdTestL()
     iEngine->AddChangedItemObserverL( *iChangedItemObserver1 );
     iEngine->AddCLFProcessObserverL( *iTestCLFProcessObserver );
 
-    CreateNewFileL( 0, iFileName );
-    CreateNewFileL( 1, iFileName );
-    CreateNewFileL( 2, iFileName );
+    CreateNewFileL( 6, iFileName );
+    CreateNewFileL( 7, iFileName );
+    CreateNewFileL( 8, iFileName );
 
 // update server
-// to avoid incorrect test result
-    CreateNewFileL( 0, iFileName );
+// to aTInt incorrect test result
+    CreateNewFileL( 6, iFileName );
     iEngine->UpdateItemsL();
     
-    EUNIT_ASSERT( iChangedItemObserver->iLastError == KErrNone );
+    if (iChangedItemObserver->iLastError != KErrNone)
+        {
+        ret = KErrUnknown;
+        }
 
 // start testing
 // update by id
-    TUint id1 = FindTestFileIdL( 1 );
-    TUint id0 = FindTestFileIdL( 0 );
-    TUint id2 = FindTestFileIdL( 2 );
+    TUint id1 = FindTestFileIdL( 7 );
+    TUint id0 = FindTestFileIdL( 6 );
+    TUint id2 = FindTestFileIdL( 8 );
     iUpdateItemIdArray.AppendL( id1 );
     iChangedItemObserver->iHandleItemChange = EFalse;
     iChangedItemObserver1->iHandleItemChange = EFalse;
     iTestCLFProcessObserver->Reset();
     iTestCLFProcessObserver1->Reset();
-    CreateNewFileL( 0, iFileName );
-    CreateNewFileL( 1, iFileName );
+    CreateNewFileL( 6, iFileName );
+    CreateNewFileL( 7, iFileName );
     iEngine->UpdateItemsL( iUpdateItemIdArray.Array() );
     
-    EUNIT_ASSERT( iChangedItemObserver->iLastError == KErrNone );
+    if (iChangedItemObserver->iLastError != KErrNone)
+        {
+        ret = KErrUnknown;
+        }
 
     iEngine->RemoveChangedItemObserver( *iChangedItemObserver1 );
     iEngine->AddCLFProcessObserverL( *iTestCLFProcessObserver1 );
@@ -1423,29 +1574,31 @@ void T_CLFApiModuleTests::UpdateItemsWithIdTestL()
     iUpdateItemIdArray.AppendL( id2 );
     
 // update server
-// to avoid incorrect test result
+// to aTInt incorrect test result
     iEngine->UpdateItemsL();
     
-    EUNIT_ASSERT( iChangedItemObserver->iLastError == KErrNone );
+    if (iChangedItemObserver->iLastError != KErrNone)
+        {
+        ret = KErrUnknown;
+        }
     
-    CreateNewFileL( 0, iFileName );
-    CreateNewFileL( 1, iFileName );
-    CreateNewFileL( 2, iFileName );
+    CreateNewFileL( 6, iFileName );
+    CreateNewFileL( 7, iFileName );
+    CreateNewFileL( 8, iFileName );
     iChangedArray.Reset();
     
     iEngine->UpdateItemsL( iUpdateItemIdArray.Array() );
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::UpdateItemsWithOpaqueDataFolderTestL
+// CContentListingFrameworkTest::UpdateItemsWithOpaqueDataFolderTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::UpdateItemsWithOpaqueDataFolderTestL()
+TInt CContentListingFrameworkTest::UpdateItemsWithOpaqueDataFolderTestL( CStifItemParser& /* aItem */ )
     {
-    // update server
-    // to avoid incorrect test result
-    iEngine->UpdateItemsL();
-    iWait.Start();
+    TInt ret = KErrNone;
 
     // start testing
     // update by opaque data
@@ -1459,6 +1612,8 @@ void T_CLFApiModuleTests::UpdateItemsWithOpaqueDataFolderTestL()
     // Calls internally same MDS method as when updating all data
     // thus only interested if this call leaves
     iEngine->UpdateItemsL( iSemanticId, *iOpaqueData );
+
+    return ret;
     }
 
 /**
@@ -1466,11 +1621,13 @@ void T_CLFApiModuleTests::UpdateItemsWithOpaqueDataFolderTestL()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::RefreshTestL
+// CContentListingFrameworkTest::RefreshTestL
 // ---------------------------------------------------------------------------
 //  
-void T_CLFApiModuleTests::RefreshTestL()
+TInt CContentListingFrameworkTest::RefreshTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iMimeTypeArray->Reset();
     iMimeTypeArray->AppendL( _L("*") );
     iListModel->SetWantedMimeTypesL( *iMimeTypeArray );
@@ -1479,24 +1636,41 @@ void T_CLFApiModuleTests::RefreshTestL()
     iTestObserver->iError = 100;
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFRefreshComplete );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() > 0 );
+
+    if (iTestObserver->iOperationEvent != ECLFRefreshComplete)
+        {
+        ret = KErrUnknown;
+        }
+    if (iTestObserver->iError != KErrNone)
+        {
+        ret = KErrUnknown;
+        }
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // cancel refresh
     iListModel->RefreshL();
     iListModel->CancelRefresh();
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetSortingStyleTestL
+// CContentListingFrameworkTest::SetSortingStyleTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SetSortingStyleTestL()
+TInt CContentListingFrameworkTest::SetSortingStyleTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iListModel->SetSortingStyle( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
+    if (CheckFileNameShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
 // file name sorting
     iSortingStyle->ResetL();
@@ -1504,7 +1678,10 @@ void T_CLFApiModuleTests::SetSortingStyleTestL()
     iSortingStyle->AddFieldL( ECLFFieldIdFileName );
     iListModel->SetSortingStyle( iSortingStyle );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( CheckFileNameShortingL() );
+    if (!CheckFileNameShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
 // file size sorting
     iSortingStyle1->ResetL();
@@ -1513,13 +1690,17 @@ void T_CLFApiModuleTests::SetSortingStyleTestL()
     iSortingStyle1->AddFieldL( ECLFFieldIdFileSize );
     iListModel->SetSortingStyle( iSortingStyle1 );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( CheckFileSizeShortingL() );
+    if (CheckFileNameShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->SetSortingStyle( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( !CheckFileDateShortingL() );
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
 // time sorting
     iSortingStyle->ResetL();
@@ -1527,95 +1708,121 @@ void T_CLFApiModuleTests::SetSortingStyleTestL()
     iSortingStyle->AddFieldL( ECLFFieldIdFileDate );
     iListModel->SetSortingStyle( iSortingStyle );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( CheckFileDateShortingL() );
+    if (!CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
 // parameter test (time)
     iListModel->SetSortingStyle( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( !CheckFileDateShortingL() );
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->SetSortingStyle( iSortingStyle );
     iListModel->RefreshL( ECLFRefreshPostFilter );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( !CheckFileDateShortingL() );
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->RefreshL( ECLFRefreshGrouping );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( !CheckFileDateShortingL() );
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->RefreshL( ECLFRefreshSorting );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( CheckFileDateShortingL() );
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || !CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
 
 // custom sorter (overwrite sorting style)
     iTestSorter->iSortItems = EFalse;
-
     iListModel->SetCustomSorter( iTestSorter );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iTestSorter->iSortItems );
-    EUNIT_ASSERT( !CheckFileNameShortingL() );
-    EUNIT_ASSERT( !CheckFileSizeShortingL() );
-    EUNIT_ASSERT( !CheckFileDateShortingL() );
+    if (!(iTestSorter->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
+    if (CheckFileNameShortingL() || CheckFileSizeShortingL() || CheckFileDateShortingL())
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetCustomSorterTestL
+// CContentListingFrameworkTest::SetCustomSorterTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SetCustomSorterTestL()
+TInt CContentListingFrameworkTest::SetCustomSorterTestL( CStifItemParser& /* aItem */ )
     {
-    iTestSorter->iSortItems = EFalse;
-    iTestSorter1->iSortItems = EFalse;
-
-    iListModel->SetCustomSorter( NULL );
-    iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
-
-    iTestSorter->iSortItems = EFalse;
-    iTestSorter1->iSortItems = EFalse;
-
-    iListModel->SetCustomSorter( iTestSorter );
-    iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
-
-    iTestSorter->iSortItems = EFalse;
-    iTestSorter1->iSortItems = EFalse;
-
-    iListModel->SetCustomSorter( iTestSorter1 );
-    iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( iTestSorter1->iSortItems );
+    TInt ret = KErrNone;
 
     iTestSorter->iSortItems = EFalse;
     iTestSorter1->iSortItems = EFalse;
 
     iListModel->SetCustomSorter( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if ((iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
     iTestSorter->iSortItems = EFalse;
     iTestSorter1->iSortItems = EFalse;
 
     iListModel->SetCustomSorter( iTestSorter );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if (!(iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
     iTestSorter->iSortItems = EFalse;
     iTestSorter1->iSortItems = EFalse;
 
     iListModel->SetCustomSorter( iTestSorter1 );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( iTestSorter1->iSortItems );
+    if ((iTestSorter->iSortItems) || !(iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
+
+    iTestSorter->iSortItems = EFalse;
+    iTestSorter1->iSortItems = EFalse;
+
+    iListModel->SetCustomSorter( NULL );
+    iListModel->RefreshL( ECLFRefreshAll );
+    if ((iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+       ret = KErrUnknown;
+        }
+
+    iTestSorter->iSortItems = EFalse;
+    iTestSorter1->iSortItems = EFalse;
+
+    iListModel->SetCustomSorter( iTestSorter );
+    iListModel->RefreshL( ECLFRefreshAll );
+    if (!(iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
+
+    iTestSorter->iSortItems = EFalse;
+    iTestSorter1->iSortItems = EFalse;
+
+    iListModel->SetCustomSorter( iTestSorter1 );
+    iListModel->RefreshL( ECLFRefreshAll );
+    if ((iTestSorter->iSortItems) || !(iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
 // parameter test
     iTestSorter->iSortItems = EFalse;
@@ -1623,8 +1830,10 @@ void T_CLFApiModuleTests::SetCustomSorterTestL()
 
     iListModel->SetCustomSorter( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if ((iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
 
     iTestSorter->iSortItems = EFalse;
@@ -1632,133 +1841,210 @@ void T_CLFApiModuleTests::SetCustomSorterTestL()
 
     iListModel->SetCustomSorter( iTestSorter );
     iListModel->RefreshL( ECLFRefreshPostFilter );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if ((iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->RefreshL( ECLFRefreshGrouping );
-    EUNIT_ASSERT( !iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if ((iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
     iListModel->RefreshL( ECLFRefreshSorting );
-    EUNIT_ASSERT( iTestSorter->iSortItems );
-    EUNIT_ASSERT( !iTestSorter1->iSortItems );
+    if (!(iTestSorter->iSortItems) || (iTestSorter1->iSortItems))
+        {
+        ret = KErrUnknown;
+        }
 
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::GroupingTestL
+// CContentListingFrameworkTest::GroupingTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::GroupingTestL()
+TInt CContentListingFrameworkTest::GroupingTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iTestGrouper->iModifiableItems = &iModifiableItems;
     iTestGrouper1->iModifiableItems = &iModifiableItems;
 
 // No grouping
     iListModel->SetCustomGrouper( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 
 // couple groups
     iListModel->SetCustomGrouper( iTestGrouper );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iModifiableItems.Count() );
+    if (iListModel->ItemCount() != iModifiableItems.Count())
+        {
+        ret = KErrUnknown;
+        }
 
 // 0 groups
     iTestGrouper1->iGroupCount = 0;
     iListModel->SetCustomGrouper( iTestGrouper1 );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iModifiableItems.Count() );
+    if (iListModel->ItemCount() != iModifiableItems.Count())
+        {
+        ret = KErrUnknown;
+        }
 
 // No grouping
     iListModel->SetCustomGrouper( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 // Music album grouping
     iListModel->SetGroupingStyle( ECLFMusicAlbumGrouping );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() != iItemCount );
+    if (iListModel->ItemCount() == iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 // No grouping
     iListModel->SetGroupingStyle( ECLFNoGrouping );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 
 // test parameters
     iTestGrouper->iGroupCount = 1000;
     iListModel->SetCustomGrouper( iTestGrouper );
     iListModel->RefreshL( ECLFRefreshPostFilter );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
     iListModel->RefreshL( ECLFRefreshSorting );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
     iListModel->RefreshL( ECLFRefreshGrouping );
-    EUNIT_ASSERT( iListModel->ItemCount() == iModifiableItems.Count() );
+    if (iListModel->ItemCount() != iModifiableItems.Count())
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetPostFilterTestL
+// CContentListingFrameworkTest::SetPostFilterTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SetPostFilterTestL()
+TInt CContentListingFrameworkTest::SetPostFilterTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
 // no filter
     iListModel->SetPostFilter( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 
 // filter couple items
     iListModel->SetPostFilter( iTestFilter );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( ( iListModel->ItemCount() + iTestFilter->iFilteredCount ) == iItemCount );
+    if ( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) == iItemCount )
+        {
+        ret = KErrUnknown;
+        }
 
 // filter all items
     iListModel->SetPostFilter( iTestFilter1 );
     iTestFilter1->iAllFilter = ETrue;
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) == iItemCount );
+    if ( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) != iItemCount )
+        {
+        ret = KErrUnknown;
+        }
 
 // no filter
     iListModel->SetPostFilter( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
 
 // filter one item
     iListModel->SetPostFilter( iTestFilter );
     iTestFilter->iShouldFilterCount = 1;
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( ( iListModel->ItemCount() + iTestFilter->iFilteredCount ) == iItemCount );
+    if ( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) == iItemCount )
+        {
+        ret = KErrUnknown;
+        }
 
 // filter couple items
     iListModel->SetPostFilter( iTestFilter1 );
     iTestFilter1->iAllFilter = EFalse;
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) == iItemCount );
+    if ( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) != iItemCount )
+        {
+        ret = KErrUnknown;
+        }
 
 // test parameters
     iListModel->SetPostFilter( NULL );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
     iListModel->SetPostFilter( iTestFilter1 );
     iTestFilter1->iAllFilter = ETrue;
     iListModel->RefreshL( ECLFRefreshSorting );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+       ret = KErrUnknown;
+        }
     iListModel->RefreshL( ECLFRefreshGrouping );
-    EUNIT_ASSERT( iListModel->ItemCount() == iItemCount );
+    if (iListModel->ItemCount() != iItemCount)
+        {
+        ret = KErrUnknown;
+        }
     iListModel->RefreshL( ECLFRefreshPostFilter );
-    EUNIT_ASSERT( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) == iItemCount );
+    if ( ( iListModel->ItemCount() + iTestFilter1->iFilteredCount ) != iItemCount )
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetWantedMimeTypesTestL
+// CContentListingFrameworkTest::SetWantedMimeTypesTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SetWantedMimeTypesTestL()
+TInt CContentListingFrameworkTest::SetWantedMimeTypesTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iTestObserver->iWait = &iWait;
 
 // list not defined (mimetype)
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // couple mime types
     iMimeTypeArray->Reset();
@@ -1774,22 +2060,31 @@ void T_CLFApiModuleTests::SetWantedMimeTypesTestL()
     iListModel->SetWantedMimeTypesL( *iMimeTypeArray );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
 // unsupported mimetype
     iMimeTypeArray1->Reset();
-    iMimeTypeArray1->AppendL( _L("ei tämmöstä ees pitäis olla")  );
+    iMimeTypeArray1->AppendL( _L("__not_supported__")  );
     iListModel->SetWantedMimeTypesL( *iMimeTypeArray1 );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // empty mimetype list
     iMimeTypeArray1->Reset();
     iListModel->SetWantedMimeTypesL( *iMimeTypeArray1 );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // from resource (mimetype)
     iMimeTypeArray->Reset();
@@ -1800,31 +2095,48 @@ void T_CLFApiModuleTests::SetWantedMimeTypesTestL()
     iListModel->SetWantedMimeTypesL( iResourceReader );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
     ResourceL( R_MIME_TYPE_ARRAY_EMPTY );
     iListModel->SetWantedMimeTypesL( iResourceReader );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // incorrect resource version
     ResourceL( R_MIME_TYPE_ARRAY_INCORRECT_VERSION );
-    EUNIT_ASSERT_SPECIFIC_LEAVE( iListModel->SetWantedMimeTypesL( iResourceReader ), KErrNotSupported );
+    TRAPD(error, iListModel->SetWantedMimeTypesL( iResourceReader ));
+    if (error != KErrNotSupported)
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetWantedMediaTypesTestL
+// CContentListingFrameworkTest::SetWantedMediaTypesTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SetWantedMediaTypesTestL()
+TInt CContentListingFrameworkTest::SetWantedMediaTypesTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iTestObserver->iWait = &iWait;
 
 // list not defined (mediatype)
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // couple media types
     iMediaTypeArray.AppendL( ECLFMediaTypeVideo );
@@ -1838,13 +2150,19 @@ void T_CLFApiModuleTests::SetWantedMediaTypesTestL()
     iListModel->SetWantedMediaTypesL( iMediaTypeArray.Array() );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
 // empty media type list list
     iListModel->SetWantedMediaTypesL( iMediaTypeArray1.Array() );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // media type list from resource
     iMediaTypeArray.Reset();
@@ -1854,27 +2172,40 @@ void T_CLFApiModuleTests::SetWantedMediaTypesTestL()
     iListModel->SetWantedMediaTypesL( iResourceReader );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
 // empty media type list from resource
     ResourceL( R_MEDIA_TYPE_ARRAY_EMPTY );
     iListModel->SetWantedMediaTypesL( iResourceReader );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SetWantedMediaAndMimeTypesTestL
+// CContentListingFrameworkTest::SetWantedMediaAndMimeTypesTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::SetWantedMediaAndMimeTypesTestL()
+TInt CContentListingFrameworkTest::SetWantedMediaAndMimeTypesTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iTestObserver->iWait = &iWait;
 
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
 
 // couple types
     iMimeTypeArray->AppendL( _L( "audio/mpeg" ) );
@@ -1892,12 +2223,18 @@ void T_CLFApiModuleTests::SetWantedMediaAndMimeTypesTestL()
     iListModel->SetWantedMediaTypesL( iMediaTypeArray.Array() );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
 // refresh again
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) );
+    if ( !CheckFileTypesL( *iMimeTypeArray, iMediaTypeArray.Array() ) )
+        {
+        ret = KErrUnknown;
+        }
 
 // empty lists
     iMediaTypeArray.Reset();
@@ -1906,18 +2243,27 @@ void T_CLFApiModuleTests::SetWantedMediaAndMimeTypesTestL()
     iListModel->SetWantedMimeTypesL( *iMimeTypeArray );
     iListModel->RefreshL();
     iWait.Start();
-    EUNIT_ASSERT( iListModel->ItemCount() == 0 );
+    if (iListModel->ItemCount() != 0)
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MultibleSortingTestL
+// CContentListingFrameworkTest::MultibleSortingTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::MultibleSortingTestL()
+TInt CContentListingFrameworkTest::MultibleSortingTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
 
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( CheckMultibleSortingShortingL() );
+    if ( !CheckMultibleSortingShortingL() )
+        {
+        ret = KErrUnknown;
+        }
 
 // resort
 
@@ -1928,8 +2274,12 @@ void T_CLFApiModuleTests::MultibleSortingTestL()
     iSortingStyle->SetUndefinedItemPosition( ECLFSortingStyleUndefinedEnd );
     iListModel->SetSortingStyle( iSortingStyle );
     iListModel->RefreshL( ECLFRefreshAll );
-    EUNIT_ASSERT( CheckMultibleSortingShorting2L() );
+    if ( CheckMultibleSortingShortingL() )
+        {
+        ret = KErrUnknown;
+        }
 
+    return ret;
     }
 
 /*
@@ -1940,19 +2290,21 @@ void T_CLFApiModuleTests::MultibleSortingTestL()
 // ModelItemsChangedTestL
 // ---------------------------------------------------------------------------
 //
-void T_CLFApiModuleTests::ModelItemsChangedTestL()
+TInt CContentListingFrameworkTest::ModelItemsChangedTestL( CStifItemParser& /* aItem */ )
     {
-    const TInt newFileNumber( 10 );
+    TInt ret = KErrNone;
+
+    const TInt newFileNumber( 13 );
 
 // create test files
-    CreateNewFileL( 0, iFileName );
-    CreateNewFileL( 1, iFileName );
-    CreateNewFileL( 2, iFileName );
+    CreateNewFileL( 9, iFileName );
+    CreateNewFileL( 10, iFileName );
+    CreateNewFileL( 11, iFileName );
     CreateNewFileL( newFileNumber, iFileName );
     User::LeaveIfError( iFs.Delete( iFileName ) );
 
 // update server
-// to avoid incorrect test result
+// to aTInt incorrect test result
     CreateNewFileL( 0, iFileName );
     iEngine->UpdateItemsL();
 
@@ -1965,9 +2317,13 @@ void T_CLFApiModuleTests::ModelItemsChangedTestL()
     iTestObserver->iError = 100;
     iListModel->RefreshL();
     iWait.Start();  // wait until model is refreshed
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFRefreshComplete );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() > 0 );
+
+    if ( iTestObserver->iOperationEvent != ECLFRefreshComplete
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != 0 )
+        {
+        ret = KErrUnknown;
+        }
 
     const TInt listModelItemCount( iListModel->ItemCount() );
     const TCLFItemId testId( FindTestFileIdL( 0 ) );
@@ -1977,50 +2333,70 @@ void T_CLFApiModuleTests::ModelItemsChangedTestL()
     iEngine->UpdateItemsL();
     iWait.Start(); // wait until model outdated event is received
 
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFModelOutdated );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount );
-    EUNIT_ASSERT( NULL != FindItem( *iListModel, testId ) );
+    if ( iTestObserver->iOperationEvent != ECLFModelOutdated
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount
+         || FindItem( *iListModel, testId ) == NULL )
+        {
+        ret = KErrUnknown;
+        }
 
     iTestObserver->iError = 100;
     iListModel->RefreshL();
     iWait.Start();  // wait until model is refreshed
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFRefreshComplete );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount );
-    EUNIT_ASSERT( NULL != FindItem( *iListModel, testId ) );
+    if ( iTestObserver->iOperationEvent != ECLFRefreshComplete
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount
+         || FindItem( *iListModel, testId ) == NULL )
+        {
+        ret = KErrUnknown;
+        }
 
 // test with new item
     CreateNewFileL( newFileNumber, iFileName );
     iEngine->UpdateItemsL();
     iWait.Start(); // wait until model outdated event is received
 
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFModelOutdated );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount );
+    if ( iTestObserver->iOperationEvent != ECLFModelOutdated
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount )
+        {
+        ret = KErrUnknown;
+        }
 
     iTestObserver->iError = 100;
     iListModel->RefreshL();
     iWait.Start();  // wait until model is refreshed
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFRefreshComplete );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount + 1 );
+    if ( iTestObserver->iOperationEvent != ECLFRefreshComplete
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount + 1 )
+        {
+        ret = KErrUnknown;
+        }
 
 // delete file
     User::LeaveIfError( iFs.Delete( iFileName ) );
     iEngine->UpdateItemsL();
     iWait.Start(); // wait until model outdated event is received
 
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFModelOutdated );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount + 1 );
+    if ( iTestObserver->iOperationEvent != ECLFModelOutdated
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount + 1 )
+        {
+        ret = KErrUnknown;
+        }
 
     iTestObserver->iError = 100;
     iListModel->RefreshL();
     iWait.Start();  // wait until model is refreshed
-    EUNIT_ASSERT( iTestObserver->iOperationEvent == ECLFRefreshComplete );
-    EUNIT_ASSERT( iTestObserver->iError == KErrNone );
-    EUNIT_ASSERT( iListModel->ItemCount() == listModelItemCount );
+    if ( iTestObserver->iOperationEvent != ECLFRefreshComplete
+         || iTestObserver->iError != KErrNone
+         || iListModel->ItemCount() != listModelItemCount )
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 /**
@@ -2028,11 +2404,13 @@ void T_CLFApiModuleTests::ModelItemsChangedTestL()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::MIFieldTestL
+// CContentListingFrameworkTest::MIFieldTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::MIFieldTestL()
+TInt CContentListingFrameworkTest::MIFieldTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     const TUint KTestField1 = 1;
     const TUint KTestField2 = 112312312;
     const TUint KTestField3 = 13333;
@@ -2046,49 +2424,57 @@ void T_CLFApiModuleTests::MIFieldTestL()
     iModifiableItem->AddFieldL( KTestField3, data );
 
 // data type test
-    EUNIT_ASSERT( iModifiableItem->DataType(
-                                KTestField1 ) == ECLFItemDataTypeTTime );
-    EUNIT_ASSERT( iModifiableItem->DataType(
-                                KTestField2 ) == ECLFItemDataTypeTInt32 );
-    EUNIT_ASSERT( iModifiableItem->DataType(
-                                KTestField3 ) == ECLFItemDataTypeDesC );
-    EUNIT_ASSERT( iModifiableItem->DataType(
-                                KTestFieldIncorrect ) == ECLFItemDataTypeNull );
-    EUNIT_ASSERT( iModifiableItem->DataType(
-                                ECLFFieldIdNull ) == ECLFItemDataTypeNull );
+    if ( iModifiableItem->DataType( KTestField1 ) != ECLFItemDataTypeTTime
+         || iModifiableItem->DataType( KTestField2 ) != ECLFItemDataTypeTInt32
+         || iModifiableItem->DataType( KTestField3 ) != ECLFItemDataTypeDesC
+         || iModifiableItem->DataType( KTestFieldIncorrect ) != ECLFItemDataTypeNull
+         || iModifiableItem->DataType( ECLFFieldIdNull ) != ECLFItemDataTypeNull )
+        {
+        ret = KErrUnknown;
+        }
 
 // get field
     TTime time1( 0 );
     TInt32 integer1( 0 );
     TPtrC ptr;
-    EUNIT_ASSERT( KErrNone == iModifiableItem->GetField(
-                                                KTestField1, time1 ) );
-    EUNIT_ASSERT( time == time1 );
-    EUNIT_ASSERT( KErrNone == iModifiableItem->GetField(
-                                                KTestField2, integer1 ) );
-    EUNIT_ASSERT( integer == integer1 );
-    EUNIT_ASSERT( KErrNone == iModifiableItem->GetField(
-                                                KTestField3, ptr ) );
-    EUNIT_ASSERT( data == ptr );
+    if ( iModifiableItem->GetField( KTestField1, time1 ) != KErrNone
+         || time != time1 )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( KTestField2, integer1 ) != KErrNone
+         || integer != integer1 )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( KTestField3, ptr ) != KErrNone
+         || data != ptr )
+        {
+        ret = KErrUnknown;
+        }
 
 // incorrect field id
-    EUNIT_ASSERT( KErrNotFound == iModifiableItem->GetField(
-                                                KTestFieldIncorrect, ptr ) );
-    EUNIT_ASSERT( KErrNotFound == iModifiableItem->GetField(
-                                                KTestFieldIncorrect, integer1 ) );
-    EUNIT_ASSERT( KErrNotFound == iModifiableItem->GetField(
-                                                KTestFieldIncorrect, time1 ) );
+    if ( iModifiableItem->GetField( KTestFieldIncorrect, ptr ) != KErrNotFound
+         || iModifiableItem->GetField( KTestFieldIncorrect, integer1 ) != KErrNotFound
+         || iModifiableItem->GetField( KTestFieldIncorrect, time1 ) != KErrNotFound )
+        {
+        ret = KErrUnknown;
+        }
 
 // incorrect field type
-    EUNIT_ASSERT( KErrNotSupported == iModifiableItem->GetField(
-                                                KTestField1, ptr ) );
-    EUNIT_ASSERT( KErrNotSupported == iModifiableItem->GetField(
-                                                KTestField3, integer1 ) );
-    EUNIT_ASSERT( KErrNotSupported == iModifiableItem->GetField(
-                                                KTestField2, time1 ) );
+    if ( iModifiableItem->GetField( KTestField1, ptr ) != KErrNotFound
+         || iModifiableItem->GetField( KTestField3, integer1 ) != KErrNotFound
+         || iModifiableItem->GetField( KTestField2, time1 ) != KErrNotFound )
+        {
+        ret = KErrUnknown;
+        }
 
+    if ( iModifiableItem->ItemId() == 0 )
+        {
+        ret = KErrUnknown;
+        }
 
-    EUNIT_ASSERT( iModifiableItem->ItemId() == 0 );
+    return ret;
     }
 
 /**
@@ -2096,20 +2482,21 @@ void T_CLFApiModuleTests::MIFieldTestL()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::ItemFieldTestL
+// CContentListingFrameworkTest::ItemFieldTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::ItemFieldTestL()
+TInt CContentListingFrameworkTest::ItemFieldTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
 // data type test
-    EUNIT_ASSERT( iItem->DataType(
-                                ECLFFieldIdFileDate ) == ECLFItemDataTypeTTime );
-    EUNIT_ASSERT( iItem->DataType(
-                                ECLFFieldIdFileSize ) == ECLFItemDataTypeTInt32 );
-    EUNIT_ASSERT( iItem->DataType(
-                                ECLFFieldIdFileNameAndPath ) == ECLFItemDataTypeDesC );
-    EUNIT_ASSERT( iItem->DataType(
-                                ECLFFieldIdNull ) == ECLFItemDataTypeNull );
+    if ( iItem->DataType( ECLFFieldIdFileDate ) != ECLFItemDataTypeTTime
+         || iItem->DataType( ECLFFieldIdFileSize ) != ECLFItemDataTypeTInt32
+         || iItem->DataType( ECLFFieldIdFileNameAndPath ) != ECLFItemDataTypeDesC
+         || iItem->DataType( ECLFFieldIdNull ) != ECLFItemDataTypeNull )
+        {
+        ret = KErrUnknown;
+        }
 
 // get field
     TTime time1( 0 );
@@ -2118,46 +2505,67 @@ void T_CLFApiModuleTests::ItemFieldTestL()
     TEntry entry;
     User::LeaveIfError( iFs.Entry( iFileName, entry ) );
 
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdFileDate, time1 ) );
-    EUNIT_ASSERT( entry.iModified == time1 );
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdFileSize, integer1 ) );
-    EUNIT_ASSERT( entry.iSize == integer1 );
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdFileNameAndPath, ptr ) );
-    EUNIT_ASSERT( iFileName == ptr );
+    if ( iModifiableItem->GetField( ECLFFieldIdFileDate, time1 ) != KErrNone
+         || entry.iModified != time1 )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( ECLFFieldIdFileSize, integer1 ) != KErrNone
+         || entry.iSize != integer1 )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( ECLFFieldIdFileNameAndPath, ptr ) != KErrNone
+         || iFileName != ptr )
+        {
+        ret = KErrUnknown;
+        }
 
     TParsePtrC parse( iFileName );
 
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdFileExtension, ptr ) );
-    EUNIT_ASSERT( parse.Ext() == ptr );
-
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdFileName, ptr ) );
-    EUNIT_ASSERT( parse.Name() == ptr );
-
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdPath, ptr ) );
-    EUNIT_ASSERT( parse.Path() == ptr );
-
-    EUNIT_ASSERT( KErrNone == iItem->GetField( ECLFFieldIdDrive, ptr ) );
-    EUNIT_ASSERT( parse.Drive() == ptr );
-
+    if ( iModifiableItem->GetField( ECLFFieldIdFileExtension, ptr ) != KErrNone
+         || parse.Ext() != ptr )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( ECLFFieldIdFileName, ptr ) != KErrNone
+         || parse.Name() != ptr )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( ECLFFieldIdPath, ptr ) != KErrNone
+         || parse.Path() != ptr )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iModifiableItem->GetField( ECLFFieldIdDrive, ptr ) != KErrNone
+         || parse.Drive() != ptr )
+        {
+        ret = KErrUnknown;
+        }
 
 // incorrect field id
-    EUNIT_ASSERT( KErrNotFound == iItem->GetField(
-                                                ECLFFieldIdNull, ptr ) );
-    EUNIT_ASSERT( KErrNotFound == iItem->GetField(
-                                                ECLFFieldIdNull, integer1 ) );
-    EUNIT_ASSERT( KErrNotFound == iItem->GetField(
-                                                ECLFFieldIdNull, time1 ) );
+    if ( iItem->GetField( ECLFFieldIdNull, ptr ) != KErrNotFound
+         || iItem->GetField( ECLFFieldIdNull, integer1 ) != KErrNotFound
+         || iItem->GetField( ECLFFieldIdNull, time1 ) != KErrNotFound )
+        {
+        ret = KErrUnknown;
+        }
 
 // incorrect field type
-    EUNIT_ASSERT( KErrNotSupported == iItem->GetField(
-                                                ECLFFieldIdFileSize, ptr ) );
-    EUNIT_ASSERT( KErrNotSupported == iItem->GetField(
-                                                ECLFFieldIdFileDate, integer1 ) );
-    EUNIT_ASSERT( KErrNotSupported == iItem->GetField(
-                                                ECLFFieldIdFileNameAndPath, time1 ) );
+    if ( iItem->GetField( ECLFFieldIdFileSize, ptr ) != KErrNotSupported
+         || iItem->GetField( ECLFFieldIdFileDate, integer1 ) != KErrNotSupported
+         || iItem->GetField( ECLFFieldIdFileNameAndPath, time1 ) != KErrNotSupported )
+        {
+        ret = KErrUnknown;
+        }
 
+    if ( iItem->ItemId() == 0 )
+        {
+        ret = KErrUnknown;
+        }
 
-    EUNIT_ASSERT( iItem->ItemId() != 0 );
+    return ret;
     }
 
 /**
@@ -2165,11 +2573,13 @@ void T_CLFApiModuleTests::ItemFieldTestL()
  */
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleResourceTestL
+// CContentListingFrameworkTest::SortingStyleResourceTestL
 // ---------------------------------------------------------------------------
 //  
-void T_CLFApiModuleTests::SortingStyleResourceTestL()
+TInt CContentListingFrameworkTest::SortingStyleResourceTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     const TInt KArray1IdCount( 4 );
     const TInt KArray2IdCount( 1 );
 
@@ -2177,87 +2587,162 @@ void T_CLFApiModuleTests::SortingStyleResourceTestL()
     RArray<TCLFItemId> itemIdArray;
     CleanupClosePushL( itemIdArray );
 
-    EUNIT_ASSERT( iSortingStyle->Ordering() == ECLFOrderingAscending );
-    EUNIT_ASSERT( iSortingStyle1->Ordering() == ECLFOrderingDescending );
-    EUNIT_ASSERT( iSortingStyle2->Ordering() == ECLFOrderingDescending );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeTInt32 );
-    EUNIT_ASSERT( iSortingStyle1->SortingDataType() == ECLFItemDataTypeDesC );
-    EUNIT_ASSERT( iSortingStyle2->SortingDataType() == ECLFItemDataTypeDesC );
+    if ( iSortingStyle->Ordering() != ECLFOrderingAscending
+         || iSortingStyle1->Ordering() != ECLFOrderingDescending
+         || iSortingStyle2->Ordering() != ECLFOrderingDescending )
+        {
+        ret = KErrUnknown;
+        }
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeTInt32
+         || iSortingStyle1->SortingDataType() != ECLFItemDataTypeDesC
+         || iSortingStyle2->SortingDataType() != ECLFItemDataTypeDesC )
+        {
+        ret = KErrUnknown;
+        }
 
     iSortingStyle->GetFieldsL( itemIdArray );
 
-    EUNIT_ASSERT( itemIdArray.Count() == 0 );
+    if ( itemIdArray.Count() != 0 )
+        {
+        ret = KErrUnknown;
+        }
 
     itemIdArray.Reset();
     iSortingStyle1->GetFieldsL( itemIdArray );
 
-    EUNIT_ASSERT( itemIdArray.Count() == KArray1IdCount );
+    if ( itemIdArray.Count() != KArray1IdCount )
+        {
+        ret = KErrUnknown;
+        }
 
     itemIdArray.Reset();
     iSortingStyle2->GetFieldsL( itemIdArray );
 
-    EUNIT_ASSERT( itemIdArray.Count() == KArray2IdCount );
+    if ( itemIdArray.Count() != KArray2IdCount )
+        {
+        ret = KErrUnknown;
+        }
 
     CleanupStack::PopAndDestroy( &itemIdArray ); // itemIdArray.Close
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleOrderingTestL
+// CContentListingFrameworkTest::SortingStyleOrderingTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleOrderingTestL()
+TInt CContentListingFrameworkTest::SortingStyleOrderingTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iSortingStyle->SetOrdering( ECLFOrderingAscending );
-    EUNIT_ASSERT( iSortingStyle->Ordering() == ECLFOrderingAscending );
+    if ( iSortingStyle->Ordering() != ECLFOrderingAscending )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetOrdering( ECLFOrderingDescending );
-    EUNIT_ASSERT( iSortingStyle->Ordering() == ECLFOrderingDescending );
+    if ( iSortingStyle->Ordering() != ECLFOrderingDescending )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetOrdering( ECLFOrderingAscending );
-    EUNIT_ASSERT( iSortingStyle->Ordering() == ECLFOrderingAscending );
+    if ( iSortingStyle->Ordering() != ECLFOrderingAscending )
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleDataTypeTestL
+// CContentListingFrameworkTest::SortingStyleDataTypeTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleDataTypeTestL()
+TInt CContentListingFrameworkTest::SortingStyleDataTypeTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iSortingStyle->SetSortingDataType( ECLFItemDataTypeTInt32 );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeTInt32 );
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeTInt32 )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetSortingDataType( ECLFItemDataTypeDesC );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeDesC );
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeDesC )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetSortingDataType( ECLFItemDataTypeTTime );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeTTime );
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeTTime )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetSortingDataType( ECLFItemDataTypeNull );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeNull );
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeNull )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetSortingDataType( ECLFItemDataTypeTInt32 );
-    EUNIT_ASSERT( iSortingStyle->SortingDataType() == ECLFItemDataTypeTInt32 );
+    if ( iSortingStyle->SortingDataType() != ECLFItemDataTypeTInt32 )
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleUndefinedItemPositionTestL
+// CContentListingFrameworkTest::SortingStyleUndefinedItemPositionTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleUndefinedItemPositionTestL()
+TInt CContentListingFrameworkTest::SortingStyleUndefinedItemPositionTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     iSortingStyle->SetUndefinedItemPosition( ECLFSortingStyleUndefinedEnd );
-    EUNIT_ASSERT( iSortingStyle->UndefinedItemPosition() == ECLFSortingStyleUndefinedEnd );
+    if ( iSortingStyle->UndefinedItemPosition() != ECLFSortingStyleUndefinedEnd )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetUndefinedItemPosition( ECLFSortingStyleUndefinedFirst );
-    EUNIT_ASSERT( iSortingStyle->UndefinedItemPosition() == ECLFSortingStyleUndefinedFirst );
+    if ( iSortingStyle->UndefinedItemPosition() != ECLFSortingStyleUndefinedFirst )
+        {
+        ret = KErrUnknown;
+        }
+
     iSortingStyle->SetUndefinedItemPosition( ECLFSortingStyleUndefinedEnd );
-    EUNIT_ASSERT( iSortingStyle->UndefinedItemPosition() == ECLFSortingStyleUndefinedEnd );
+    if ( iSortingStyle->UndefinedItemPosition() != ECLFSortingStyleUndefinedEnd )
+        {
+        ret = KErrUnknown;
+        }
+
+    return ret;
     }
 
 // ---------------------------------------------------------------------------
-// T_CLFApiModuleTests::SortingStyleFieldTestL
+// CContentListingFrameworkTest::SortingStyleFieldTestL
 // ---------------------------------------------------------------------------
 // 
-void T_CLFApiModuleTests::SortingStyleFieldTestL()
+TInt CContentListingFrameworkTest::SortingStyleFieldTestL( CStifItemParser& /* aItem */ )
     {
+    TInt ret = KErrNone;
+
     RArray<TCLFItemId> itemIdArray;
     CleanupClosePushL( itemIdArray );
 
     iSortingStyle->GetFieldsL( itemIdArray );
-    EUNIT_ASSERT( itemIdArray.Count() == 0 );
+    if ( itemIdArray.Count() != 0 )
+        {
+        ret = KErrUnknown;
+        }
 
     iSortingStyle->AddFieldL( ECLFFieldIdFileName );
     iSortingStyle->AddFieldL( ECLFFieldIdCollectionId );
@@ -2266,248 +2751,22 @@ void T_CLFApiModuleTests::SortingStyleFieldTestL()
 
     iSortingStyle->GetFieldsL( itemIdArray );
 
-    EUNIT_ASSERT( itemIdArray.Count() == 4 );
+    if ( itemIdArray.Count() != 4 )
+        {
+        ret = KErrUnknown;
+        }
 
     itemIdArray.Reset();
     iSortingStyle->ResetL();
     iSortingStyle->GetFieldsL( itemIdArray );
-    EUNIT_ASSERT( itemIdArray.Count() == 0 );
+    if ( itemIdArray.Count() != 0 )
+        {
+        ret = KErrUnknown;
+        }
 
     CleanupStack::PopAndDestroy( &itemIdArray ); // itemIdArray.Close
+
+    return ret;
     }
 
-// ---------------------------------------------------------------------------
-// Test case table for this test suite class
-// ---------------------------------------------------------------------------
-// 
-
-EUNIT_BEGIN_TEST_TABLE( T_CLFApiModuleTests, "T_CLFApiModuleTests", "MODULE" )
-
-// Constructor tests
-    EUNIT_TEST( "Create engine",
-                "",
-                "",
-                "FUNCTIONALITY",
-                BaseSetupL,
-                CreateEngineTestL,
-                Teardown )
-
-    EUNIT_TEST( "Create modifiable item",
-                "",
-                "",
-                "FUNCTIONALITY",
-                BaseSetupL,
-                CreateModifiableItemTestL,
-                Teardown )
-
-    EUNIT_TEST( "Create sorting style",
-                "",
-                "",
-                "FUNCTIONALITY",
-                BaseSetupL,
-                CreateSortignStyleTestL,
-                Teardown )
-
-    EUNIT_TEST( "Create sorting style from resource",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleResourceSetupL,
-                CreateSortignStyleFromResourceTestL,
-                Teardown )
-
-    EUNIT_TEST( "Create list model",
-                "",
-                "",
-                "FUNCTIONALITY",
-                CreateModelSetupL,
-                CreateListModelTestL,
-                Teardown )
-
-    EUNIT_TEST( "Create list model from resource",
-                "",
-                "",
-                "FUNCTIONALITY",
-                CreateModelFromResourceSetupL,
-                CreateListModelFromResourceTestL,
-                Teardown )
-
-// Engine tests
-
-    EUNIT_TEST( "Engine update test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                EngineTestSetupL,
-                UpdateItemsTestL,
-                Teardown )
-
-    EUNIT_TEST( "Engine update test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                EngineTestSetupL,
-                UpdateItemsWithIdTestL,
-                Teardown )
-
-    EUNIT_TEST( "Engine update test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                EngineTestSetupL,
-                UpdateItemsWithOpaqueDataFolderTestL,
-                Teardown )
-
-// Sorting Style tests
-    EUNIT_TEST( "Sorting style from resource",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleResourceTestSetupL,
-                SortingStyleResourceTestL,
-                Teardown )
-
-    EUNIT_TEST( "Sorting style ordering test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleTestSetupL,
-                SortingStyleOrderingTestL,
-                Teardown )
-
-    EUNIT_TEST( "Sorting style data type test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleTestSetupL,
-                SortingStyleDataTypeTestL,
-                Teardown )
-
-    EUNIT_TEST( "Sorting style undefined item position test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleTestSetupL,
-                SortingStyleUndefinedItemPositionTestL,
-                Teardown )
-
-    EUNIT_TEST( "Sorting style field test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                SortingStyleTestSetupL,
-                SortingStyleFieldTestL,
-                Teardown )
-
-// List model tests
-    EUNIT_TEST( "List model refresh test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelSetupL,
-                RefreshTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model sorting style test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelAllFileItemsSetupL,
-                SetSortingStyleTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model custom sorter test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelAllFileItemsSetupL,
-                SetCustomSorterTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model grouping test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelAllFileItemsSetupL,
-                GroupingTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model post filter test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelAllFileItemsSetupL,
-                SetPostFilterTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model wanted mime types test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelSetupL,
-                SetWantedMimeTypesTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model wanted media types test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelSetupL,
-                SetWantedMediaTypesTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model wanted media and mime types",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelSetupL,
-                SetWantedMediaAndMimeTypesTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model multible sorters",
-                "",
-                "",
-                "FUNCTIONALITY",
-                MultibleSortingSetupL,
-                MultibleSortingTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model multible sorters",
-                "",
-                "",
-                "FUNCTIONALITY",
-                MultibleSortingResourceSetupL,
-                MultibleSortingTestL,
-                Teardown )
-
-    EUNIT_TEST( "List model changed items",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ListModelSetupL,
-                ModelItemsChangedTestL,
-                Teardown )
-
-
-// Modifiable item tests
-    EUNIT_TEST( "Modifiable item test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ModifiableItemTestSetupL,
-                MIFieldTestL,
-                Teardown )
-
-// Item tests
-    EUNIT_TEST( "Item test",
-                "",
-                "",
-                "FUNCTIONALITY",
-                ItemTestSetupL,
-                ItemFieldTestL,
-                Teardown )
-
-
-EUNIT_END_TEST_TABLE
-
-//  End of File
+//  [End of File] - Do not remove

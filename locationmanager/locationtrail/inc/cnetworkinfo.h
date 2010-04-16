@@ -33,7 +33,7 @@ public:
      * This method is used for setting the network cell id to the 
      * location trail.
      */
-    virtual void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, const TInt aError ) __SOFTFP  = 0;
+    virtual void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, const TInt aError ) = 0;
     };
 
 /**

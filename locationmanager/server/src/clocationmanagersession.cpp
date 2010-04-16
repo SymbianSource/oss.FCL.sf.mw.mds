@@ -48,6 +48,7 @@ CLocationManagerSession::CLocationManagerSession()
 CLocationManagerSession::~CLocationManagerSession()
     {
     LOG( "CLocationManagerSession::~CLocationManagerSession(), begin" );
+    TRAP_IGNORE(Server().StopGPSPositioningL());
     Server().CancelNotificationRequest( iNotificationHandle );
     Server().CancelLocationRequest( iLocationHandle );
     Server().CancelTrackLogNotificationRequest( iTrackLogNotificationHandle );

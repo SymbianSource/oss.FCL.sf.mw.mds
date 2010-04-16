@@ -224,8 +224,7 @@ void CHarvesterRequestQueue::DoCancel()
 
     iShutdown = ETrue;
     
-    const TInt count( iRequests.Count() );
-    for( TInt i = 0; i < count; i++ )
+    for( TInt i = iRequests.Count() - 1; i >=0; i-- )
         {
         CHarvesterRequestActive* request = iRequests[i];
         if( request )

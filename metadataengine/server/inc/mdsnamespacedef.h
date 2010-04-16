@@ -213,6 +213,10 @@ private:
 	void MergeRelationsL( CMdsNamespaceDef* aNamespace, const TBool& aDryRun );
 	void MergeEventsL( CMdsNamespaceDef* aNamespace, const TBool& aDryRun );
 
+    static TInt CompareObjectDefId(const CMdsObjectDef& aFirst, const CMdsObjectDef& aSecond);
+    static TInt CompareEventDefId(const CMdsEventDef& aFirst, const CMdsEventDef& aSecond);
+    static TInt CompareRelationDefId(const CMdsRelationDef& aFirst, const CMdsRelationDef& aSecond);
+	
 private:
 enum TNamespaceDefFlags
 	{

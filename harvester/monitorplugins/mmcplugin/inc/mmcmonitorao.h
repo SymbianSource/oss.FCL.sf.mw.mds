@@ -75,20 +75,6 @@ class CMMCMonitorAO : public CActive
         TBool StopMonitoring();
         
         /**
-        * Resumes paused monitoring.
-        *
-        * @return ETrue if success, EFalse if not
-        */
-        TBool Resume();
-        
-        /**
-        * Pauses monitoring.
-        *
-        * @return ETrue if success, EFalse if not
-        */
-        TBool Pause();
-        
-        /**
         * Inherited from CActive. This method will be called on file server notifying.
         */
         void RunL();

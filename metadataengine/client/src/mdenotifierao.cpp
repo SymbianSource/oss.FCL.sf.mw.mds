@@ -165,8 +165,7 @@ void CMdENotifierAO::RunL()
 	        iSession.DoListen( Id(), &iResultSize, iStatus );  // continue listening for events
 	        SetActive();
 	        }
-	    else if ( status & ( /*ERelationItemNotifyAdd | ERelationItemNotifyModify
-	                         |*/ ERelationItemNotifyRemove ) ) // a relation was removed
+	    else if ( status & ( ERelationItemNotifyRemove ) ) // a relation was removed
 	    	{
 	    	if( !iDataBuffer )
 	    		{
@@ -198,6 +197,33 @@ void CMdENotifierAO::RunL()
 	        iSession.DoListen( Id(), &iResultSize, iStatus ); // continue listening for events
 	        SetActive();
 	    	}
+	    else if ( status & ( EObjectNotifyAddWithUri | EObjectNotifyModifyWithUri
+	                           | EObjectNotifyRemoveWithUri ) )
+	        {
+	        if( !iDataBuffer )
+	            {
+	            iDataBuffer = CMdCSerializationBuffer::NewL( iResultSize() );
+	            }
+	        else if( iDataBuffer->Buffer().MaxSize() < iResultSize() )
+	            {
+	            delete iDataBuffer;
+	            iDataBuffer = NULL;
+	            iDataBuffer = CMdCSerializationBuffer::NewL( iResultSize() );
+	            }
+	        
+	        if( iResultSize() )
+	            {
+	            iSession.DoGetDataL( *iDataBuffer, Id() ); // reads data to the buffer
+	            DecodeDataBufferL(); // decodes ids and uri from the data buffer 
+	            
+	            delete iDataBuffer;
+	            iDataBuffer = NULL;
+	            
+	            DoNotifyObserver(); // notifies the observer about the event
+	            }
+	        iSession.DoListen( Id(), &iResultSize, iStatus );  // continue listening for events
+	        SetActive();
+	        }
     	}
     else
         {
@@ -327,7 +353,32 @@ void CMdENotifierAO::DoNotifyObserver()
             obs->HandleSchemaModified();
         	break;
         	}
-
+        	
+        case EObjectNotifyAddWithUri:
+            {
+            MMdEObjectObserverWithUri* obs = static_cast<MMdEObjectObserverWithUri*>( iObserver );
+            obs->HandleUriObjectNotification( iSessionImpl, ENotifyAdd, iIdArray, iUriArray );
+            iUriArray.ResetAndDestroy();
+            iUriArray.Compress();
+            break;
+            }
+        case EObjectNotifyModifyWithUri:
+            {
+            MMdEObjectObserverWithUri* obs = static_cast<MMdEObjectObserverWithUri*>( iObserver );
+            obs->HandleUriObjectNotification( iSessionImpl, ENotifyModify, iIdArray, iUriArray );
+            iUriArray.ResetAndDestroy();
+            iUriArray.Compress();
+            break;
+            }
+        case EObjectNotifyRemoveWithUri:
+            {
+            MMdEObjectObserverWithUri* obs = static_cast<MMdEObjectObserverWithUri*>( iObserver );
+            obs->HandleUriObjectNotification( iSessionImpl, ENotifyRemove, iIdArray, iUriArray );
+            iUriArray.ResetAndDestroy();
+            iUriArray.Compress();
+            break;
+            }    	
+        	
         default:
         	// no observer to call - this should be skipped on server side!
         	break;
@@ -356,6 +407,42 @@ void CMdENotifierAO::DecodeIdBufferL()
 		}
 	}
 
+void CMdENotifierAO::DecodeDataBufferL()
+    {    
+    iIdArray.Reset();
+    iUriArray.ResetAndDestroy();
+    
+    iDataBuffer->PositionL( KNoOffset );
+    
+    const TMdCItemIds& itemIds = TMdCItemIds::GetFromBufferL( *iDataBuffer );
+    __ASSERT_DEBUG( iNamespaceDefId == itemIds.iNamespaceDefId, User::Panic( _L("Incorrect namespaceDef from returned items!"), KErrCorrupt ) );
+    
+    // Get IDs
+    iDataBuffer->PositionL( itemIds.iObjectIds.iPtr.iOffset );
+	iIdArray.ReserveL( itemIds.iObjectIds.iPtr.iCount );
+    for( TUint32 i = 0; i < itemIds.iObjectIds.iPtr.iCount; ++i )
+        {
+        TItemId id;
+        iDataBuffer->ReceiveL( id );
+        iIdArray.AppendL( id );
+        }
+    
+    // Get uri count
+    TUint32 uriCount ( 0 );
+    iDataBuffer->ReceiveL( uriCount );
+    
+    HBufC* uri = NULL;
+    
+    for( TInt i( 0 ); i < uriCount; i++ )
+        {        
+        //Get uri
+        uri = iDataBuffer->ReceiveDes16L();
+        CleanupStack::PushL( uri );
+        iUriArray.AppendL( uri );
+        CleanupStack::Pop( uri );
+        }
+    }
+
 void CMdENotifierAO::DecodeRelationItemBufferL()
 	{
     iRelationItemArray.Reset();
@@ -376,3 +463,4 @@ void CMdENotifierAO::DecodeRelationItemBufferL()
     		}
     	}
 	}
+

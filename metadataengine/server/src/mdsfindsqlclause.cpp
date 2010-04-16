@@ -266,7 +266,7 @@ void CMdSFindSqlClause::CreateL(
 			{
 			TDefId objectDefId;
 			iSerializedBuffer->ReceiveL( objectDefId );			
-			iSourceObjectDefs->Append( objectDefId );
+			iSourceObjectDefs->AppendL( objectDefId );
 			}
 		}
 	else
@@ -558,6 +558,11 @@ void CMdSFindSqlClause::AppendSelectObjectItemStatementL()
 		{
 		// No property filters so get all properties
 		
+	    if( !iObjectDef )
+	        {
+	        User::Leave( KErrMdEUnknownObjectDef );
+	        }
+	
 		// "SELECT BO.* "
 		iQueryBuf->AppendL( KSelectAllFromBaseObject );
 	

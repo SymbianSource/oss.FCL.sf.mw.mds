@@ -97,8 +97,7 @@ void CHarvesterCenRepUtil::AddOrRemoveIgnorePathsL( const TDesC& aDrivePrefix,
 	TInt ret = repo->FindL( KIgnorePathPartialKey, KSearchMask, ignoredKeys );
 	
 	TBuf<KMaxFileName> path;
-	const TInt count = ignoredKeys.Count();
-	for( TInt i=0;i<count;i++ )
+	for( TInt i = ignoredKeys.Count() - 1; i >=0; i-- )
 		{
 		const TInt error( repo->Get( ignoredKeys[i], path ) );
 		if( error != KErrNone )
@@ -191,7 +190,7 @@ void CHarvesterCenRepUtil::GetPathsL( TUint32 aPartialKey, RPointerArray<HBufC>&
 	TBuf<KMaxFileName> path;
 	const TInt count = scanPathKeys.Count();
 	aPaths.ReserveL( count );
-	for( TInt i = 0; i < count; i++ )
+	for( TInt i = count - 1; i >=0; i-- )
 		{
 	    const TInt error( repo->Get( scanPathKeys[i], path ) );
 	    if( error != KErrNone )
@@ -215,8 +214,7 @@ void CHarvesterCenRepUtil::GetItemsL( TUint32 aPartialKey, RPointerArray<TScanIt
 	repo->FindL( aPartialKey, KSearchMask, scanPathKeys );
 
 	TBuf<KMaxFileName> path;
-	const TInt count = scanPathKeys.Count();
-	for( TInt i = 0; i < count; i++ )
+	for( TInt i = scanPathKeys.Count() - 1; i >=0; i-- )
 		{
 	    const TInt error( repo->Get( scanPathKeys[i], path ) );
 	    if( error != KErrNone )

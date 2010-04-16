@@ -197,7 +197,9 @@ void CComposerImagePlugin::WriteGPSTagsL( TItemId aObjectId, TItemId locationId 
     CMdEObjectDef& imageObjDef = defaultNamespace.GetObjectDefL( MdeConstants::Image::KImageObject );
     CMdEObjectDef& locationObjDef = defaultNamespace.GetObjectDefL( MdeConstants::Location::KLocationObject );
 	CMdEObject* object = iSession->GetObjectL( aObjectId, imageObjDef );
+	CleanupStack::PushL( object );
 	CMdEObject* location = iSession->GetObjectL( locationId, locationObjDef );
+	CleanupStack::PushL( location );
 	
 	if( object && location )
 		{
@@ -208,7 +210,7 @@ void CComposerImagePlugin::WriteGPSTagsL( TItemId aObjectId, TItemId locationId 
 			iMdEHarvesterSession->ResetPendingL( objectId );
 			}
 		}
-	CleanupStack::PopAndDestroy( &objectId );
+	CleanupStack::PopAndDestroy( 3, &objectId );
 	}
 
 void CComposerImagePlugin::HandlePendingObjects( const RArray<TItemId>& aObjectIdArray )

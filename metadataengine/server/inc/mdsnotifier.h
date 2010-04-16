@@ -27,6 +27,7 @@ class CMdSServerSession;
 class CMdSNotifyComparator;
 class CMdSSchema;
 class CMdCSerializationBuffer;
+class CMdSManipulationEngine;
 
 /**
 * A class that contains notification profiles for clients.
@@ -140,10 +141,12 @@ class CMdSNotifier : public CBase
                 * Triggers the notifier causing the observer to be
                 * notifier with the given code.
                 * @param aCompleteCode either added/removed/modified
-                * @param aItem the target of the event
+                * @param aIdArray ids of matching results
+                * @param aUriArray uris of matching results 
                 */
                 void TriggerL( TUint32 aCompleteCode,
-                    const RArray<TItemId>& aIdArray );
+                    const RArray<TItemId>& aIdArray,
+                    RPointerArray<HBufC>& aUriArray );
 
                 /**
                  * Triggers the notifier causing the observer to be
@@ -166,7 +169,9 @@ class CMdSNotifier : public CBase
 				 *	The entry has currently no message active, 
 				 *	wait until one is available.
 				 */
-                void CacheL(TUint32 aCompleteCode, const RArray<TItemId>& aIdArray );
+                void CacheL(TUint32 aCompleteCode, 
+                                    const RArray<TItemId>& aIdArray,
+                                    const RPointerArray<HBufC>& aUriArray);
 
                 /**
 				 *	The entry has currently no message active, 
@@ -195,6 +200,15 @@ class CMdSNotifier : public CBase
 				 */
 				CMdCSerializationBuffer* CopyToBufferL(
 						const RArray<TItemId>& aIdArray);
+				
+                /**
+                 * Copy all URIs from the array in to the buffer
+                 * 
+                 * @param aUriArray URI array
+                 * @return new buffer
+                 */
+                CMdCSerializationBuffer* CopyToBufferL(const RArray<TItemId>& aIdArray,
+                                                                              const RPointerArray<HBufC>& aUriArray);
 
 				/**
 				 * Copy matched relation IDs to a buffer
@@ -290,8 +304,10 @@ class CMdSNotifier : public CBase
        /**
         * notifiers that items has been modified
         * @param aObjectIds object IDs
+        * @param aMEngine pointer to manipulator class for utility functions
         */
-        void NotifyModifiedL(const RArray<TItemId>& aObjectIds);
+        void NotifyModifiedL( const RArray<TItemId>& aObjectIds,
+                                           CMdSManipulationEngine* aMEngine );
 
 	   /**
         * notifiers that objects has been set to present or not present state
@@ -320,15 +336,21 @@ class CMdSNotifier : public CBase
 		 * Can be only used for default namespace.
 		 * 
 		 * @param aItemIdArray modified item IDs
+		 * @param aMEngine pointer to manipulator class for utility functions
 		 */
-		void NotifyRemovedL(const RArray<TItemId>& aItemIdArray);
+		void NotifyRemovedL( const RArray<TItemId>& aItemIdArray,
+		                                    CMdSManipulationEngine* aMEngine );
 		
 		/**
         * notifiers that items has been removed
         * @param aSerializedItemIds serialized item IDs
         * @param aItemIsConfidential are items confidential
+        * @param aRemovedItemUriArray uri array if uris are present
+        * @param aMEngine pointer to manipulator class for utility functions
         */
-        void NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds, TBool aItemIsConfidential );
+        void NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds, TBool aItemIsConfidential,
+                                           RPointerArray<HBufC>& aRemovedItemUriArray,
+                                           CMdSManipulationEngine* aMEngine );
 
 		void NotifySchemaAddedL();
 		

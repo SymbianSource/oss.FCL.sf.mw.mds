@@ -132,7 +132,7 @@ EXPORT_C void RLocationObjectManipulator::CopyLocationData (TDesC& aSourceURI,
     TInt urisRequiredSize = CMdCSerializationBuffer::KRequiredSizeForTInt32;
 
     // and URIs
-    for( TInt i = 0; i < uriCount; i++ )
+    for( TInt i = uriCount - 1; i >=0; i-- )
     	{
     	urisRequiredSize += CMdCSerializationBuffer::RequiredSize( *aTargetURIs[i] );
     	}
@@ -150,7 +150,7 @@ EXPORT_C void RLocationObjectManipulator::CopyLocationData (TDesC& aSourceURI,
         return;
         }
 
-    for( TInt i = 0; i < uriCount; i++ )
+    for( TInt i = uriCount - 1; i >=0; i-- )
 		{
 		TRAPD( err, uriBuffer->InsertL( *aTargetURIs[i] ) );
 		

@@ -86,8 +86,8 @@ _LIT(KHarvesterOomQueue, "mdsoommsgqueue");
 
 enum TMdsOomStatus
 	{
-	TMdsOomFreeRam,
-	TMdsOomMemoryGood
+	EMdsOomFreeRam,
+	EMdsOomMemoryGood
 	};
 
 const TInt KHarvesterGetRootDirFlags = EDirsFirst;

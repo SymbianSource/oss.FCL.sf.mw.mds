@@ -170,7 +170,7 @@ void CMdEQueryCriteriaSerialization::ConstructL(
 			CMdCSerializationBuffer::KRequiredSizeForTUint32;
 
 	// Required size for order rules
-	for( TInt i = 0; i < orderRuleCount; i++ )
+	for( TInt i = orderRuleCount - 1; i >=0; i-- )
 		{
 		criteriaBufferSize += aOrderRules[i].RequiredBufferSize();
 		}

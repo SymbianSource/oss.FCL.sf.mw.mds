@@ -85,5 +85,3 @@ LIBRARY     	mdccommon.lib
 
 DEBUGLIBRARY    flogger.lib
 
-
-

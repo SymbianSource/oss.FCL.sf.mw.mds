@@ -35,7 +35,6 @@
 __DEFINE_LOGGER
 
 const TInt64 KDiskSpaceGarbageCollectorThreshold = 1024*1024; // 1 MB
-const TInt64 KDiskFullThreshold = 1024*50; // 50 kB
 
 _LIT( KSchema, "schema.mde" );
 _LIT( KDefaultImportProfile, "defaultimportfile.mde" );
@@ -156,6 +155,36 @@ const CPolicyServer::TPolicy KMdsPolicy =
     NULL //mdsElements
     };
 
+// ======================= LOCAL FUNCTIONS ================================
+
+void CheckAndInitializeFileL( RFs& aFs, TBuf<KMaxFileName>& aFile, const TDesC16& aFilePath,
+                                            RFileReadStream& aTempFile, CFileMan* aFileMan )
+    {
+    __LOG1( ELogAlways, "CheckAndInitializeFileL() - handling file %S", &aFilePath );
+    const TInt err = aTempFile.Open( aFs, aFile, EFileRead | EFileShareAny );
+    __LOG1( ELogAlways, "CheckAndInitializeFileL() - open file error %d", err );
+    aTempFile.Close();
+    if ( err != KErrNone )
+        {
+        if ( err == KErrNotFound )
+            {
+            // Path found but not schema.mde, copy schema.m
+            const TInt error = aFileMan->Copy( aFilePath, aFile, CFileMan::EOverWrite );
+            __LOG1( ELogAlways, "CheckAndInitializeFileL() - copy file error %d", error );
+            }
+        else if ( err == KErrPathNotFound)
+            {
+            // Create private dir
+            User::LeaveIfError( aFs.CreatePrivatePath( EDriveC ) );
+            
+            // Copy schema.mde
+            const TInt error = aFileMan->Copy( aFilePath, aFile, CFileMan::EOverWrite );
+            __LOG1( ELogAlways, "CheckAndInitializeFileL() - copy file error %d", error );
+            }    
+        }    
+    }
+
+// ======================= MEMBER FUNCTIONS ===============================
 
 CPolicyServer::TCustomResult CMdSServer::CustomSecurityCheckL(
         const RMessage2& aMsg, TInt& /*aAction*/, TSecurityInfo& /*aMissing*/ )
@@ -325,6 +354,10 @@ void CMdSServer::ConstructL()
     __INIT_LOGGER;
     StartL( KMdSServerName );
     __LOGLB( ELogAlways, "Server start" );
+
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
     
     CheckInitSriptL();
     
@@ -516,21 +549,23 @@ TBool CMdSServer::BackupOrRestoreRunning() const
 	{
 	return iBackupOrRestoreRunning;
 	}
-    
+  
+TBool CMdSServer::ShutdownInProgress() const
+    {
+    return iShutdown;
+    }
+
 // -----------------------------------------------------------------------------
 // CMdSServer::ShutdownNotification
 // -----------------------------------------------------------------------------
 //
 void CMdSServer::ShutdownNotification()
     {
-
-    
     if (!iShutdown)
         {    
         CActiveScheduler::Stop();
         iShutdown = ETrue;
         }
-    
     }
 
 // -----------------------------------------------------------------------------
@@ -871,73 +906,13 @@ void CMdSServer::CheckInitSriptL()
     backupRegistration.Append( KBackupRegistration );
     
     CFileMan* fileMan = CFileMan::NewL( fs );
-    CleanupStack::PushL( fileMan);
+    CleanupStack::PushL( fileMan );
     
-    TInt err = tmpFile.Open( fs, schema, EFileRead | EFileShareAny );
-    __LOG1( ELogAlways, "open schema.mde %d", err );
-    tmpFile.Close();
-    if ( err != KErrNone )
-        {
-        if ( err == KErrNotFound )
-            {
-            // Path found but not schema.mde, copy schema.m
-            const TInt error = fileMan->Copy( KSchemaPath, schema, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy schema.mde %d", error );
-            }
-        else if ( err == KErrPathNotFound)
-            {
-            // Create private dir
-            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
-            
-            // Copy schema.mde
-            const TInt error = fileMan->Copy( KSchemaPath, schema, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy schema.mde %d", error );
-            }    
-        }
-
-    err = tmpFile.Open( fs, defaultImportProfile, EFileRead | EFileShareAny );
-    __LOG1( ELogAlways, "open defaultimportprofile.mde %d", err );
-    tmpFile.Close();
-    if ( err != KErrNone )
-        {
-        if ( err == KErrNotFound )
-            {
-            // Path found but not schema.mde, copy schema.m
-            const TInt error1 = fileMan->Copy( KDefaultImportProfilePath, defaultImportProfile, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy defaultimportprofile.mde %d", error1 );
-            }
-        else if ( err == KErrPathNotFound)
-            {
-            // Create private dir
-            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
-             
-            // Copy schema.mde
-            const TInt error1 = fileMan->Copy( KDefaultImportProfilePath, defaultImportProfile, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy defaultimportprofile.mde %d", error1 );
-            }    
-        }    
+    CheckAndInitializeFileL( fs, schema, KSchemaPath(), tmpFile, fileMan );
     
-    err = tmpFile.Open( fs, backupRegistration, EFileRead | EFileShareAny );
-    __LOG1( ELogAlways, "open backup_registration.xml %d", err );
-    tmpFile.Close();
-    if ( err != KErrNone )
-        {
-        if ( err == KErrNotFound )
-            {
-            // Path found but not schema.mde, copy schema.m
-            const TInt error2 = fileMan->Copy( KBackupRegistrationPath, backupRegistration, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy backup_registration.xml %d", error2 );
-            }
-        else if ( err == KErrPathNotFound)
-            {
-            // Create private dir
-            User::LeaveIfError( fs.CreatePrivatePath( EDriveC ) );
-            
-            // Copy schema.mde
-            const TInt error2 = fileMan->Copy( KBackupRegistrationPath, backupRegistration, CFileMan::EOverWrite );
-            __LOG1( ELogAlways, "copy backup_registration.xml %d", error2 );
-            }    
-        }   
+    CheckAndInitializeFileL( fs, defaultImportProfile, KDefaultImportProfilePath(), tmpFile, fileMan );    
+    
+    CheckAndInitializeFileL( fs, backupRegistration, KBackupRegistrationPath(), tmpFile, fileMan );
 
     CleanupStack::PopAndDestroy( 2 ); //fileman, fs
     }

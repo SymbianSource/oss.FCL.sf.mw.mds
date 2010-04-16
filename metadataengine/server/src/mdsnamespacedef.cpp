@@ -101,7 +101,6 @@ CMdsObjectDef* CMdsNamespaceDef::AddObjectDefL( const TDesC& aObjectName, const 
 	CMdsObjectDef* parent = GetObjectDef( aParentName );
 	if ( !parent )
 		{
-		/* testing */
 		// found namespace in default schema
 		if ( aDefaultSchema )
 			{
@@ -118,7 +117,7 @@ CMdsObjectDef* CMdsNamespaceDef::AddObjectDefL( const TDesC& aObjectName, const 
 			}
 		}
 	CMdsObjectDef* object = CMdsObjectDef::NewLC( aObjectName, parent );
-	iObjectDefs.AppendL( object );
+	User::LeaveIfError( iObjectDefs.InsertInOrderAllowRepeats(object, TLinearOrder<CMdsObjectDef>(CMdsNamespaceDef::CompareObjectDefId) ) );
 	CleanupStack::Pop( object );
 	return object;
 	}
@@ -135,8 +134,8 @@ void CMdsNamespaceDef::AddObjectDefL( TDefId aId, TDefId aParentId, TInt aFlags,
 		}
 	CMdsObjectDef* object = CMdsObjectDef::NewLC( aName, parent );
 	object->SetFlags( (CMdsObjectDef::TObjectDefFlags)aFlags );
-	iObjectDefs.AppendL( object );
 	object->SetId(aId);
+	User::LeaveIfError( iObjectDefs.InsertInOrderAllowRepeats(object, TLinearOrder<CMdsObjectDef>(CMdsNamespaceDef::CompareObjectDefId) ) );
 	object->SetStoredInDB();
 	CleanupStack::Pop( object );
 	}
@@ -170,7 +169,7 @@ void CMdsNamespaceDef::AddRelationDefL( const TDesC& aRelationName )
 		User::Leave( KErrAlreadyExists );
 		}
 	CMdsRelationDef* relation = CMdsRelationDef::NewLC( aRelationName );
-	iRelationDefs.AppendL( relation );
+	User::LeaveIfError( iRelationDefs.InsertInOrderAllowRepeats(relation, TLinearOrder<CMdsRelationDef>(CMdsNamespaceDef::CompareRelationDefId) ) );
 	CleanupStack::Pop( relation );
 	}
 
@@ -179,7 +178,7 @@ void CMdsNamespaceDef::AddRelationDefL( TDefId aId, const TDesC& aRelationName )
 	{
 	CMdsRelationDef* relation = CMdsRelationDef::NewLC( aRelationName );
 	relation->SetId(aId);
-	iRelationDefs.AppendL( relation );
+	User::LeaveIfError( iRelationDefs.InsertInOrderAllowRepeats(relation, TLinearOrder<CMdsRelationDef>(CMdsNamespaceDef::CompareRelationDefId) ) );
 	relation->SetStoredInDB();
 	CleanupStack::Pop( relation );
 	}
@@ -206,7 +205,7 @@ void CMdsNamespaceDef::AddEventDefL( const TDesC& aEventName, TInt32 aPriority )
 		User::Leave( KErrAlreadyExists );
 		}
 	CMdsEventDef* event = CMdsEventDef::NewLC( aEventName, aPriority );
-	iEventDefs.AppendL( event );
+	User::LeaveIfError( iEventDefs.InsertInOrderAllowRepeats(event, TLinearOrder<CMdsEventDef>(CMdsNamespaceDef::CompareEventDefId) ) );
 	CleanupStack::Pop( event );
 	}
 
@@ -214,7 +213,7 @@ void CMdsNamespaceDef::AddEventDefL( TDefId aId, const TDesC& aEventName, TInt32
 	{
 	CMdsEventDef* event = CMdsEventDef::NewLC( aEventName, aPriority );
 	event->SetId(aId);
-	iEventDefs.AppendL( event );
+	User::LeaveIfError( iEventDefs.InsertInOrderAllowRepeats(event, TLinearOrder<CMdsEventDef>(CMdsNamespaceDef::CompareEventDefId) ) );
 	event->SetStoredInDB();
 	CleanupStack::Pop( event );
 	}
@@ -239,44 +238,80 @@ const CMdsObjectDef* CMdsNamespaceDef::GetObjectByIdL( TDefId aId ) const
 		{
 		return iBaseObject;
 		}
-	
-	const TInt count = iObjectDefs.Count();
-	
-	for ( TInt i = 0; i < count; ++i )
-		{
-		if( iObjectDefs[i]->GetId() == aId )
-			{
-			return iObjectDefs[i];
-			}
-		}
+
+    TInt low( 0 );
+    TInt high( iObjectDefs.Count() );
+    
+    while( low < high )
+        {
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( aId - iObjectDefs[mid]->GetId() );
+        if( compare == 0 )
+            {
+            return iObjectDefs[mid];
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }   
 	return NULL;
 	}
 
 const CMdsEventDef* CMdsNamespaceDef::GetEventByIdL( TDefId aId ) const
 	{
-	const TInt count = iEventDefs.Count();
-	
-	for ( TInt i = 0; i < count; ++i )
-		{
-		if( iEventDefs[i]->GetId() == aId )
-			{
-			return iEventDefs[i];
-			}
-		}
+    TInt low( 0 );
+    TInt high( iEventDefs.Count() );
+    
+    while( low < high )
+        {
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( aId - iEventDefs[mid]->GetId() );
+        if( compare == 0 )
+            {
+            return iEventDefs[mid];
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }
 	return NULL;
 	}
 
 const CMdsRelationDef* CMdsNamespaceDef::GetRelationByIdL( TDefId aId ) const
 	{
-	const TInt count = iRelationDefs.Count();
-	
-	for ( TInt i = 0; i < count; ++i )
-		{
-		if( iRelationDefs[i]->GetId() == aId )
-			{
-			return iRelationDefs[i];
-			}
-		}
+    TInt low( 0 );
+    TInt high( iRelationDefs.Count() );
+    
+    while( low < high )
+        {
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( aId - iRelationDefs[mid]->GetId() );
+        if( compare == 0 )
+            {
+            return iRelationDefs[mid];
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
+            }
+        }
 	return NULL;
 	}
 
@@ -312,6 +347,7 @@ void CMdsNamespaceDef::StoreToDBL( TBool aStoreOnlyNamespace )
 		{
 		iObjectDefs[i]->StoreToDBL( GetId() );
 		}
+	iObjectDefs.Sort( TLinearOrder<CMdsObjectDef>(CMdsNamespaceDef::CompareObjectDefId) );
 	
 	const TInt eventDefCount = iEventDefs.Count();
 	
@@ -320,6 +356,7 @@ void CMdsNamespaceDef::StoreToDBL( TBool aStoreOnlyNamespace )
 		{
 		iEventDefs[i]->StoreToDBL( GetId() );
 		}
+	iEventDefs.Sort( TLinearOrder<CMdsEventDef>(CMdsNamespaceDef::CompareEventDefId) );
 	
 	const TInt relationDefCount = iRelationDefs.Count();
 	
@@ -328,6 +365,7 @@ void CMdsNamespaceDef::StoreToDBL( TBool aStoreOnlyNamespace )
 		{
 		iRelationDefs[i]->StoreToDBL( GetId() );
 		}
+	iRelationDefs.Sort( TLinearOrder<CMdsRelationDef>(CMdsNamespaceDef::CompareRelationDefId) );
 
 	CleanupStack::PopAndDestroy( &rowData );
 	}
@@ -346,7 +384,8 @@ void CMdsNamespaceDef::MergeObjectsL( CMdsNamespaceDef* aNamespace, const TBool&
 			}
 		else if ( !aDryRun )
 			{
-			iObjectDefs.AppendL( aNamespace->iObjectDefs[i] );
+		    User::LeaveIfError( iObjectDefs.InsertInOrderAllowRepeats(aNamespace->iObjectDefs[i], 
+		                                  TLinearOrder<CMdsObjectDef>(CMdsNamespaceDef::CompareObjectDefId) ) );
 			aNamespace->iObjectDefs[i]->SetAllNotStoredInDB();
 			aNamespace->iObjectDefs[i] = NULL;
 			}
@@ -369,7 +408,8 @@ void CMdsNamespaceDef::MergeRelationsL( CMdsNamespaceDef* aNamespace, const TBoo
 			}
 		else if ( !aDryRun )
 			{
-			iRelationDefs.AppendL( aNamespace->iRelationDefs[i] );
+		    User::LeaveIfError( iRelationDefs.InsertInOrderAllowRepeats(aNamespace->iRelationDefs[i], 
+		                                        TLinearOrder<CMdsRelationDef>(CMdsNamespaceDef::CompareRelationDefId) ) );
 			aNamespace->iRelationDefs[i]->SetAllNotStoredInDB();
 			aNamespace->iRelationDefs[i] = NULL;
 			}
@@ -392,7 +432,7 @@ void CMdsNamespaceDef::MergeEventsL( CMdsNamespaceDef* aNamespace, const TBool& 
 			}
 		else if ( !aDryRun )
 			{
-			iEventDefs.AppendL( aNamespace->iEventDefs[i] );
+		    User::LeaveIfError( iEventDefs.InsertInOrderAllowRepeats(aNamespace->iEventDefs[i], TLinearOrder<CMdsEventDef>(CMdsNamespaceDef::CompareEventDefId) ) );
 			aNamespace->iEventDefs[i]->SetAllNotStoredInDB();
 			aNamespace->iEventDefs[i] = NULL;
 			}
@@ -480,6 +520,7 @@ void CMdsNamespaceDef::ImportFromDBL()
 		{
 		iObjectDefs[i]->ImportFromDBL();
 		}
+	iObjectDefs.Sort( TLinearOrder<CMdsObjectDef>(CMdsNamespaceDef::CompareObjectDefId) );
 
 	// everything is ok, so set the flags
 	SetStoredInDB();
@@ -611,6 +652,21 @@ const CMdsPropertyDef* CMdsNamespaceDef::GetPropertyL( TDefId aId ) const
 
 	return NULL;
 	}
+
+TInt CMdsNamespaceDef::CompareObjectDefId(const CMdsObjectDef& aFirst, const CMdsObjectDef& aSecond)
+    {
+    return aFirst.GetId() - aSecond.GetId();
+    }
+
+TInt CMdsNamespaceDef::CompareEventDefId(const CMdsEventDef& aFirst, const CMdsEventDef& aSecond)
+    {
+    return aFirst.GetId() - aSecond.GetId();
+    }
+
+TInt CMdsNamespaceDef::CompareRelationDefId(const CMdsRelationDef& aFirst, const CMdsRelationDef& aSecond)
+    {
+    return aFirst.GetId() - aSecond.GetId();
+    }
 
 /**
  * Initialize static variables

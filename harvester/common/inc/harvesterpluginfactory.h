@@ -43,6 +43,7 @@ NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 		IMPORT_C TBool IsContainerFileL( const TDesC& aURI );
 		
 		IMPORT_C void SendHarvestingStatusEventL( TBool aStarted );
+		IMPORT_C void PauseHarvester( TBool aPaused );
 
 	private:
 		CHarvesterPluginFactory();

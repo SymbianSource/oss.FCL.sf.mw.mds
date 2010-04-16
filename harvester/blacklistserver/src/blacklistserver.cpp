@@ -184,21 +184,16 @@ CBlacklistServer::~CBlacklistServer()
  
     iBlacklistMemoryTable.ResetAndDestroy();
     iBlacklistMemoryTable.Close();
-   	
-   	
-    const TInt KRowCountRemovedItems = iBufferedRemoveItems.Count();
 
-    for( TInt i = 0; i < KRowCountRemovedItems; i++ )
+    for( TInt i = iBufferedRemoveItems.Count() - 1; i >=0; i-- )
     	{
     	iBufferedRemoveItems[i]->Close();
     	}
 
     iBufferedRemoveItems.ResetAndDestroy();
     iBufferedRemoveItems.Close();  	
-   	
-    const TInt KRowCountAddedItems = iBufferedAddedItems.Count();
 
-    for( TInt i = 0; i < KRowCountAddedItems; i++ )
+    for( TInt i = iBufferedAddedItems.Count() - 1; i >=0; i-- )
     	{
     	iBufferedAddedItems[i]->Close();
     	}

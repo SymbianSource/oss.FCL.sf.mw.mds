@@ -52,7 +52,7 @@ EXPORT_C void RTrackLog::StopTrackLog()
     LOG( "RTrackLog::StopTrackLog()" );
     if ( iHandle )
         {
-        SendReceive( ELocManStopTrackLog);
+        Send( ELocManStopTrackLog );
         }   
     }
 

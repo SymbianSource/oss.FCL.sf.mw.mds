@@ -220,7 +220,6 @@ EXPORT_C void CHarvesterPlugin::RunL()
 //
 EXPORT_C void CHarvesterPlugin::DoCancel()
     {
-    
     }
 
 // ---------------------------------------------------------------------------

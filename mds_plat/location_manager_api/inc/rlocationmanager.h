@@ -64,13 +64,7 @@ protected:
 	 * @param aError Symbian error code
 	 */
 	void CompleteRequest(TRequestStatus& aStatus, TInt aError);
-       
-protected:
-    /**
-     * Buffer for names.
-     * Own.
-     */    
-    CBufFlat* iNameBuf;
+
     };
     
 #endif // R_RLOCATIONMANAGER_H

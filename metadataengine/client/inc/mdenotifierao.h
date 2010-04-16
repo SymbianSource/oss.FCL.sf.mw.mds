@@ -131,6 +131,7 @@ NONSHARABLE_CLASS(CMdENotifierAO) : public CActive
         void DoNotifyObserver();
 		
 		void DecodeIdBufferL();
+		void DecodeDataBufferL();
 		void DecodeRelationItemBufferL();
 
     private: // Data
@@ -156,6 +157,8 @@ NONSHARABLE_CLASS(CMdENotifierAO) : public CActive
         CMdCSerializationBuffer* iDataBuffer;
 
 		RArray<TItemId> iIdArray;
+		
+		RPointerArray<HBufC> iUriArray;
 
 		RArray<TMdERelation> iRelationItemArray;
     };

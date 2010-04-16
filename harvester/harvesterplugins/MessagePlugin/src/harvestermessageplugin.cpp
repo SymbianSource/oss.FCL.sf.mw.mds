@@ -30,6 +30,7 @@
 #include <mdetextproperty.h>
 
 #include "harvestermessageplugin.h"
+#include "harvestercommon.h"
 #include "harvesterlog.h"
 #include "mdsutils.h"
 #include "mdeobjectdef.h"
@@ -283,9 +284,9 @@ TInt CHarvesterMessagePlugin::GatherDataL( CMdEObject& aMetadataObject )
 void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 	{	    
 	WRITELOG( "CHarvesterMessagePlugin::SetPropertiesL enter" );
-	CMdEObject& aMetadataObject = aHD.MdeObject();
+	CMdEObject& metadataObject = aHD.MdeObject();
 	
-	CMdEObjectDef& messageObjectDef = aMetadataObject.Def();
+	CMdEObjectDef& messageObjectDef = metadataObject.Def();
 	
 	CMdEPropertyDef& creationTimeDef = messageObjectDef.GetPropertyDefL( 									  
 		MdeConstants::Object::KCreationDateProperty ) ;
@@ -318,19 +319,19 @@ void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 	
 	if ( EHarvesterAdd == aHD.EventType() )
 		{
-		aMetadataObject.AddTimePropertyL( creationTimeDef, now );			
-		aMetadataObject.AddTimePropertyL( lastModTimeDef, iDate );										
-		aMetadataObject.AddBoolPropertyL( receivedDef, iIncoming );
+	    metadataObject.AddTimePropertyL( creationTimeDef, now );			
+	    metadataObject.AddTimePropertyL( lastModTimeDef, iDate );										
+	    metadataObject.AddBoolPropertyL( receivedDef, iIncoming );
 		if (iFromOrTo && iFromOrTo->Length())
 			{
-			aMetadataObject.AddTextPropertyL( textDef, *iFromOrTo );
+		    metadataObject.AddTextPropertyL( textDef, *iFromOrTo );
 			}
-		aMetadataObject.AddTextPropertyL( ItemtypeDef, iItemType );									
-		aMetadataObject.AddUint32PropertyL( sizeDef, iSize );
-		aMetadataObject.AddInt16PropertyL( offSetDef, timeOffset.Int() / 60 );
+		metadataObject.AddTextPropertyL( ItemtypeDef, iItemType );									
+		metadataObject.AddUint32PropertyL( sizeDef, iSize );
+		metadataObject.AddInt16PropertyL( offSetDef, timeOffset.Int() / 60 );
 		
 		CMdEProperty* prop = NULL;	
-		TInt index = aMetadataObject.Property( titleDef, prop );
+		TInt index = metadataObject.Property( titleDef, prop );
 		
 		if (iSubject.Length())
 			{
@@ -340,7 +341,7 @@ void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 				}
 			else
 				{
-				aMetadataObject.AddTextPropertyL( titleDef, iSubject );
+			    metadataObject.AddTextPropertyL( titleDef, iSubject );
 				}
 			}
 		else
@@ -353,7 +354,7 @@ void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 					}
 				else
 					{
-					aMetadataObject.AddTextPropertyL( titleDef, *iFromOrTo );
+				    metadataObject.AddTextPropertyL( titleDef, *iFromOrTo );
 					}
 				}
 			}
@@ -361,7 +362,7 @@ void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 	else
 		{	
 		CMdEProperty* prop = NULL;	
-		TInt index = aMetadataObject.Property( textDef, prop );
+		TInt index = metadataObject.Property( textDef, prop );
 		if (iFromOrTo && iFromOrTo->Length())
 			{
 			if (prop)
@@ -370,18 +371,18 @@ void CHarvesterMessagePlugin::SetPropertiesL( CHarvesterData& aHD )
 				}
 			else
 				{
-				aMetadataObject.AddTextPropertyL( textDef, *iFromOrTo );
+			    metadataObject.AddTextPropertyL( textDef, *iFromOrTo );
 				}
 			}
 		else if (index >= 0)
 			{
-			aMetadataObject.RemoveProperty(index);
+		    metadataObject.RemoveProperty(index);
 			}
 		
-		aMetadataObject.Property( sizeDef, prop );
+		metadataObject.Property( sizeDef, prop );
 		static_cast<CMdEUint32Property *>(prop)->SetValueL( iSize );
 		
-		aMetadataObject.Property( lastModTimeDef, prop );
+		metadataObject.Property( lastModTimeDef, prop );
 		static_cast <CMdETimeProperty *>(prop)->SetValueL( iDate );										
 		}
 

@@ -116,6 +116,7 @@ void CMdSMaintenanceEngine::DeleteDatabase()
 //
 void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsSchema& aSchema )
     {
+    __LOG1( ELogAlways, "Trying to validate MDS DB, error expected if not created(first boot): %d", 0 );
     if ( !(iMaintenance->ValidateL( ) ) )
         {
         // first-time init: re-form the database completely

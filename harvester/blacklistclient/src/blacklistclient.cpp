@@ -37,14 +37,14 @@ EXPORT_C RBlacklistClient::RBlacklistClient() : RSessionBase (),
 //
 EXPORT_C RBlacklistClient::~RBlacklistClient()
     {
-    WRITELOG( "CBlacklistServer::~RBlacklistClient - begin" );
+    WRITELOG( "RBlacklistClient::~RBlacklistClient - begin" );
     
     RSessionBase::Close(); 
     iBlacklistMemoryTable.ResetAndDestroy();
     iBlacklistMemoryTable.Close();
 	iBlacklistChunk.Close();
 
-    WRITELOG( "CBlacklistServer::~RBlacklistClient - end" );
+    WRITELOG( "RBlacklistClient::~RBlacklistClient - end" );
     }
 
 // ---------------------------------------------------------------------------
@@ -53,35 +53,24 @@ EXPORT_C RBlacklistClient::~RBlacklistClient()
 //
 EXPORT_C TInt RBlacklistClient::Connect()
     {
-    WRITELOG( "CBlacklistServer::Connect - begin" );
+    WRITELOG( "RBlacklistClient::Connect - begin" );
 
-    TInt retryCount = 2;
-    TInt error = KErrNone;
-    
     iSessionOk = EFalse;
-    
-    while ( retryCount )
+      
+    TInt error = StartServer();
+
+    if ( error == KErrNone || error == KErrAlreadyExists )
         {
-        // try create session, if ok, then break out and return KErrNone
+        WRITELOG( "RBlacklistClient::Connect() - creating session" );
         error = CreateSession( KBlacklistServerName, Version() );
-        if( error != KErrNotFound && error != KErrServerTerminated )
-            {
-            iSessionOk = ETrue;
-            break;
-            }
-        
-        // Cannot create session, start server
-        error = StartServer();
-        
-        if ( error != KErrNone && error != KErrAlreadyExists )
-            {
-            break;
-            }
-       
-        --retryCount;
         }
     
-    WRITELOG( "CBlacklistServer::Connect - end" );
+    if( error == KErrNone )
+        {
+        iSessionOk = ETrue;
+        }
+    
+    WRITELOG( "RBlacklistClient::Connect - end" );
 
     return error;
     }
@@ -92,7 +81,7 @@ EXPORT_C TInt RBlacklistClient::Connect()
 //
 TVersion RBlacklistClient::Version() const
     {
-    WRITELOG( "CBlacklistServer::Version - begin" );
+    WRITELOG( "RBlacklistClient::Version - begin" );
 
     return TVersion( KBlacklistServerMajorVersion, KBlacklistServerMinorVersion,
     	KBlacklistServerBuildVersion );
@@ -105,10 +94,8 @@ TVersion RBlacklistClient::Version() const
 //
 TInt RBlacklistClient::StartServer()
     {
-    WRITELOG( "CBlacklistServer::CustomSecurityCheckL - begin" );
-
-    const TUidType serverUid = ( KNullUid, KNullUid, KUidKBlacklistServer );
-
+    WRITELOG( "RBlacklistClient::StartServer - begin" );
+    
     RProcess server;
     TInt error = server.Create( KBlacklistServerExe, KNullDesC );
     if( error != KErrNone )
@@ -132,7 +119,7 @@ TInt RBlacklistClient::StartServer()
     error = server.ExitType() == EExitPanic ? KErrGeneral : status.Int();
     server.Close();
 
-    WRITELOG( "CBlacklistServer::Version - end" );
+    WRITELOG( "RBlacklistClient::StartServer - end" );
 
     return error;
     }
@@ -143,7 +130,7 @@ TInt RBlacklistClient::StartServer()
 //
 void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) const
     {
-    WRITELOG( "CBlacklistServer::RemoveFromDBL - begin" );
+    WRITELOG( "RBlacklistClient::RemoveFromDBL - begin" );
 
     TPckgBuf<TUint32> mediaIdPckg( aMediaId );
     
@@ -154,7 +141,7 @@ void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) cons
     const TInt err = SendReceive( EBlacklistRemoveFromDB, ipcArgs );
     User::LeaveIfError( err );
 
-    WRITELOG( "CBlacklistServer::RemoveFromDBL - end" );
+    WRITELOG( "RBlacklistClient::RemoveFromDBL - end" );
     }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +150,7 @@ void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) cons
 //
 void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
     {
-    WRITELOG( "CBlacklistServer::DoLoadBlacklistL - begin" );
+    WRITELOG( "RBlacklistClient::DoLoadBlacklistL - begin" );
 
     TPckgBuf<TInt> handleBuf;
     TIpcArgs ipcArgs;
@@ -172,7 +159,7 @@ void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
     User::LeaveIfError( err );
     aHandle = handleBuf();
 
-    WRITELOG( "CBlacklistServer::DoLoadBlacklistL - end" );
+    WRITELOG( "RBlacklistClient::DoLoadBlacklistL - end" );
     } 
 
 // ---------------------------------------------------------------------------
@@ -181,7 +168,7 @@ void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
 //
 EXPORT_C void RBlacklistClient::LoadBlacklistL()
     {
-    WRITELOG( "CBlacklistServer::LoadBlacklistL - begin" );
+    WRITELOG( "RBlacklistClient::LoadBlacklistL - begin" );
 
     if ( !iSessionOk )
         {
@@ -221,7 +208,7 @@ EXPORT_C void RBlacklistClient::LoadBlacklistL()
 	TUint32 mediaId ( 0 );
     HBufC* uri = NULL;
     
-    for( TInt i( 0 ); i < listCount; i++ )
+    for( TInt i = listCount - 1; i >=0; i-- )
         {
         // get modified and media id
 	    buffer->ReceiveL( modified );
@@ -238,7 +225,7 @@ EXPORT_C void RBlacklistClient::LoadBlacklistL()
 	CleanupStack::PopAndDestroy( buffer );
 	CleanupStack::PopAndDestroy( name );
 
-    WRITELOG( "CBlacklistServer::LoadBlacklistL - end" );
+    WRITELOG( "RBlacklistClient::LoadBlacklistL - end" );
     }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +235,7 @@ EXPORT_C void RBlacklistClient::LoadBlacklistL()
 void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
         const TDesC& aUri, const TUint32 aMediaId )
     {
-    WRITELOG( "CBlacklistServer::AddToMemoryTableL - begin" );
+    WRITELOG( "RBlacklistClient::AddToMemoryTableL - begin" );
 
     CBlacklistItem* item = CBlacklistItem::NewL( aModified, aUri, aMediaId );
     
@@ -259,7 +246,7 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
         }
 
 
-    WRITELOG( "CBlacklistServer::AddToMemoryTableL - end" );
+    WRITELOG( "RBlacklistClient::AddToMemoryTableL - end" );
     }
 
 // ---------------------------------------------------------------------------
@@ -268,7 +255,7 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
 //
 void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 aMediaId )
     {
-    WRITELOG( "CBlacklistServer::RemoveFromMemoryTableL - begin" );
+    WRITELOG( "RBlacklistClient::RemoveFromMemoryTableL - begin" );
 
     const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
@@ -278,7 +265,7 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
         iBlacklistMemoryTable.Remove( index );
         }
 
-    WRITELOG( "CBlacklistServer::RemoveFromMemoryTableL - end" );
+    WRITELOG( "RBlacklistClient::RemoveFromMemoryTableL - end" );
     }
  
 
@@ -288,7 +275,7 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
 //
 EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMediaId, TTime aLastModifiedTime )
     {
-    WRITELOG( "CBlacklistServer::IsBlacklistedL - begin" );
+    WRITELOG( "RBlacklistClient::IsBlacklistedL - begin" );
 
     const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
@@ -300,7 +287,7 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
             {
             if ( modified == aLastModifiedTime.Int64() )
                 {
-                WRITELOG( "CBlacklistServer::IsBlacklistedL - file is blacklisted, modification time is different" );
+                WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is different" );
                 return ETrue;
                 }
             else
@@ -315,13 +302,13 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
             }
         else
             {
-            WRITELOG( "CBlacklistServer::IsBlacklistedL - file is blacklisted, no modification time found" );
+            WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, no modification time found" );
             return ETrue;
             }
         
         }
    
-    WRITELOG( "CBlacklistServer::IsBlacklistedL - end" );
+    WRITELOG( "RBlacklistClient::IsBlacklistedL - end" );
     return EFalse;
     }
 
@@ -331,7 +318,7 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
 //
 TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
     {
-    WRITELOG( "CBlacklistServer::GetListIndex - begin" );
+    WRITELOG( "RBlacklistClient::GetListIndex - begin" );
 
     for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
         {
@@ -341,7 +328,7 @@ TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
             }
         }
 
-    WRITELOG( "CBlacklistServer::GetListIndex - end" );
+    WRITELOG( "RBlacklistClient::GetListIndex - end" );
 
     return KErrNotFound;
     }
@@ -353,7 +340,7 @@ TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
 //
 EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime aLastModifiedTime ) const
     {
-    WRITELOG( "CBlacklistServer::AddL - begin" );
+    WRITELOG( "RBlacklistClient::AddL - begin" );
 
     TPckgC<TUint32> mediaIdPckg( aMediaId );
     TPckgC<TTime> lastModifiedTimePckg( aLastModifiedTime );
@@ -366,7 +353,7 @@ EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime
     const TInt err = SendReceive( EBlacklistAdd, ipcArgs );
     User::LeaveIfError( err );
 
-    WRITELOG( "CBlacklistServer::AddL - end" );
+    WRITELOG( "RBlacklistClient::AddL - end" );
     }
 
 
@@ -376,7 +363,7 @@ EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime
 //
 EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) const
     {
-    WRITELOG( "CBlacklistServer::RemoveL - begin" );
+    WRITELOG( "RBlacklistClient::RemoveL - begin" );
 
     TPckgBuf<TUint32> mediaIdPckg( aMediaId );
     
@@ -387,7 +374,7 @@ EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) c
     const TInt err = SendReceive( EBlacklistRemove, ipcArgs );
     User::LeaveIfError( err );
 
-    WRITELOG( "CBlacklistServer::RemoveL - end" );
+    WRITELOG( "RBlacklistClient::RemoveL - end" );
     }
 
 // ---------------------------------------------------------------------------
@@ -396,7 +383,7 @@ EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) c
 //
 EXPORT_C void RBlacklistClient::CloseDBL()
     {
-    WRITELOG( "CBlacklistServer::CloseDBL - begin" );
+    WRITELOG( "RBlacklistClient::CloseDBL - begin" );
 
     if ( !iSessionOk )
         {
@@ -407,7 +394,7 @@ EXPORT_C void RBlacklistClient::CloseDBL()
         Send( EBlacklistCloseDB );
         }
 
-    WRITELOG( "CBlacklistServer::CloseDBL - end" );
+    WRITELOG( "RBlacklistClient::CloseDBL - end" );
     }
 
 

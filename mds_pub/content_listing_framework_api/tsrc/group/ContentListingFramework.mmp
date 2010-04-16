@@ -23,35 +23,37 @@
 #define         KEUnitTestDllUid2 0x1000af5a
 
 // Build target
-TARGET          T_CLFApiMdlTest.dll
+//TARGET          CLFApiMdlTest.dll
+TARGET          ContentListingFrameworkTest.dll
 TARGETTYPE      dll
 UID             KEUnitTestDllUid2 KEUnitUid3
-CAPABILITY      ALL -TCB -DRM
+
+//CAPABILITY      ALL -TCB -DRM
+CAPABILITY      ALL -TCB
 VENDORID        VID_DEFAULT
 
-APP_LAYER_SYSTEMINCLUDE
+DEFFILE         ContentListingFrameworkTest.def
 
-// Source files
 SOURCEPATH      ../src
-SOURCE          CreateTestSuite.cpp
-SOURCE          T_CLFApiModuleTests.cpp
+SOURCE          ContentListingFrameworkTest.cpp
+SOURCE          ContentListingFrameworkTestBlocks.cpp
 
-START RESOURCE  T_ContentListingFramework.rss
+START RESOURCE  ContentListingFrameworkTest.rss
   HEADER
   TARGETPATH    RESOURCE_FILES_DIR
   LANGUAGE_IDS
 END
 
-// Include paths
+SYSTEMINCLUDE     /epoc32/include/ecom
 USERINCLUDE     ../inc
 
-SYSTEMINCLUDE     /epoc32/include/platform/digia/eunit
+MW_LAYER_SYSTEMINCLUDE
 
-// Dependencies to system components
 LIBRARY         euser.lib
-LIBRARY         EUnit.lib
-LIBRARY         efsrv.lib
-LIBRARY         bafl.lib
+LIBRARY         stiftestinterface.lib
+LIBRARY         stiftestengine.lib
 LIBRARY         platformenv.lib
 LIBRARY         ContentListingFramework.lib 
 LIBRARY         estor.lib
+LIBRARY         efsrv.lib
+LIBRARY         bafl.lib

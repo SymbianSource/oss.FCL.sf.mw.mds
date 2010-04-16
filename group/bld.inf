@@ -47,3 +47,4 @@ PRJ_TESTMMPFILES
 
 PRJ_TESTEXPORTS
 ../rom/mds_testers.iby	CORE_MW_LAYER_IBY_EXPORT_PATH(mds_testers.iby)
+

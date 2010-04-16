@@ -110,6 +110,9 @@ CFileEventHandlerAO::~CFileEventHandlerAO()
     delete iEventArray;
     
     iQueue.ResetAndDestroy();
+    iQueue.Close();
+	
+    iUriArray.ResetAndDestroy();
     iUriArray.Close();
     }
 
@@ -837,7 +840,7 @@ CMdEHarvesterSession * CFileEventHandlerAO::MdeHarvesterSession()
 void CFileEventHandlerAO::AddToQueueL( TMdsFSPStatus& aEvent )
 	{
 	CMdsFSPQueueItem* item = CMdsFSPQueueItem::NewL(aEvent);
-	iQueue.Append(item);
+	iQueue.AppendL(item);
 	if( iNextRequest == ERequestIdle && !iCacheEvents )
 		{
 		SetNextRequest( ERequestProcessing );

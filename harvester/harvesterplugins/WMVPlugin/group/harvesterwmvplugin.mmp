@@ -43,15 +43,15 @@ USERINCLUDE    ../inc
 MW_LAYER_SYSTEMINCLUDE
 
 SYSTEMINCLUDE /epoc32/include/ecom
-SYSTEMINCLUDE /epoc32/include/caf
 
 LIBRARY       caf.lib
+LIBRARY       cafutils.lib
 LIBRARY       euser.lib
 LIBRARY       efsrv.lib
 LIBRARY       harvestercommon.lib
 LIBRARY       harvesterplugininterface.lib
 LIBRARY       mdeclient.lib
-LIBRARY	  harvesterdata.lib
+LIBRARY	      harvesterdata.lib
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

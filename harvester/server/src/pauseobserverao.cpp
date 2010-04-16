@@ -57,7 +57,7 @@ void CPauseObserverAO::ConstructL()
 
 	WRITELOG1("CPauseObserverAO::ConstructL() Define error: %d", error);
 
-	if( KErrAlreadyExists != error )
+	if( KErrAlreadyExists != error && KErrNone != error )
 		{
 		User::LeaveIfError( error );
 		}

@@ -70,6 +70,12 @@ CGpxConverterAO::~CGpxConverterAO()
     
     iObservers.Reset();
     
+    iFileQueue.ResetAndDestroy();
+    iFileQueue.Close();
+    
+    iBoundQueue.ResetAndDestroy();
+    iBoundQueue.Close();
+    
     delete iWriteBuf;
     delete iFormatBuf;
     }
@@ -105,8 +111,10 @@ void CGpxConverterAO::AddToQueueL( const TDesC& aFileName, TBoundaries* aBoundar
 	{
 	LOG("CGpxConverterAO::AddToQueueL");
 	TFileName *filename = new (ELeave) TFileName(aFileName);
-	iFileQueue.Append(filename);
-	iBoundQueue.Append( aBoundaries );
+	CleanupStack::PushL( filename );
+	iFileQueue.AppendL( filename );
+	CleanupStack::Pop( filename );
+	iBoundQueue.AppendL( aBoundaries );
 	
 	if ( iState == EIdle )
 		{
@@ -275,8 +283,7 @@ void CGpxConverterAO::RunL()
 				distance = iBoundaries->distance;
 				}
 			
-			TInt count = iObservers.Count();
-			for( TInt i = 0; i < count; i++ )
+			for( TInt i = iObservers.Count() - 1; i >=0; i-- )
 				{
 				iObservers[i]->GpxFileCreated( iGpxPath, iTagId, distance, iStartTime, iEndTime );
 				}

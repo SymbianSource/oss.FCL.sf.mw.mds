@@ -139,7 +139,7 @@ EXPORT_C void CMdEHarvesterSession::SetFilesToPresentL(TUint32 aMediaId,
 	TInt urisSize = CMdCSerializationBuffer::KRequiredSizeForTUint32;
 
 	WRITELOG( "CMdEHarvesterSession::SetFilesToPresentL -- Loop urisSize" );
-	for( TInt i = 0; i < fileCount; i++ )
+	for( TInt i = fileCount - 1; i >=0; i-- )
 		{
 		urisSize += CMdCSerializationBuffer::RequiredSize( aUris[i] );
 		}
@@ -298,9 +298,7 @@ EXPORT_C HBufC* CMdEHarvesterSession::HarvestingPrioritizationUriL(
 EXPORT_C void CMdEHarvesterSession::AutoLockL( 
 		RPointerArray<CMdEObject>& aObjects )
 	{
-	const TInt objectCount = aObjects.Count();
-	
-	for( TInt i = 0; i < objectCount; i++ )
+	for( TInt i = aObjects.Count() - 1; i >=0; i-- )
 		{
 		aObjects[i]->AutoLockL();
 		}

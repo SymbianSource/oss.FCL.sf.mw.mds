@@ -279,7 +279,7 @@ public:
 	/**
 	 * Update current C-drive media id to all objects in DB that have the old media id.
 	 */
-	void ChangeCDriveMediaId();
+	IMPORT_C void ChangeCDriveMediaId();
 
 	/**
 	 * Set "binary composing to file" pending flag to objects
@@ -329,7 +329,7 @@ public:
 	/**
 	 * Update DB with current internal mass storage media id
 	 */
-    void CheckMassStorageMediaId( const TUint32 aMediaId );
+	IMPORT_C void CheckMassStorageMediaId( const TUint32 aMediaId );
 
 private:
 	CMdESessionImpl* iSession;

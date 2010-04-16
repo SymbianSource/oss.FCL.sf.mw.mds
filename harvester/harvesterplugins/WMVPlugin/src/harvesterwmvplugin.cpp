@@ -11,16 +11,17 @@
 *
 * Contributors:
 *
-* Description:  Harvests metadata from wmv video file 
+* Description:  Harvests metadata from wm video file 
 *
 */
 
 #include <e32std.h>
-#include <caf/content.h>
+#include <caf/caf.h>
 
 #include "mdsutils.h"
 #include "harvesterdata.h"
 #include "harvesterlog.h"
+#include "harvestercommon.h"
 #include "harvesterwmvplugin.h"
 #include <mdenamespacedef.h>
 #include <mdeobjectdef.h>
@@ -42,6 +43,13 @@ void CHarvesterWmvPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
+    iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	
+    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
+    iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
+    iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDescriptionProperty );
+    iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KAuthorProperty );
+    iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
 	}
 
 CHarvesterWmvPluginPropertyDefs* CHarvesterWmvPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
@@ -77,6 +85,7 @@ CHarvesterWMVPlugin* CHarvesterWMVPlugin::NewL()
 CHarvesterWMVPlugin::~CHarvesterWMVPlugin()
     {
     WRITELOG( "CHarvesterWMVPlugin::~CHarvesterWMVPlugin()" );
+    delete iPropDefs;
     }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +163,7 @@ CHarvesterWMVPlugin::CHarvesterWMVPlugin() : CHarvesterPlugin(), iPropDefs( NULL
 void CHarvesterWMVPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterWMVPlugin::ConstructL()" );
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
     }
 
 // ---------------------------------------------------------------------------
@@ -166,7 +176,6 @@ void CHarvesterWMVPlugin::GatherDataL( CMdEObject& aMetadataObject, CHarvesterWm
        
     const TDesC& uri = aMetadataObject.Uri();
 
-    TInt error ( KErrNone );
     TEntry* entry = new (ELeave) TEntry();
     CleanupStack::PushL( entry );
 
@@ -178,16 +187,81 @@ void CHarvesterWMVPlugin::GatherDataL( CMdEObject& aMetadataObject, CHarvesterWm
     CleanupStack::PopAndDestroy( entry );
     
     ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
+    ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
+   
+    ContentAccess::RStringAttributeSet attrSet;
+    CleanupClosePushL( attrSet );
+    
+    attrSet.AddL( ContentAccess::EDescription );
+    attrSet.AddL( ContentAccess::EMimeType );
+    attrSet.AddL( ContentAccess::ETitle );
+    attrSet.AddL( ContentAccess::EAuthor );
+    attrSet.AddL( ContentAccess::EGenre );
 
-    //Mime type check
-    error = content->GetStringAttribute( ContentAccess::EMimeType, aClipDetails.iMimeType );
-    if (  error != KErrNone )
+    User::LeaveIfError( data->GetStringAttributeSet(attrSet) );
+
+    TInt err = attrSet.GetValue( ContentAccess::EMimeType, aClipDetails.iMimeType );
+    if ( err != KErrNone)
         {
-        WRITELOG( "CHarvesterWMVPlugin - Could not resolve mime type, leave!" );
-        User::Leave( KErrNotSupported );
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting mimetype failed %d", err );
+        }
+        
+    if ( aClipDetails.iMimeType.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterWMVPlugin::GatherDataL - no mimetype" );
+        }
+    
+    err = attrSet.GetValue( ContentAccess::EDescription, aClipDetails.iDescription );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting description failed %d", err );
+        }
+        
+    if ( aClipDetails.iDescription.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterWMVPlugin::GatherDataL - no description" );
+        }
+    
+    err = attrSet.GetValue( ContentAccess::ETitle, aClipDetails.iTitle );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting title failed %d", err );
+        }
+        
+    if ( aClipDetails.iTitle.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterWMVPlugin::GatherDataL - no title" );
+        }
+    
+    err = attrSet.GetValue( ContentAccess::EAuthor, aClipDetails.iAuthor );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting author failed %d", err );
+        }
+        
+    if ( aClipDetails.iAuthor.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterWMVPlugin::GatherDataL - no author" );
         }
 
-    CleanupStack::PopAndDestroy( content );  
+    err = attrSet.GetValue( ContentAccess::EGenre, aClipDetails.iGenre );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting genre failed %d", err );
+        }
+        
+    if ( aClipDetails.iGenre.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterWMVPlugin::GatherDataL - no genre" );
+        }
+    
+    err = content->GetAttribute( ContentAccess::EIsProtected, aClipDetails.iDrmProtected );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterWMVPlugin::GatherDataL - ERROR: getting protection info failed %d", err );
+        }
+        
+    CleanupStack::PopAndDestroy( 3 ); // content, data, attrSet
     }
 
 // ---------------------------------------------------------------------------
@@ -226,5 +300,36 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
     	}
+    
+    // DRM protection
+    if( aClipDetails.iDrmProtected )
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iDrmPropertyDef, &aClipDetails.iDrmProtected, aIsAdd );
+        } 
+    // Title (is set from URI by default)
+    if(aClipDetails.iTitle.Length() > 0)
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iTitlePropertyDef, &aClipDetails.iTitle, EFalse );
+        }
+    // Description
+    if(aClipDetails.iDescription.Length() > 0)
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iDescriptionPropertyDef, &aClipDetails.iDescription, aIsAdd );
+        }   
+    // Author
+    if(aClipDetails.iAuthor.Length() > 0)
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iAuthorPropertyDef, &aClipDetails.iAuthor, aIsAdd );
+        }
+    // Genre
+    if(aClipDetails.iGenre.Length() > 0)
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iGenrePropertyDef, &aClipDetails.iGenre, aIsAdd );
+        }   
     }
 

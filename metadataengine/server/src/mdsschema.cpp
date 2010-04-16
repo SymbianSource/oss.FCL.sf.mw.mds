@@ -203,7 +203,7 @@ void CMdsSchema::AddObjectToSqlClauseL( CMdsObjectDef* aObject, CMdsClauseBuffer
 
 void CMdsSchema::CreateObjectTablesL()
 	{
-	_LIT( KBaseObjectDefinition,  "CREATE TABLE IF NOT EXISTS %S%u(ObjectId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectDefId INTEGER NOT NULL,Flags INTEGER,MediaId LARGEINT,UsageCount LARGEINT DEFAULT 0,GuidHigh LARGEINT,GuidLow LARGEINT,URI TEXT NOT NULL COLLATE NOCASE,Origin INTEGER,Size LARGEINT,TimeOffset INTEGER,CreationDate LARGEINT,LastModifiedDate LARGEINT,ItemType TEXT,Title TEXT,UNIQUE(GuidHigh,GuidLow),UNIQUE(MediaId,URI));" );	
+	_LIT( KBaseObjectDefinition,  "CREATE TABLE IF NOT EXISTS %S%u(ObjectId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectDefId INTEGER NOT NULL,Flags INTEGER,MediaId LARGEINT,UsageCount LARGEINT DEFAULT 0,GuidHigh LARGEINT,GuidLow LARGEINT,URI TEXT NOT NULL COLLATE NOCASE,Origin INTEGER,Size LARGEINT,TimeOffset INTEGER,CreationDate LARGEINT,LastModifiedDate LARGEINT,ItemType TEXT,Title TEXT,UNIQUE(GuidHigh,GuidLow),UNIQUE(URI,MediaId));" );	
 	_LIT( KCreateRelationsTable,  "CREATE TABLE IF NOT EXISTS Relations%u(RelationId INTEGER PRIMARY KEY AUTOINCREMENT,Flags INTEGER,RelationDefId INTEGER NOT NULL,LeftObjectId INTEGER NOT NULL,RightObjectId INTEGER NOT NULL,Parameter INTEGER,GuidHigh LARGEINT,GuidLow LARGEINT,LastModifiedDate LARGEINT);" );
 	_LIT( KCreateEventsTable,     "CREATE TABLE IF NOT EXISTS Event%u(EventId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectId INTEGER NOT NULL, EventDefId INTEGER NOT NULL, Timestamp INTEGER NOT NULL, Source TEXT, Participant TEXT);" );
 	_LIT( KCreateTxtSrchTable,    "CREATE TABLE IF NOT EXISTS TextSearch%u(WordId INTEGER NOT NULL,ObjectId INTEGER NOT NULL,Position INTEGER);" );
@@ -233,6 +233,9 @@ void CMdsSchema::CreateObjectTablesL()
 	
 	// ObjectTypeDefinition index
 	_LIT( KMdsIndexObjectDefId, "CREATE INDEX ObjectDefIndex%u ON Object%u(ObjectDefId);" );
+	
+    // MediaId index
+    _LIT( KMdsIndexMediaId, "CREATE INDEX MediaIdIndex%u ON Object%u(MediaId);" );
 
 	// create tables
 	CMdsClauseBuffer* clause = CMdsClauseBuffer::NewLC( 1024 );
@@ -337,6 +340,11 @@ void CMdsSchema::CreateObjectTablesL()
             // add objectdefidindex[number]
             clauseTrigger->ReserveSpaceL( KMdsIndexObjectDefId().Size() + ( KMaxUintValueLength * 2 ) );  
             clauseTrigger->BufferL().Format( KMdsIndexObjectDefId, namespaceDefId, namespaceDefId );
+            connection.ExecuteL( clauseTrigger->ConstBufferL(), emptyRowData );
+            
+            // add mediaidindex[number]
+            clauseTrigger->ReserveSpaceL( KMdsIndexMediaId().Size() + ( KMaxUintValueLength * 2 ) );  
+            clauseTrigger->BufferL().Format( KMdsIndexMediaId, namespaceDefId, namespaceDefId );
             connection.ExecuteL( clauseTrigger->ConstBufferL(), emptyRowData );
             
 			namespaceDef->SetTableStoredInDB();

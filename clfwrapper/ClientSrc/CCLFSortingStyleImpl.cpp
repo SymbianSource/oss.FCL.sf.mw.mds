@@ -127,8 +127,7 @@ void CCLFSortingStyleImpl::AddFieldL( TCLFFieldId aFieldId )
 //
 void CCLFSortingStyleImpl::GetFieldsL( RArray<TCLFFieldId>& aArray ) const
     {
-    const TInt count( iFieldIDArray.Count() );
-    for( TInt i = 0 ; i < count ; ++i )
+    for( TInt i = iFieldIDArray.Count() - 1; i >=0; i--)
         {
         aArray.AppendL( iFieldIDArray[i] );
         }

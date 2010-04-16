@@ -189,6 +189,7 @@ CPropertyWatcher::~CPropertyWatcher()
 	WRITELOG( "CPropertyWatcher::~CPropertyWatcher() - begin" ); 
 	
 	iListenersArray.ResetAndDestroy(); // Clean array and objects.
+    iListenersArray.Close(); 
 	
 	WRITELOG( "CPropertyWatcher::~CPropertyWatcher() - end" ); 
 	}

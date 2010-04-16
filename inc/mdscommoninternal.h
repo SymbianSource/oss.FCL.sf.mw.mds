@@ -41,6 +41,8 @@ const TDefId KBaseObjectDefId = 1;
 
 const TUint32 KBaseObjectBasicValueColumnOffset = 8;
 
+const TItemId KSystemFavouritesAlbumId = 1;
+
 const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
 
@@ -58,8 +60,9 @@ const TUint KMdSServMajorVersionNumber=2;
 const TUint KMdSServMinorVersionNumber=5;
 const TUint KMdSServBuildVersionNumber=0;
 
-
 const TUint32 KNokiaVendorId = 52487775;
+
+const TInt64 KDiskFullThreshold = 1024*50; // 50 kB
 
 // P&S stuff
 static _LIT_SECURITY_POLICY_PASS(KAllowAllPolicy);
@@ -267,6 +270,10 @@ enum TMdSObserverNotificationType
 	EEventNotifyRemove        = 0x00200000,
 	
 	ESchemaModify             = 0x01000000,
+	
+	EObjectNotifyAddWithUri        = 0x10000000,
+    EObjectNotifyModifyWithUri     = 0x20000000,
+    EObjectNotifyRemoveWithUri     = 0x40000000,	
 	
 	// 0x80000000 is not allowed (signed number is negative)
 	};

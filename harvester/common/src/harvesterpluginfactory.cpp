@@ -111,7 +111,7 @@ EXPORT_C void CHarvesterPluginFactory::GetObjectDefL( CHarvesterData& aHD, TDes&
 				return;
 				}
 			}
-		for( TInt i = 0; i < sCount; i++ )
+		for( TInt i = sCount - 1; i >=0; i-- )
 			{
 			CHarvesterPluginInfo* info = supportedPlugins[i];
 			if ( !(info->iPlugin) )
@@ -148,8 +148,7 @@ EXPORT_C void CHarvesterPluginFactory::GetMimeType(const TDesC& aUri, TDes& aMim
         RPointerArray<CHarvesterPluginInfo> supportedPlugins;
         TRAP_IGNORE( GetSupportedPluginsL( supportedPlugins, extPtr ) );
         
-        const TInt sCount = supportedPlugins.Count();
-        for( TInt i = 0; i < sCount; i++ )
+        for( TInt i = supportedPlugins.Count() - 1; i >=0; i-- )
             {
             CHarvesterPluginInfo* info = supportedPlugins[i];
             if ( !(info->iPlugin) )
@@ -164,11 +163,11 @@ EXPORT_C void CHarvesterPluginFactory::GetMimeType(const TDesC& aUri, TDes& aMim
                 info->iPlugin->SetHarvesterPluginFactory( *this );  
                 info->iPlugin->SetBlacklist( *iBlacklist );
                 }
-                info->iPlugin->GetMimeType( aUri, aMimeType );
-                if( aMimeType.Length() > 0 )
-                    {
-                    break;
-                    }
+            info->iPlugin->GetMimeType( aUri, aMimeType );
+            if( aMimeType.Length() > 0 )
+                {
+                break;
+                }
             }
         supportedPlugins.Close();
         }
@@ -210,7 +209,7 @@ EXPORT_C TInt CHarvesterPluginFactory::HarvestL( CHarvesterData* aHD )
 		   	hpi->iQueue.Insert( aHD, 0 );
 		   	if( !hpi->iPlugin->IsActive() )
 		   	    {
-	            hpi->iPlugin->SetPriority( KHarvesterPriorityHarvestingPlugin + 2 );
+	            hpi->iPlugin->SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );
 		   	    }
 		    }
 	    else
@@ -244,12 +243,14 @@ EXPORT_C void CHarvesterPluginFactory::SetBlacklist( CHarvesterBlacklist& aBlack
 	WRITELOG( "CHarvesterPluginFactory::SetBlacklist()" );
 	iBlacklist = &aBlacklist;
 	
-	TInt count = iHarvesterPluginInfoArray.Count();
-	for ( TInt i = 0; i < count; i++ )
+	const TInt count = iHarvesterPluginInfoArray.Count();
+	for ( TInt i = count; --i >= 0; )
 		{
-		iHarvesterPluginInfoArray[i]->iPlugin->SetBlacklist( *iBlacklist );
-		}
-	
+	    if( iHarvesterPluginInfoArray[i]->iPlugin )
+	        {
+	        iHarvesterPluginInfoArray[i]->iPlugin->SetBlacklist( *iBlacklist );
+	        }
+		}	
 	}
 
 // ---------------------------------------------------------------------------
@@ -324,10 +325,11 @@ void CHarvesterPluginFactory::AddNewPluginL( const TDesC8& aType,
     
     pluginInfo->iPluginUid = aPluginUid;
     
-    // Load plugin
+#ifdef MDS_HARVESTERPLUGINS_ON_BOOT
     pluginInfo->iPlugin = CHarvesterPlugin::NewL( pluginInfo->iPluginUid );
     pluginInfo->iPlugin->SetQueue( pluginInfo->iQueue );
-    pluginInfo->iPlugin->SetHarvesterPluginFactory( *this );  
+    pluginInfo->iPlugin->SetHarvesterPluginFactory( *this );
+#endif
     
     iHarvesterPluginInfoArray.AppendL( pluginInfo );
     CleanupStack::Pop( pluginInfo );
@@ -394,8 +396,7 @@ EXPORT_C TBool CHarvesterPluginFactory::IsContainerFileL( const TDesC& aURI )
 		RPointerArray<CHarvesterPluginInfo> supportedPlugins;
 		CleanupClosePushL( supportedPlugins );
 		GetSupportedPluginsL( supportedPlugins, extPtr );
-		const TInt sCount = supportedPlugins.Count();
-		for( TInt i = 0; i < sCount; i++ )
+		for( TInt i = supportedPlugins.Count() - 1; i >=0; i-- )
 			{
 			CHarvesterPluginInfo* info = supportedPlugins[i];
 			if( info->iObjectTypes.Count() >  1 )
@@ -455,6 +456,22 @@ EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarte
         iHarvesting = EFalse;                       
         iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
         iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
+        }
+    }
+
+EXPORT_C void CHarvesterPluginFactory::PauseHarvester( TBool aPaused )
+    {
+    const TInt count = iHarvesterPluginInfoArray.Count();
+    for ( TInt i = count; --i >= 0; )
+        {
+        if( iHarvesterPluginInfoArray[i]->iPlugin && aPaused )
+            {
+            iHarvesterPluginInfoArray[i]->iPlugin->Cancel();
+            }
+        else if( iHarvesterPluginInfoArray[i]->iPlugin )
+            {
+            iHarvesterPluginInfoArray[i]->iPlugin->StartHarvest();
+            }
         }
     }
 

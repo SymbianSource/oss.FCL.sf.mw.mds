@@ -111,10 +111,8 @@ void CMdELogicCondition::SetLocked(TBool aLocked)
     // Base class locking.
     CMdECondition::SetLocked(aLocked);    
     
-    const TInt count = iChildren.Count();
-    
     // Lock children as well.
-    for(TInt i = 0; i < count; ++i)
+    for( TInt i = iChildren.Count()- 1; i >=0; i-- )
         {
         iChildren[i]->SetLocked(aLocked);
         }
@@ -122,10 +120,8 @@ void CMdELogicCondition::SetLocked(TBool aLocked)
 
 TUint32 CMdELogicCondition::InternalQueryOptimizationFlags(TUint32& aFlags)
 	{
-	const TInt count = iChildren.Count();
-	
 	// get flag from childrens
-	for( TInt i = 0 ; i < count; i++)
+	for( TInt i = iChildren.Count() - 1; i >=0; i-- )
 		{
 		iOptimizationFlags |= iChildren[i]->InternalQueryOptimizationFlags(aFlags);
 		}
@@ -144,7 +140,7 @@ TUint32 CMdELogicCondition::RequiredBufferSize() const
 	bufferSize += count * CMdCSerializationBuffer::KRequiredSizeForTUint32;
 
 	// Required size for childrens
-	for( TInt i = 0 ; i < count; i++)
+	for( TInt i = count - 1; i >=0; i-- )
 		{
 		bufferSize += iChildren[i]->RequiredBufferSize();
 		}
@@ -338,8 +334,8 @@ EXPORT_C CMdETextPropertyCondition& CMdELogicCondition::AddPropertyConditionL(
     {
     AssertNotLocked();
 
-    CMdETextPropertyCondition* condition 
-        = CMdETextPropertyCondition::NewLC(aPropertyDef, aCompareMethod, aText);
+    CMdETextPropertyCondition* condition = CMdETextPropertyCondition::NewLC( aPropertyDef, 
+                                                                                                                      aCompareMethod, aText );
     AddL(condition);
     CleanupStack::Pop(condition);
     return *condition;

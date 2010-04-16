@@ -58,6 +58,7 @@ void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
 	iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDescriptionProperty );
 	iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KAuthorProperty );
+	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
 	}
 
 CHarvesterOmaDrmPluginPropertyDefs* CHarvesterOmaDrmPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
@@ -167,8 +168,8 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
     aVHD.iFileSize = (TUint)entry->iSize;
     CleanupStack::PopAndDestroy( entry );
     
-    ContentAccess::CContent* content = NULL;
-    content = ContentAccess::CContent::NewLC( uri );
+    ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );   
+    ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
     
     ContentAccess::RStringAttributeSet attrSet;
     CleanupClosePushL( attrSet );
@@ -177,8 +178,9 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
     attrSet.AddL( ContentAccess::EMimeType );
     attrSet.AddL( ContentAccess::ETitle );
     attrSet.AddL( ContentAccess::EAuthor );
-    
-    User::LeaveIfError( content->GetStringAttributeSet(attrSet) );
+    attrSet.AddL( ContentAccess::EGenre );
+
+    User::LeaveIfError( data->GetStringAttributeSet(attrSet) );
     
     TInt err = attrSet.GetValue( ContentAccess::EDescription, aVHD.iDescription );
     if ( err != KErrNone)
@@ -223,6 +225,17 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no author" );
         }
+
+    err = attrSet.GetValue( ContentAccess::EGenre, aVHD.iGenre );
+    if ( err != KErrNone)
+        {
+        WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting genre failed %d", err );
+        }
+        
+    if ( aVHD.iGenre.Length() <= 0 )
+        {
+        WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no genre" );
+        }
     
     err = content->GetAttribute( ContentAccess::EIsProtected, aVHD.iDrmProtected );
     if ( err != KErrNone)
@@ -230,7 +243,7 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting protection info failed %d", err );
         }
         
-    CleanupStack::PopAndDestroy( 2, content );
+    CleanupStack::PopAndDestroy( 3 ); // content, data, attrSet
     }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +316,12 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iAuthorPropertyDef, &aVHD.iAuthor, aIsAdd );
     	}
+    // Genre
+    if(aVHD.iGenre.Length() > 0)
+        {
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iGenrePropertyDef, &aVHD.iGenre, aIsAdd );
+        }
     }
 
 // ---------------------------------------------------------------------------

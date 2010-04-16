@@ -90,6 +90,8 @@ class CVideoHarvestData : public CBase
 
         HBufC* iMimeBuf;
         TUint32 iCodec;
+        
+        TBool iDrmProtected;
 
         CVideoHarvestData() : CBase()
         	{
@@ -135,6 +137,7 @@ class CHarvesterVideoPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iGenrePropertyDef;
 		CMdEPropertyDef* iArtistPropertyDef;
 		CMdEPropertyDef* iDescriptionPropertyDef;
+		CMdEPropertyDef* iDrmPropertyDef;
 		
 		CMdEPropertyDef* iAudioFourCCDef;
 	

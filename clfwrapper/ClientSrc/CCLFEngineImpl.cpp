@@ -308,8 +308,7 @@ void CCLFEngineImpl::OperationCompleteL( const TInt aError )
 
     if ( aError )
         {
-        const TInt count( iChangedItemObserverArray.Count() );
-        for( TInt i = 0 ; i < count ; ++i )
+        for( TInt i = iChangedItemObserverArray.Count() - 1; i >=0; i--)
             {
             iChangedItemObserverArray[i]->HandleError( aError );
             }
@@ -326,8 +325,7 @@ void CCLFEngineImpl::OperationCompleteL( const TInt aError )
         // notify changed item observers
         if ( iChangedItemModel.iChangedItemIdArray.Count() > 0 )
             {
-            const TInt count( iChangedItemObserverArray.Count() );
-            for( TInt i = 0 ; i < count ; ++i )
+            for( TInt i = iChangedItemObserverArray.Count() - 1; i >=0; i--)
                 {
                 iChangedItemObserverArray[i]->HandleItemChangeL(
                             iChangedItemModel.iChangedItemIdArray.Array() );

@@ -151,6 +151,8 @@ class CMdSServer : public CPolicyServer, public MMdSDiskSpaceNotifierObserver,
         TBool DiskFull() const;
         
         TBool BackupOrRestoreRunning() const;
+        
+        TBool ShutdownInProgress() const;
 
         TInt SetHarvestingPrioritizationChunkL( const RMessagePtr2 aMessage, TInt aParam );
 

@@ -115,6 +115,12 @@ void CMdSServerSession::ServiceL( const RMessage2& aMessage )
 		return;
 		}
 
+    if( iServer.ShutdownInProgress() )
+        {
+        aMessage.Complete( KErrServerTerminated );
+        return;
+        }
+	
     TRAPD( err, ServiceFunctionL( aMessage ) );
     if( err != KErrNone )
         {
@@ -638,12 +644,10 @@ void CMdSServerSession::FindContinueAsyncL( const RMessage2& aMsg )
     CMdSFindEngine* findEngine = NULL;
 
     const TUint32 queryId = (TUint32)aMsg.Int0();
-
-    const TInt count = iFindEngines.Count();
-
+    
     TInt feIndex = 0;
 
-    for( TInt i = 0; i < count; i++ )
+    for( TInt i = iFindEngines.Count() - 1; i >=0; i-- )
     	{
     	if( queryId == iFindEngines[i]->QueryId() )
     		{
@@ -684,9 +688,7 @@ void CMdSServerSession::FindCancel( const RMessage2& aMsg, TInt aError )
     
     const TUint32 queryId = (TUint32)aMsg.Int0();
 
-    const TInt count = iFindEngines.Count();
-    
-    for( TInt i = 0; i < count; i++ )
+    for( TInt i = iFindEngines.Count() - 1; i >=0; i-- )
     	{
     	CMdSFindEngine* findEngine = iFindEngines[i];
 
@@ -1195,10 +1197,8 @@ CMdSServer& CMdSServerSession::GetServer() const
 void CMdSServerSession::ShutdownL( const RMessage2& /*aMsg*/ )
     {
     __LOGLB( ELogServer, "-> Shutdown session" );
-    
-    const TInt count = iFindEngines.Count();
-    
-    for( TInt i = 0; i < count; i++ )
+
+    for( TInt i = iFindEngines.Count() - 1; i >=0; i-- )
         {
         CMdSFindEngine* fe = iFindEngines[i];
         

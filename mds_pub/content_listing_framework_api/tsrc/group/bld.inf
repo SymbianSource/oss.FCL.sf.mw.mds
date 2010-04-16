@@ -22,4 +22,12 @@ PRJ_PLATFORMS
 PRJ_EXPORTS
 
 PRJ_TESTMMPFILES
-    T_ContentListingFramework.mmp
+    ContentListingFramework.mmp
+
+PRJ_TESTEXPORTS
+../conf/ContentListingFrameworkTest.cfg /epoc32/winscw/c/TestFramework/ContentListingFrameworkTest.cfg
+../init/ContentListingFrameworkTest.ini /epoc32/winscw/c/TestFramework/ContentListingFrameworkTest.ini
+
+//  End of File
+
+    

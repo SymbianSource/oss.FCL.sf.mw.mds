@@ -45,6 +45,7 @@ CPositionInfo::CPositionInfo( MPositionInfoObserver* aTrail )
     : CActive( CActive::EPriorityStandard ),
     iFirstInterval( ETrue )
     {
+    LOG( "CPositionInfo::CPositionInfo()");
     CActiveScheduler::Add( this );
     iTrail = aTrail;
     iTrailCaptureSetting = RLocationTrail::ECaptureAll;
@@ -101,7 +102,6 @@ void CPositionInfo::StartL( RLocationTrail::TTrailCaptureSetting aCaptureSetting
     iFirstInterval = ETrue;
     iPositionInfo = TPositionSatelliteInfo();
     
-    
     // Set update interval.
      iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds(KFirstInterval) );
      // Set time out level. 
@@ -110,8 +110,6 @@ void CPositionInfo::StartL( RLocationTrail::TTrailCaptureSetting aCaptureSetting
      iUpdateOptions.SetMaxUpdateAge( TTimeIntervalMicroSeconds(KMaxAge) );
      // Disables location framework to send partial position data
      iUpdateOptions.SetAcceptPartialUpdates( EFalse );
-    
-   
     
     if ( aCaptureSetting == RLocationTrail::ECaptureAll ) 
     	{
@@ -162,7 +160,7 @@ void CPositionInfo::NextPosition()
 void CPositionInfo::Stop()
     {
     Cancel();    
-    // Start shutdown timer...
+
     iPositioner.Close();
     iPosServer.Close();
     }    

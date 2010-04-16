@@ -60,6 +60,11 @@ class CMdSNotifyComparator : public CBase
         * @param aSerializedItems the items to compare
         * @param aSerializedItemIds the item IDs (successful and failed IDs)
         * @param aMatchingItemIdArray matching object IDs
+        * @param aAllItemsIdArray array to store the ids if all matched
+        * @param aMatchingItemUriArray matching object URIs
+        * @param aAllItemsUriArray array to store the uris if all matched
+        * @param aAllMatched to determine if there is no specific conditions to match
+        * @param aAllUrisFetched to determine if all uris have been previously fetched
         * 
         * @return If true at least some item matches.
         */
@@ -67,8 +72,14 @@ class CMdSNotifyComparator : public CBase
         		CMdCSerializationBuffer& aSerializedCondition,
         		CMdCSerializationBuffer& aSerializedItems,
 		    	CMdCSerializationBuffer& aSerializedItemIds,
-		    	RArray<TItemId>& aMatchingItemIdArray, 
-		    	TBool aAllowConfidential);
+		    	RArray<TItemId>& aMatchingItemIdArray,
+		    	RArray<TItemId>& aAllItemsIdArray,
+		    	RPointerArray<HBufC>& aMatchingItemUriArray, 
+		    	RPointerArray<HBufC>& aAllItemsUriArray,
+		    	TBool aAllowConfidential,
+		    	TBool uriNotify,
+		    	TBool& aAllMatched,
+		    	TBool& aAllUrisFetched);
 
 		/**
         * Matches object against the given condition. This variant matches only

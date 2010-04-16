@@ -517,6 +517,15 @@ NONSHARABLE_CLASS(CMdESessionImpl) : public CMdESession
 		 */
 		void NotifyError(TInt aError);
 
+        /* From MdESession. */
+        void AddObjectObserverWithUriL( MMdEObjectObserverWithUri& aObserver,
+                                CMdELogicCondition* aCondition,
+                                TUint32 aNotificationType,
+                                CMdENamespaceDef* aNamespaceDef );
+        
+        /* From MdESession. */
+        void RemoveObjectObserverWithUriL( MMdEObjectObserverWithUri& aObserver, 
+                                CMdENamespaceDef* aNamespaceDef );
     protected:
 
         /*

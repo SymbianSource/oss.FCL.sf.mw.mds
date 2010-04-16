@@ -39,11 +39,12 @@
 #include "mdsgetimeiao.h"
 
 #include <e32math.h>
+#include <mdeobject.h>
 
 /** logging instance */
 __USES_LOGGER
 
-const TInt KMaxBuffers = 3;
+const TInt KMaxBuffers = 5;
 
 _LIT( KMemoryCard, "MC" );
 
@@ -181,6 +182,7 @@ CMdSSqlObjectManipulate::~CMdSSqlObjectManipulate()
 	iBuffers.Close();
 
 	delete iGenerator;
+	delete iUri;
     }
 
 CMdSSqlObjectManipulate::CMdSSqlObjectManipulate( const CMdsSchema& aSchema, 
@@ -418,7 +420,7 @@ TItemId CMdSSqlObjectManipulate::SearchNotPresentFileL(TUint32 aMediaId,
 
     RRowData var;
     CleanupClosePushL( var );
-    var.ReserveL( 5 );
+    var.ReserveL( 6 );
     var.AppendL( TColumn( EMdEObjectFlagRemoved ) );
     var.AppendL( TColumn( EMdEObjectFlagNotPresent ) ); // not present flag
     var.AppendL( TColumn( EMdEObjectFlagStartUpNotPresent ) ); // start up not present flag
@@ -507,6 +509,7 @@ void CMdSSqlObjectManipulate::SetFilesToPresentL(const RArray<TItemId>& aObjectI
 		clauseBuffer.BufferL().Format( KSetFileToPresent, KDefaultNamespaceDefId );
 
 	    RRowData var;
+	    var.ReserveL( 3 );
 	    CleanupClosePushL( var );
 	    // reset not present and start up not present flags
 	    var.AppendL( TColumn( ~(EMdEObjectFlagNotPresent | EMdEObjectFlagStartUpNotPresent) ) );
@@ -531,29 +534,33 @@ void CMdSSqlObjectManipulate::SetFilesToPresentL(const RArray<TItemId>& aObjectI
 void CMdSSqlObjectManipulate::SetRelationsToPresentL(TItemId aObjectId, 
 		RArray<TItemId>& aIdArray)
 	{
-	_LIT( KSearchNotPresentRelations, "SELECT RelationId FROM Relations%u WHERE NOT Flags&? AND Flags&? AND (LeftObjectId=? OR RightObjectId=?);" );
-	_LIT( KSetRelationsToPresent, "UPDATE Relations%u SET Flags=Flags&? WHERE Flags&? AND (LeftObjectId=? OR RightObjectId=?);" );
+	_LIT( KSearchNotPresentRelations, "SELECT RelationId FROM Relations%u WHERE NOT Flags&? AND Flags&? AND LeftObjectId=? UNION SELECT RelationId FROM Relations%u WHERE NOT Flags&? AND Flags&? AND RightObjectId=?;" );
+	_LIT( KSetRelationsToPresent1, "UPDATE Relations%u SET Flags=Flags&? WHERE Flags&? AND LeftObjectId=?;" );
+	_LIT( KSetRelationsToPresent2, "UPDATE Relations%u SET Flags=Flags&? WHERE Flags&? AND RightObjectId=?;" );
 
-	RClauseBuffer commonClauseOne(*this, KSearchNotPresentRelations.iTypeLength + KMaxUintValueLength);
+	RClauseBuffer commonClauseOne(*this, KSearchNotPresentRelations.iTypeLength + 2*KMaxUintValueLength);
 	CleanupClosePushL( commonClauseOne );
 	CMdsClauseBuffer& clauseBuffer = commonClauseOne.BufferL();
-	clauseBuffer.BufferL().Format( KSearchNotPresentRelations, KDefaultNamespaceDefId );
+	clauseBuffer.BufferL().Format( KSearchNotPresentRelations, KDefaultNamespaceDefId, KDefaultNamespaceDefId );
 
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
     RRowData var;
     CleanupClosePushL( var );
     
-    var.ReserveL( 4 ); // reserve space for flags and object IDs
+    var.ReserveL( 6 ); // reserve space for flags and object IDs
     var.AppendL( TColumn( EMdERelationFlagDeleted ) );
     var.AppendL( TColumn( EMdERelationFlagNotPresent ) );
     var.AppendL( TColumn( aObjectId ) );
+    var.AppendL( TColumn( EMdERelationFlagDeleted ) );
+    var.AppendL( TColumn( EMdERelationFlagNotPresent ) );
     var.AppendL( TColumn( aObjectId ) );
 
 	RMdsStatement statement;
 	CleanupClosePushL( statement );
 	connection.ExecuteQueryL( clauseBuffer.ConstBufferL(), statement, var );
 
-	var.Free();	var.Reset();
+	var.Free();	
+	var.Reset();
     TItemId relationId(0);
     var.AppendL( TColumn( relationId ) );
 	while( connection.NextRowL( statement, var ) )
@@ -562,8 +569,21 @@ void CMdSSqlObjectManipulate::SetRelationsToPresentL(TItemId aObjectId,
 		aIdArray.AppendL( relationId );
 		}
 
-	clauseBuffer.ReserveSpaceL( KSetRelationsToPresent.iTypeLength + KMaxUintValueLength );
-	clauseBuffer.BufferL().Format( KSetRelationsToPresent, KDefaultNamespaceDefId );
+	clauseBuffer.ReserveSpaceL( KSetRelationsToPresent1.iTypeLength + KMaxUintValueLength );
+	clauseBuffer.BufferL().Format( KSetRelationsToPresent1, KDefaultNamespaceDefId );
+
+    var.Free(); 
+    var.Reset();
+
+    var.ReserveL( 3 );
+    var.AppendL( TColumn( ~EMdERelationFlagNotPresent ) ); // reset not present flag
+    var.AppendL( TColumn( EMdERelationFlagNotPresent ) );
+    var.AppendL( TColumn( aObjectId ) );
+
+    connection.ExecuteL( clauseBuffer.ConstBufferL(), var );
+
+    clauseBuffer.ReserveSpaceL( KSetRelationsToPresent2.iTypeLength + KMaxUintValueLength );
+    clauseBuffer.BufferL().Format( KSetRelationsToPresent2, KDefaultNamespaceDefId );
 
     var.Free(); 
     var.Reset();
@@ -571,17 +591,15 @@ void CMdSSqlObjectManipulate::SetRelationsToPresentL(TItemId aObjectId,
     var.AppendL( TColumn( ~EMdERelationFlagNotPresent ) ); // reset not present flag
     var.AppendL( TColumn( EMdERelationFlagNotPresent ) );
     var.AppendL( TColumn( aObjectId ) );
-    var.AppendL( TColumn( aObjectId ) );
 
     connection.ExecuteL( clauseBuffer.ConstBufferL(), var );
-
+    
 	CleanupStack::PopAndDestroy( 3, &commonClauseOne ); // statement, var, clauseBuffer
 	}
 
 void CMdSSqlObjectManipulate::SetFilesToNotPresentL(TUint32 aMediaId, TBool aStartUp,
 		RArray<TItemId>& aObjectIds)
-	{
-	
+	{	
 	_LIT( KSearchPresentFilesStartUpL, "SELECT ObjectId FROM Object%u WHERE NOT Flags&? AND MediaId=?;" );
 	_LIT( KSearchPresentFilesL, "SELECT ObjectId FROM Object%u WHERE NOT Flags&? AND NOT Flags&? AND MediaId=?;" );
 	
@@ -657,21 +675,27 @@ void CMdSSqlObjectManipulate::SetFilesToNotPresentL(TUint32 aMediaId, TBool aSta
 void CMdSSqlObjectManipulate::SetRelationsToNotPresentL(
 		TUint32 aMediaId, RArray<TItemId>& aRelationIds)
 	{
-	_LIT( KSearchPresentRelations, "SELECT DISTINCT A.RelationId FROM Relations%u AS A LEFT JOIN object%u AS B On A.LeftObjectId = B.ObjectId OR A.RightObjectId = B.ObjectId WHERE NOT A.Flags&%u AND NOT A.Flags&%u AND B.MediaId=%u" );
+	_LIT( KSearchPresentRelations, "SELECT A.RelationId FROM Relations%u AS A, Object%u AS B WHERE A.LeftObjectId = B.ObjectId AND B.MediaId=%u AND NOT A.Flags&%u AND NOT A.Flags&%u UNION SELECT A.RelationId FROM Relations%u AS A, Object%u AS B WHERE A.RightObjectId = B.ObjectId AND B.MediaId=%u AND NOT A.Flags&%u AND NOT A.Flags&%u" );
 	_LIT( KSetRelationsToPresent, "UPDATE Relations%u SET Flags=Flags|? WHERE NOT Flags&? AND RelationId IN (%S);" );
 
 	// RelationIDs query sql statement
 	RClauseBuffer commonClauseOne(*this, 
 			KSearchPresentRelations.iTypeLength + 
-			KMaxUintValueLength  );
+			2*KMaxUintValueLength  );
     CleanupClosePushL( commonClauseOne );
 	CMdsClauseBuffer& clauseBufferOne = commonClauseOne.BufferL();
 	clauseBufferOne.BufferL().Format( KSearchPresentRelations, 
                 KDefaultNamespaceDefId,
                 KDefaultNamespaceDefId,
+                aMediaId,
                 EMdERelationFlagDeleted,
                 EMdERelationFlagNotPresent,
-                aMediaId );
+                KDefaultNamespaceDefId,
+                KDefaultNamespaceDefId,
+                aMediaId,
+                EMdERelationFlagDeleted,
+                EMdERelationFlagNotPresent
+                );
 	
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
     	
@@ -733,6 +757,7 @@ void CMdSSqlObjectManipulate::RemoveFilesNotPresentL(TUint32 aMediaId, RArray<TI
 
 		RRowData var;
 		CleanupClosePushL( var );
+		var.ReserveL( 4 );
 		var.AppendL( TColumn( EMdEObjectFlagRemoved ) );
 		var.AppendL( TColumn( EMdEObjectFlagNotPresent ) );
 		var.AppendL( TColumn( EMdEObjectFlagStartUpNotPresent ) );
@@ -769,6 +794,7 @@ void CMdSSqlObjectManipulate::RemoveFilesNotPresentL(TUint32 aMediaId, RArray<TI
 
     RRowData var;
     CleanupClosePushL( var );
+    var.ReserveL( 5 ); 
     var.AppendL( TColumn( EMdEObjectFlagRemoved ) );
     var.AppendL( TColumn( EMdEObjectFlagRemoved ) );
     var.AppendL( TColumn( EMdEObjectFlagNotPresent ) ); // not present flag
@@ -1415,8 +1441,6 @@ TItemId CMdSSqlObjectManipulate::AddObjectL( CMdSSqLiteConnection& aConnection,
 	if(objName != iLastAddedObjName)
 	    {
         iLastAddedObjName = objName;
-        aMdsBaseObjStatement.Close();
-        aMdsBaseObjStatement = RMdsStatement();
 	    aMdsObjStatement.Close();
         aMdsObjStatement = RMdsStatement();
         }
@@ -1729,6 +1753,7 @@ void CMdSSqlObjectManipulate::RemoveObjectForceL( const TDesC16& aUri, TItemId a
     // do remove
     RRowData varRemove;
     CleanupClosePushL( varRemove );
+    varRemove.ReserveL( 3 );
     varRemove.AppendL( TColumn( EMdEObjectFlagRemoved ) );
     varRemove.AppendL( TColumn( aObjectId ) );
     varRemove.AppendL( TColumn( aUri ) );
@@ -1822,7 +1847,8 @@ CMdCSerializationBuffer* CMdSSqlObjectManipulate::CheckObjectL( TInt aResultBuff
 
 	db.ExecuteQueryL( checkObjectClause.ConstBufferL(), query, rowData );
 
-	rowData.Free();	rowData.Reset();
+	rowData.Free();	
+	rowData.Reset();
 	rowData.ReserveL( 3 ); // space for SELECTs
 
 	TMdCObject object;
@@ -1996,11 +2022,14 @@ static TInt CompareTItemIds( const TItemId& aLeft, const TItemId& aRight )
 void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds, RArray<TItemId>& aObjectIds,
                                                     RArray<TItemId>& aRelationIds, RArray<TItemId>& /*aEventIds*/ )
 	{
-	_LIT( KCollectGetDeleteId,          "SELECT O.ObjectId, R.RelationId FROM Object%u AS O LEFT JOIN Relations%u AS R ON O.ObjectId=R.LeftObjectId OR O.ObjectId=R.RightObjectId WHERE NOT O.Flags&? AND ObjectId IN(?" );
+    _LIT( KCollectGetDeleteId1, "SELECT O.ObjectId, R.RelationId FROM Object%u AS O LEFT JOIN Relations%u AS R ON O.ObjectId=R.LeftObjectId WHERE NOT O.Flags&? AND ObjectId IN(?");
+    _LIT( KCollectGetDeleteId2, " UNION SELECT O.ObjectId, R.RelationId FROM Object%u AS O LEFT JOIN Relations%u AS R ON O.ObjectId=R.RightObjectId WHERE NOT O.Flags&? AND ObjectId IN(?");
+
 	_LIT( KCollectUpdateObjectBegin,    "UPDATE Object%u SET Flags=Flags|? WHERE ObjectId IN(?" );
 	_LIT( KCollectUpdateRelationsBegin, "UPDATE Relations%u SET Flags=Flags|? WHERE RelationId IN(?" );
 	_LIT( KCollectMiddle, ",?" );
-	_LIT( KCollectEnd,    ");" );
+	_LIT( KCollectEnd1,    ")" );
+	_LIT( KCollectEnd2,    ");" );
 
 	const TInt removeIdsCount = aRemoveIds.Count();
 	if (removeIdsCount < 1)
@@ -2009,27 +2038,58 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 		}
 
 	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
-	RClauseBuffer commonClauseOne(*this,  KCollectGetDeleteId().Length() + 2 * KMaxUintValueLength +
-											(removeIdsCount-1) * KCollectMiddle().Length() +
-											KCollectEnd().Length());
+	
+	const TInt clauseSize( KCollectGetDeleteId1().Length() + KMaxUintValueLength +
+                                      (removeIdsCount-1) * KCollectMiddle().Length() +
+                                      KCollectEnd1().Length() +
+                                      KCollectGetDeleteId2().Length() + KMaxUintValueLength +
+                                      (removeIdsCount-1) * KCollectMiddle().Length() +
+                                      KCollectEnd2().Length() );
+	
+	HBufC* clause = HBufC::NewLC( clauseSize );
+	
+	TPtr clauseBuffer( clause->Des() );
+	clauseBuffer.Append( KCollectGetDeleteId1 );	
+	for( TInt i = removeIdsCount - 2; i >=0; i-- )
+        {
+	    clauseBuffer.Append( KCollectMiddle );
+        }
+	clauseBuffer.Append( KCollectEnd1 );	
+    
+	clauseBuffer.Append( KCollectGetDeleteId2 );
+    for( TInt i = removeIdsCount - 2; i >=0; i-- )
+        {
+        clauseBuffer.Append( KCollectMiddle );
+        }
+    clauseBuffer.Append( KCollectEnd2 );  
+	
+    RClauseBuffer commonClauseOne(*this,  clauseSize );
 	CleanupClosePushL( commonClauseOne );
 	CMdsClauseBuffer& buffer = commonClauseOne.BufferL();
 
 	// getting removed object id and relation id
+	buffer.BufferL().Format( clauseBuffer, 
+	                                    iNamespaceDef->GetId(), 
+	                                    iNamespaceDef->GetId(),
+	                                    iNamespaceDef->GetId(), 
+	                                    iNamespaceDef->GetId() );
+
 	RRowData dataRow;
 	CleanupClosePushL( dataRow );
-	dataRow.ReserveL( removeIdsCount );
+	dataRow.ReserveL( removeIdsCount*2 + 2 );
 	dataRow.AppendL( TColumn( EMdEObjectFlagRemoved ) );
-	buffer.BufferL().Format( KCollectGetDeleteId, iNamespaceDef->GetId(), iNamespaceDef->GetId() );
-	for (TInt i = 0; i < removeIdsCount; ++i)
-		{
-		if(i>0)
-			{
-			buffer.AppendL( KCollectMiddle );
-			}
-		dataRow.AppendL( TColumn( aRemoveIds[i] ) );
-		}
-	buffer.AppendL( KCollectEnd );
+	
+    for( TInt i = removeIdsCount - 1; i >=0; i-- )
+        {
+        dataRow.AppendL( TColumn( aRemoveIds[i] ) );
+        }
+
+    dataRow.AppendL( TColumn( EMdEObjectFlagRemoved ) );
+    
+    for( TInt i = removeIdsCount - 1; i >=0; i-- )
+        {
+        dataRow.AppendL( TColumn( aRemoveIds[i] ) );
+        }
 
 	RMdsStatement objectQuery;
 	CleanupClosePushL( objectQuery );
@@ -2037,7 +2097,8 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 	__LOGQUERY_16( _L("Find objects to delete:"), buffer.ConstBufferL(), dataRow);
 	connection.ExecuteQueryL( buffer.ConstBufferL(), objectQuery, dataRow );
 
-	dataRow.Free();	dataRow.Reset();
+	dataRow.Free();	
+	dataRow.Reset();
 	TItemId objectId = KNoId;
     TItemId prevId = objectId;
     TItemId relationId = KNoId;
@@ -2073,7 +2134,7 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 		{
 		buffer.ReserveSpaceL( KCollectUpdateObjectBegin().Length() + KMaxUintValueLength +
 							   (removeObjectCount-1) * KCollectMiddle().Length() +
-							   KCollectEnd().Length() );
+							   KCollectEnd2().Length() );
 
 		buffer.BufferL().Format( KCollectUpdateObjectBegin, iNamespaceDef->GetId() );
 
@@ -2089,39 +2150,10 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 				}
 			dataRow.AppendL( TColumn( aObjectIds[i] ) );
 			}
-		buffer.AppendL( KCollectEnd );
+		buffer.AppendL( KCollectEnd2 );
 
 		__LOGQUERY_16( _L("Remove objects:"), buffer.ConstBufferL(), dataRow);
 		connection.ExecuteL( buffer.ConstBufferL(), dataRow );
-		
-#ifdef MDS_PLAYLIST_HARVESTING_ENABLED
-		_LIT( KSetPlaylistItemsRemoved, "UPDATE Object%u SET Flags=Flags|? WHERE ObjectId IN (SELECT ObjectId FROM AudioPlaylistItem%u WHERE AudioObjectID IN(?" );
-		_LIT( KPlaylistCollectEnd,    "));" );
-
-		buffer.ReserveSpaceL( KSetPlaylistItemsRemoved().Length() + KMaxUintValueLength +
-                               (removeObjectCount-1) * KCollectMiddle().Length() +
-                               KPlaylistCollectEnd().Length() );
-
-		TDefId nameSpaceDefID = iNamespaceDef->GetId();
-        buffer.BufferL().Format( KSetPlaylistItemsRemoved, nameSpaceDefID, nameSpaceDefID );
-
-        dataRow.Free();
-        dataRow.Reset();
-        dataRow.AppendL( TColumn( EMdEObjectFlagRemoved ) );
-
-        for (TInt i = 0; i < removeObjectCount; ++i)
-            {
-            if(i>0)
-                {
-                buffer.AppendL( KCollectMiddle );
-                }
-            dataRow.AppendL( TColumn( aObjectIds[i] ) );
-            }
-        buffer.AppendL( KPlaylistCollectEnd );
-
-        __LOGQUERY_16( _L("Remove playlist items:"), buffer.ConstBufferL(), dataRow);
-        connection.ExecuteL( buffer.ConstBufferL(), dataRow );
-#endif
 		}
 
 	// mark relations as removed
@@ -2131,7 +2163,7 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 		{
 		buffer.ReserveSpaceL( KCollectUpdateRelationsBegin().Length() + KMaxUintValueLength +
 							   (removeRelationCount-1) * KCollectMiddle().Length() +
-							   KCollectEnd().Length() );
+							   KCollectEnd2().Length() );
 
 		buffer.BufferL().Format( KCollectUpdateRelationsBegin, iNamespaceDef->GetId() );
 
@@ -2147,19 +2179,20 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 				}
 			dataRow.AppendL( TColumn( aRelationIds[i] ) );
 			}
-		buffer.AppendL( KCollectEnd );
+		buffer.AppendL( KCollectEnd2 );
 
 		__LOGQUERY_16( _L("Remove relations:"), buffer.ConstBufferL(), dataRow);
 		connection.ExecuteL( buffer.ConstBufferL(), dataRow );
 		}
 
 
-	CleanupStack::PopAndDestroy( 3, &commonClauseOne ); // objectQuery, dataRow, commonClauseOne
+	CleanupStack::PopAndDestroy( 4, clause ); // objectQuery, dataRow, commonClauseOne, clause
 	}
 
 void CMdSSqlObjectManipulate::RemoveObjectsByIdL( 
 		CMdCSerializationBuffer& aBuffer, TInt aCount, RArray<TItemId>& aIdArray, 
-		RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds )
+		RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds,
+		TBool aUrisRequired, RPointerArray<HBufC>& aRemovedItemUriArray )
 	{
 	if ( !iNamespaceDef )
 		{
@@ -2175,7 +2208,9 @@ void CMdSSqlObjectManipulate::RemoveObjectsByIdL(
 	for (TUint32 i = 0; i < aCount; ++i)
 		{
 		aBuffer.ReceiveL( objectId );
-		if ( objectId != KNoId )
+		if ( objectId != KNoId && 
+		     objectId != KSystemFavouritesAlbumId && 
+		     objectId != KSystemCapturedAlbumId )
 			{
 			if ( iLockList.IsLocked( *iNamespaceDef, objectId ) )
 				{
@@ -2185,15 +2220,28 @@ void CMdSSqlObjectManipulate::RemoveObjectsByIdL(
 			objectIds.AppendL( objectId );
 			}
 		}
+    
+    CollectRemovedItemsL( objectIds, aIdArray, aRelationIds, aEventIds );
 
-	CollectRemovedItemsL( objectIds, aIdArray, aRelationIds, aEventIds );
-
+    if( aUrisRequired )
+         {
+         const TInt count( aIdArray.Count() );
+         for( TInt i( 0 ); i < count; i++ )
+             {
+             TUint32 flags;
+             SearchObjectUriByIdL( aIdArray[i], flags );
+             aRemovedItemUriArray.AppendL( iUri );
+             iUri = NULL;
+             }
+         }
+    
     CleanupStack::PopAndDestroy( &objectIds );
 	}
 
 void CMdSSqlObjectManipulate::RemoveObjectsByUriL( 
 		CMdCSerializationBuffer& aBuffer, TInt aCount, RArray<TItemId>& aIdArray,
-        RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds )
+        RArray<TItemId>& aRelationIds, RArray<TItemId>& aEventIds, 
+        TBool aUrisRequired, RPointerArray<HBufC>& aRemovedItemUriArray )
 	{
 	if ( !iNamespaceDef )
 		{
@@ -2210,7 +2258,9 @@ void CMdSSqlObjectManipulate::RemoveObjectsByUriL(
 		{
 		TPtrC16 uri = aBuffer.ReceivePtr16L();
         objectId = SearchObjectByUriL( uri, flags );
-		if ( objectId != KNoId )
+        if ( objectId != KNoId && 
+             objectId != KSystemFavouritesAlbumId && 
+             objectId != KSystemCapturedAlbumId )
 			{
 			// unlock object, so update is no possible anymore
 			if ( iLockList.IsLocked( *iNamespaceDef, objectId ) )
@@ -2219,6 +2269,13 @@ void CMdSSqlObjectManipulate::RemoveObjectsByUriL(
 				}
 			
 			objectIds.AppendL( objectId );
+			
+			if( aUrisRequired )
+			    {
+			    // Only objects have uris, so if the are removed by uri, it can be assumed
+			    // that only objects are removed.
+			    aRemovedItemUriArray.AppendL( uri.AllocL() );
+			    }
 			}
 		}
 
@@ -2250,6 +2307,7 @@ TItemId CMdSSqlObjectManipulate::SearchObjectByUriL( const TDesC16& aUri,
 
     RRowData varSearch;
     CleanupClosePushL( varSearch );
+    varSearch.ReserveL( 3 );
     varSearch.AppendL( TColumn( EMdEObjectFlagNotPresent ) );
     varSearch.AppendL( TColumn( EMdEObjectFlagRemoved ) );
     varSearch.AppendL( TColumn( aUri ) );
@@ -2276,6 +2334,58 @@ TItemId CMdSSqlObjectManipulate::SearchObjectByUriL( const TDesC16& aUri,
 	CleanupStack::PopAndDestroy( &commonClauseOne );
 	return objectId;
 	}
+
+HBufC*& CMdSSqlObjectManipulate::SearchObjectUriByIdL( const TItemId aId, 
+        TUint32& aFlags )
+    {
+    _LIT( KMdsSearchObjectUribyId, "SELECT URI,Flags FROM Object%u WHERE NOT Flags&? AND ObjectId=? LIMIT 1;" );
+
+    if ( !iNamespaceDef )
+        {
+        User::Leave( KErrMdEUnknownNamespaceDef );
+        }
+
+    RClauseBuffer commonClauseOne(*this, KMdsSearchObjectUribyId.iTypeLength + KMaxUintValueLength );
+    CleanupClosePushL( commonClauseOne );
+    CMdsClauseBuffer& searchUriClause = commonClauseOne.BufferL();
+
+    searchUriClause.BufferL().Format( KMdsSearchObjectUribyId, iNamespaceDef->GetId() );
+
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+
+    TPtrC16 uri;
+    aFlags = 0;
+
+    RRowData varSearch;
+    CleanupClosePushL( varSearch );
+    varSearch.ReserveL( 2 );
+    varSearch.AppendL( TColumn( EMdEObjectFlagNotPresent ) );
+    varSearch.AppendL( TColumn( aId ) );
+
+    RMdsStatement getQuery;
+    CleanupClosePushL( getQuery );
+
+    __LOGQUERY_16( _L("Search object URI by ID:"), 
+            searchUriClause.ConstBufferL(), varSearch);
+    TRAPD( err, connection.ExecuteQueryL( 
+            searchUriClause.ConstBufferL(), getQuery, varSearch ) );
+
+    varSearch.Free();
+    varSearch.Reset();
+    varSearch.AppendL( TColumn( uri ) );
+    varSearch.AppendL( TColumn( aFlags ) );
+    if ( err == KErrNone && connection.NextRowL( getQuery, varSearch ) )
+        {
+        varSearch.Column(0).Get( uri );
+        varSearch.Column(1).Get( aFlags );
+        iUri = uri.AllocL();
+        }
+
+    CleanupStack::PopAndDestroy( 2, &varSearch ); // getQuery, varSearch
+    CleanupStack::PopAndDestroy( &commonClauseOne );
+    
+    return iUri;
+    }
 
 TItemId CMdSSqlObjectManipulate::UpdateObjectL( 
 		CMdSSqLiteConnection& aConnection, CMdCSerializationBuffer& aBuffer )
@@ -2484,10 +2594,8 @@ TItemId CMdSSqlObjectManipulate::UpdateObjectL(
 		objectRow.AppendL( TColumn( object.iId ) );
 		}
 
-	TInt queryResult = 0, err;
-    RMdSTransaction transaction( aConnection );
-    CleanupClosePushL( transaction );
-    User::LeaveIfError( transaction.Error() );
+	TInt queryResult( 0 );
+	TInt err( KErrNone );
 
 	if ( KUpdateModObject || KBaseObjectPropertyMod )
 		{
@@ -2537,9 +2645,6 @@ TItemId CMdSSqlObjectManipulate::UpdateObjectL(
 			UpdateFreeTextL( aBuffer, object.iFreeTexts.iPtr.iCount, object.iId );
 			}
 		}
-
-    transaction.CommitL();
-    CleanupStack::PopAndDestroy( &transaction );
 
     CleanupStack::PopAndDestroy( uriBuf );
     CleanupStack::PopAndDestroy( &commonClauseTwo );
@@ -2761,6 +2866,7 @@ void CMdSSqlObjectManipulate::RemoveRelationsL( CMdCSerializationBuffer& aBuffer
 
     RRowData varRemove;
     CleanupClosePushL( varRemove );
+    varRemove.ReserveL( 3 );
     varRemove.AppendL( TColumn( 
     		EMdERelationFlagDeleted | EMdERelationFlagGarbageDeleted ) );
     varRemove.AppendL( TColumn( relationId ) );

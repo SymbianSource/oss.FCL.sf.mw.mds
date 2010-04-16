@@ -25,6 +25,7 @@
 #include "harvesteraudioplaylistplugin.h"
 #include "mdeobjectwrapper.h"
 #include "mdsutils.h"
+#include "harvestercommon.h"
 
 #include "harvesterlog.h"
 
@@ -112,6 +113,7 @@ CHarvesterAudioPlaylistPlugin::~CHarvesterAudioPlaylistPlugin()
 void CHarvesterAudioPlaylistPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterAudioPlaylistPlugin::ConstructL()" );
+	SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
 	
 	iPlaylistParser =  CHarvesterAudioPlaylistParser::NewL();
 	}

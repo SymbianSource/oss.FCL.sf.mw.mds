@@ -22,7 +22,11 @@
 #include "mdsnotifycomparator.h"
 #include "mdslogger.h"
 #include "mdcserializationbuffer.h"
+#include "mdsmanipulationengine.h"
 #include "mdccommon.pan"
+
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
 
 __USES_LOGGER
 
@@ -125,21 +129,34 @@ CMdSNotifier::TEntry::TEntry( TInt aId,
 //
 void CMdSNotifier::TEntry::TriggerL(
 	TUint32 aCompleteCode,
-    const RArray<TItemId>& aIdArray )
+    const RArray<TItemId>& aIdArray,
+    RPointerArray<HBufC>& aUriArray )
     {
     const TInt remoteSizeMsgSlot = iRemoteSizeMsgSlot;
     iRemoteSizeMsgSlot = KErrNotFound;
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
 
-    if(aIdArray.Count())
+    if( iMessage.IsNull() )
+        {
+        return;
+        }
+    
+    if( aIdArray.Count() )
 		{
-		iDataBuffer = CopyToBufferL( aIdArray );
+		if( iType & ( EObjectNotifyAddWithUri | EObjectNotifyModifyWithUri | EObjectNotifyRemoveWithUri  ) )
+		    {
+		    iDataBuffer = CopyToBufferL( aIdArray, aUriArray );
+		    }
+		else
+		    {
+		    iDataBuffer = CopyToBufferL( aIdArray );
+		    }
 	    iSession.SizeToRemoteL( iMessage, remoteSizeMsgSlot, iDataBuffer->Size());
 		}
 	else
 		{
-	    iSession.SizeToRemoteL( iMessage, remoteSizeMsgSlot, 0);
+	    iSession.SizeToRemoteL( iMessage, remoteSizeMsgSlot, 0 );
 		}
 
     __LOG2( ELogServer, "<- Notify trigger %d (%d)", iId, aCompleteCode );
@@ -161,6 +178,11 @@ void CMdSNotifier::TEntry::TriggerRelationItemsL(
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
 
+    if( iMessage.IsNull() )
+        {
+        return;
+        }
+    
     if(aRelationIdArray.Count())
 		{
 		iDataBuffer = CopyItemsToBufferL( aBuffer, aRelationIdArray );
@@ -180,7 +202,12 @@ void CMdSNotifier::TEntry::TriggerRelationItemsL(
 // ------------------------------------------------
 //
 void CMdSNotifier::TEntry::TriggerSchema()
-    {
+    {    
+    if( iMessage.IsNull() )
+        {
+        return;
+        }
+    
     iRemoteSizeMsgSlot = KErrNotFound;
     iMessage.Complete( ESchemaModify );
     }
@@ -233,6 +260,59 @@ CMdCSerializationBuffer* CMdSNotifier::TEntry::CopyToBufferL(const RArray<TItemI
 	}
 
 // ------------------------------------------------
+// CopyToBufferL copies ids and uris to buffer
+// ------------------------------------------------
+//
+CMdCSerializationBuffer* CMdSNotifier::TEntry::CopyToBufferL(const RArray<TItemId>& aIdArray,
+                                                                                                  const RPointerArray<HBufC>& aUriArray)
+    {
+    const TUint32 count = aIdArray.Count();
+    const TUint32 uriCount = aUriArray.Count();
+
+    TInt urisSize = CMdCSerializationBuffer::KRequiredSizeForTUint32;
+
+    for( TInt i = uriCount - 1; i >=0; i-- )
+        {
+        urisSize += CMdCSerializationBuffer::RequiredSize( *aUriArray[i] );
+        }
+    
+    TInt idsSize( sizeof( TMdCItemIds ) + count * CMdCSerializationBuffer::KRequiredSizeForTItemId );
+    
+    CMdCSerializationBuffer* buffer = CMdCSerializationBuffer::NewLC(
+            urisSize + idsSize );
+    
+    TMdCItemIds itemIds;
+    itemIds.iNamespaceDefId = NamespaceDefId();
+    itemIds.iObjectIds.iPtr.iCount = count;
+    itemIds.iObjectIds.iPtr.iOffset = sizeof(TMdCItemIds);
+    itemIds.SerializeL( *buffer );
+
+    // Insert IDs
+    for( TInt i = 0; i < count; ++i )
+        {
+        buffer->InsertL( aIdArray[i] );
+        }
+    
+    // Insert uri count
+    buffer->InsertL( uriCount );
+    
+    // Insert uris
+    for( TInt i = 0; i < uriCount; ++i )
+        {
+        // add uri
+        const TDesC& uri =  *aUriArray[i];
+        HBufC* lcUri = HBufC::NewLC( uri.Length() );
+        lcUri->Des().Append( uri );
+        buffer->InsertL( *lcUri );
+        CleanupStack::PopAndDestroy( lcUri ); 
+        lcUri = NULL;
+        }
+
+    CleanupStack::Pop( buffer );
+    return buffer;  
+    }
+
+// ------------------------------------------------
 // CopyItemsToBufferL copies relation items to buffer
 // ------------------------------------------------
 //
@@ -282,14 +362,25 @@ CMdCSerializationBuffer* CMdSNotifier::TEntry::CopyItemsToBufferL(
 // CacheL caches the notification
 // ------------------------------------------------
 //
-void CMdSNotifier::TEntry::CacheL(TUint32 aCompleteCode, const RArray<TItemId>& aIdArray )
+void CMdSNotifier::TEntry::CacheL(TUint32 aCompleteCode, 
+                                                         const RArray<TItemId>& aIdArray, 
+                                                         const RPointerArray<HBufC>& aUriArray)
     {
     if ( aIdArray.Count() <= 0 )
     	{
     	return;
     	}
 
-    CMdCSerializationBuffer* data = CopyToBufferL( aIdArray );
+    CMdCSerializationBuffer* data( NULL );
+    
+    if( iType & ( EObjectNotifyAddWithUri | EObjectNotifyModifyWithUri | EObjectNotifyRemoveWithUri  ) )
+        {
+        data = CopyToBufferL( aIdArray, aUriArray );
+        }
+    else
+        {
+        data = CopyToBufferL( aIdArray );
+        }
     iSession.CacheNotificationL( iId, aCompleteCode, data );
     }
 
@@ -327,6 +418,11 @@ void CMdSNotifier::TEntry::TriggerCachedL(TUint32 aCompleteCode,
 
     __ASSERT_DEBUG( !iDataBuffer, MMdCCommon::Panic( KErrCorrupt ) );
 
+    if( iMessage.IsNull() )
+        {
+        return;
+        }
+    
     if( aData )
     	{
     	iSession.SizeToRemoteL( iMessage, remoteSizeMsgSlot, aData->Size());
@@ -470,49 +566,82 @@ void CMdSNotifier::RemoveEntriesBySession(
 void CMdSNotifier::NotifyAddedL(CMdCSerializationBuffer& aSerializedItems, 
 							    CMdCSerializationBuffer& aSerializedItemIds)
     {
-    const TInt count = iEntries.Count();
+    const TBool uriNotify = CheckForNotifier(EObjectNotifyAddWithUri);
+    TBool allMatched( EFalse );
+    TBool allItemsFetched( EFalse );
     
-    for( TInt i = 0; i < count; ++i )
+    RArray<TItemId> allItemsIdArray;
+    CleanupClosePushL( allItemsIdArray );
+    RPointerArray<HBufC> allItemsUriArray;
+    CleanupResetAndDestroyPushL( allItemsUriArray );
+    
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
-        if ( ! (e.iType & ( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd ) ) )
+        if ( ! (e.iType & ( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd | EObjectNotifyAddWithUri ) ) )
         	{
         	continue;
         	}
         
         RArray<TItemId> matchingItemIdArray;
+        RPointerArray<HBufC> matchingItemUriArray;
    		CleanupClosePushL( matchingItemIdArray );
+   		CleanupResetAndDestroyPushL( matchingItemUriArray );
 
 		aSerializedItems.PositionL( KNoOffset );
 		aSerializedItemIds.PositionL( KNoOffset );
 
 		const TBool someMatches = iComparator->MatchL( e.NamespaceDefId(), e.iType, e.Condition(), 
-												 aSerializedItems, aSerializedItemIds, 
-												 matchingItemIdArray,
-												 e.AllowConfidential() );
+										    		 aSerializedItems, aSerializedItemIds, 
+											    	 matchingItemIdArray,
+											    	 allItemsIdArray,
+												     matchingItemUriArray,
+												     allItemsUriArray,
+						     						 e.AllowConfidential(),
+							     					 uriNotify,
+								    				 allMatched,
+								    				 allItemsFetched );
 
         if( someMatches ) // check if there is some matches
             {
             if( e.IsPending() )
             	{
+            	TInt err( KErrNone );
             	// match found. trigger notifier entry !
-	            TRAPD( err, e.TriggerL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd,
-	            		matchingItemIdArray ) );
-	            if( err != KErrNone )
-	            	{
-	            	e.TriggerError( err );
-	            	}
+            	if( allMatched )
+            	    {
+                    TRAP( err, e.TriggerL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd | EObjectNotifyAddWithUri,
+                            allItemsIdArray, allItemsUriArray ) );  
+            	    }
+            	else
+            	    {
+                    TRAP( err, e.TriggerL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd | EObjectNotifyAddWithUri,
+                            matchingItemIdArray, matchingItemUriArray ) );  
+            	    }
+                if( err != KErrNone )
+                    {
+                    e.TriggerError( err );
+                    }
             	}
             else
             	{
-            	TRAP_IGNORE( e.CacheL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd,
-            			matchingItemIdArray ) );
+                if( allMatched )
+                    {
+                    TRAP_IGNORE( e.CacheL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd | EObjectNotifyAddWithUri,
+                             allItemsIdArray, allItemsUriArray ) );    
+                    }
+                else
+                    {
+                    TRAP_IGNORE( e.CacheL( EObjectNotifyAdd | ERelationNotifyAdd | EEventNotifyAdd | EObjectNotifyAddWithUri,
+                             matchingItemIdArray, matchingItemUriArray ) );    
+                    }
             	}
             }
 
-   		CleanupStack::PopAndDestroy( &matchingItemIdArray );
+   		CleanupStack::PopAndDestroy( 2, &matchingItemIdArray ); // matchingItemIdArray, matchingItemUriArray
         }
+    CleanupStack::PopAndDestroy( 2, &allItemsIdArray ); // allItemsIdArray, allItemsUriArray
     }
 
 // ------------------------------------------------
@@ -520,7 +649,9 @@ void CMdSNotifier::NotifyAddedL(CMdCSerializationBuffer& aSerializedItems,
 // ------------------------------------------------
 //
 void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds, 
-								  TBool aItemIsConfidential)
+								  TBool aItemIsConfidential,
+								  RPointerArray<HBufC>& aRemovedItemUriArray,
+								  CMdSManipulationEngine* aMEngine )
     {
 	aSerializedItemIds.PositionL( KNoOffset );
 
@@ -587,8 +718,7 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 			|| eventCount != 0 
 			|| relationCount != 0 )
 		{
-		const TInt entriesCount = iEntries.Count();
-	    for( TInt i=0; i < entriesCount; ++i )
+		for( TInt i = iEntries.Count() - 1; i >=0; i-- )
 	        {
 	        TEntry& e = iEntries[i];
 	        
@@ -603,6 +733,9 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	        	continue;	
 	        	}
 
+	        RPointerArray<HBufC> uriArray;
+	        CleanupResetAndDestroyPushL( uriArray );
+	        
 	        if( e.iType & EObjectNotifyRemove && objectCount > 0 )
 	            {
 	            // collect matching object IDs
@@ -624,12 +757,12 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 		            		{
 		            		// all matches so send whole object ID array
 		            		TRAP( err, e.TriggerL( EObjectNotifyRemove, 
-		            				objectIdArray ) );
+		            				objectIdArray, uriArray ) );
 		            		}
 		            	else
 		            		{
 		            		TRAP( err, e.TriggerL( EObjectNotifyRemove, 
-		            				matchingObjectIdArray ) );
+		            				matchingObjectIdArray, uriArray ) );
 		            		}
 	
 		            	if( err != KErrNone )
@@ -643,18 +776,72 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 		            		{
 		            		// all matches so send whole object ID array
 	            			TRAP_IGNORE( e.CacheL( EObjectNotifyRemove, 
-	            					objectIdArray ) );
+	            					objectIdArray, uriArray ) );
 		            		}
 		            	else
 		            		{
 		            		TRAP_IGNORE( e.CacheL( EObjectNotifyRemove, 
-		            				matchingObjectIdArray ) );
+		            				matchingObjectIdArray, uriArray ) );
 		            		}
 	            		}
 	            	}
 	
 				CleanupStack::PopAndDestroy( &matchingObjectIdArray );
 				}
+	        else if( e.iType & EObjectNotifyRemoveWithUri && objectCount > 0 )
+                {
+                // collect matching object IDs
+                RArray<TItemId> matchingObjectIdArray;
+                CleanupClosePushL( matchingObjectIdArray );
+    
+                const TBool allMatches = iComparator->MatchObjectIdsL( e.Condition(),
+                        objectIdArray, matchingObjectIdArray );
+    
+                // check is there any matches
+                if( allMatches || matchingObjectIdArray.Count() > 0 )
+                    {
+                    if(e.IsPending())
+                        {
+                        // Match found. Trigger notifier entry.
+                        TInt err( KErrNone );
+                        
+                        if( allMatches )
+                            {
+                            // all matches so send whole object ID array
+                            TRAP( err, e.TriggerL( EObjectNotifyRemoveWithUri, 
+                                    objectIdArray, aRemovedItemUriArray ) );
+                            }
+                        else
+                            {
+                            aMEngine->GetObjectUrisByIdsL( objectIdArray, uriArray );
+                            TRAP( err, e.TriggerL( EObjectNotifyRemoveWithUri, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
+    
+                        if( err != KErrNone )
+                            {
+                            e.TriggerError( err );
+                            }
+                        }
+                    else
+                        {
+                        if( allMatches )
+                            {
+                            // all matches so send whole object ID array
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyRemoveWithUri, 
+                                    objectIdArray, aRemovedItemUriArray ) );
+                            }
+                        else
+                            {
+                            aMEngine->GetObjectUrisByIdsL( objectIdArray, uriArray );
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyRemoveWithUri, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
+                        }
+                    }
+    
+                CleanupStack::PopAndDestroy( &matchingObjectIdArray );
+                }
 	        else if( ( e.iType & EEventNotifyRemove ) 
 	        		&& eventCount > 0 )
             	{
@@ -664,7 +851,7 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	        		{
 	            	// Match found. Trigger notifier entry.
 	            	TRAPD( err, e.TriggerL( EEventNotifyRemove, 
-	            			eventIdArray ) );
+	            			eventIdArray, uriArray ) );
 	            	if( err != KErrNone )
 		            	{
 		            	e.TriggerError( err );
@@ -673,7 +860,7 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	        	else
 	        		{
 	        		TRAP_IGNORE( e.CacheL( EEventNotifyRemove, 
-	        				eventIdArray ) );
+	        				eventIdArray, uriArray ) );
 	        		}
             	}
 	        else if( ( e.iType & ERelationNotifyRemove ) 
@@ -685,7 +872,7 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	        		{
 	            	// Match found. Trigger notifier entry.
 	            	TRAPD( err, e.TriggerL( ERelationNotifyRemove, 
-	            			relationIdArray ) );
+	            			relationIdArray, uriArray ) );
 	            	if( err != KErrNone )
 		            	{
 		            	e.TriggerError( err );
@@ -694,9 +881,10 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 	        	else
 	        		{
 	        		TRAP_IGNORE( e.CacheL( ERelationNotifyRemove, 
-	        				relationIdArray ) );
+	        				relationIdArray, uriArray ) );
 	        		}
             	}
+	        CleanupStack::PopAndDestroy( &uriArray );
 	        }
 		}
 	CleanupStack::PopAndDestroy( 3, &objectIdArray ); // relationIdArray, eventIdArray, objectIdArray
@@ -709,74 +897,112 @@ void CMdSNotifier::NotifyRemovedL(CMdCSerializationBuffer& aSerializedItemIds,
 void CMdSNotifier::NotifyModifiedL(CMdCSerializationBuffer& aSerializedItems, 
 							       CMdCSerializationBuffer& aSerializedItemIds)
     {
-    const TInt count = iEntries.Count();
+    const TBool uriNotify = CheckForNotifier(EObjectNotifyModifyWithUri);
+    TBool allMatched( EFalse );
+    TBool allItemsFetched( EFalse );
+
+    RArray<TItemId> allItemsIdArray;
+    CleanupClosePushL( allItemsIdArray );
+    RPointerArray<HBufC> allItemsUriArray;
+    CleanupResetAndDestroyPushL( allItemsUriArray );
     
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
-        if ( ! (e.iType & ( EObjectNotifyModify | ERelationNotifyModify ) ) )
+        if ( ! (e.iType & ( EObjectNotifyModify | ERelationNotifyModify | EObjectNotifyModifyWithUri ) ) )
         	{
         	continue;
         	}
   
         RArray<TItemId> matchingObjectIdArray;
+        RPointerArray<HBufC> matchingItemUriArray;
 		CleanupClosePushL( matchingObjectIdArray );
+		CleanupResetAndDestroyPushL( matchingItemUriArray );
 
 		aSerializedItems.PositionL( KNoOffset );
 		aSerializedItemIds.PositionL( KNoOffset );
 
-		const TBool someMatches = iComparator->MatchL( e.NamespaceDefId(), 
-				e.iType, e.Condition(), aSerializedItems, aSerializedItemIds, 
-				matchingObjectIdArray, e.AllowConfidential() );
+		const TBool someMatches = iComparator->MatchL( e.NamespaceDefId(), e.iType, e.Condition(), 
+                                          aSerializedItems, aSerializedItemIds, 
+                                          matchingObjectIdArray,
+                                          allItemsIdArray,
+                                          matchingItemUriArray,
+                                          allItemsUriArray,
+                                          e.AllowConfidential(),
+                                          uriNotify,
+                                          allMatched,
+                                          allItemsFetched );
 
         if( someMatches ) // check if there is some matches
             {
             if( e.IsPending() )
             	{
-            	// match found. trigger notifier entry !
-	            TRAPD( err, e.TriggerL( EObjectNotifyModify | ERelationNotifyModify,
-	            		matchingObjectIdArray ) );
-	            if( err != KErrNone )
-	            	{
-	            	e.TriggerError( err );
-	            	}
+            	TInt err( KErrNone );
+                // match found. trigger notifier entry !
+                if( allMatched )
+                    {
+                    TRAP( err, e.TriggerL( EObjectNotifyModify | ERelationNotifyModify | EObjectNotifyModifyWithUri,
+                            allItemsIdArray, allItemsUriArray ) );  
+                    }
+                else
+                    {
+                    TRAP( err, e.TriggerL( EObjectNotifyModify | ERelationNotifyModify | EObjectNotifyModifyWithUri,
+                            matchingObjectIdArray, matchingItemUriArray ) );  
+                    }
+                if( err != KErrNone )
+                    {
+                    e.TriggerError( err );
+                    }         
             	}
             else
             	{
-            	TRAP_IGNORE( e.CacheL( EObjectNotifyModify | ERelationNotifyModify,
-            			matchingObjectIdArray ) );
-            	}
+                if( allMatched )
+                    {
+                    TRAP_IGNORE( e.CacheL( EObjectNotifyModify | ERelationNotifyModify | EObjectNotifyModifyWithUri,
+                             allItemsIdArray, allItemsUriArray ) );    
+                    }
+                else
+                    {
+                    TRAP_IGNORE( e.CacheL( EObjectNotifyModify | ERelationNotifyModify | EObjectNotifyModifyWithUri,
+                            matchingObjectIdArray, matchingItemUriArray ) );    
+                    }
+                }
             }
-
-		CleanupStack::PopAndDestroy( &matchingObjectIdArray );
+		CleanupStack::PopAndDestroy( 2, &matchingObjectIdArray ); // matchingItemIdArray, matchingItemUriArray
         }
+    CleanupStack::PopAndDestroy( 2, &allItemsIdArray ); // allItemsIdArray, allItemsUriArray
     }
 
 // ------------------------------------------------
 // NotifyModified
 // ------------------------------------------------
 //
-void CMdSNotifier::NotifyModifiedL(const RArray<TItemId>& aObjectIds)
+void CMdSNotifier::NotifyModifiedL(const RArray<TItemId>& aObjectIds,
+                                                         CMdSManipulationEngine* aMEngine)
 	{
 	if (aObjectIds.Count() == 0)
     	{
     	return;
     	}
 
-    const TInt count = iEntries.Count();
+    TBool allUrisFetched( EFalse );
+    RPointerArray<HBufC> allUrisArray;
+    CleanupResetAndDestroyPushL( allUrisArray );
 
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
-        if( e.iType & EObjectNotifyModify )
+        if( e.iType & (EObjectNotifyModify | EObjectNotifyModifyWithUri) )
             {
             // collect matching object IDs
             RArray<TItemId> matchingObjectIdArray;
 			CleanupClosePushL( matchingObjectIdArray );
+		    RPointerArray<HBufC> uriArray;
+		    CleanupResetAndDestroyPushL( uriArray );
 
-                const TBool allMatches = iComparator->MatchObjectIdsL( e.Condition(),
+            const TBool allMatches = iComparator->MatchObjectIdsL( e.Condition(), 
             		aObjectIds, matchingObjectIdArray );
 
 			// check is there any matches
@@ -790,15 +1016,36 @@ void CMdSNotifier::NotifyModifiedL(const RArray<TItemId>& aObjectIds)
 	            	if( allMatches )
 	            		{
 	            		// all matches so send whole object ID array
-	            		TRAP( err, e.TriggerL( EObjectNotifyModify, 
-	            				aObjectIds ) );
+	            		if( e.iType & EObjectNotifyModifyWithUri )
+	            		    {
+	            		    if( !allUrisFetched )
+	            		        {
+	            		        aMEngine->GetObjectUrisByIdsL( aObjectIds, allUrisArray );
+	            		        allUrisFetched = ETrue;
+	            		        }
+	                        TRAP( err, e.TriggerL( EObjectNotifyModifyWithUri, 
+	                                 aObjectIds, allUrisArray ) );
+	            		    }
+	            		else
+	            		    {
+                            TRAP( err, e.TriggerL( EObjectNotifyModify, 
+                                     aObjectIds, uriArray ) );
+	            		    }
 	            		}
 	            	else
 	            		{
-	            		TRAP( err, e.TriggerL( EObjectNotifyModify, 
-	            				matchingObjectIdArray ) );
+                        if( e.iType & EObjectNotifyModifyWithUri )
+                            {
+                            aMEngine->GetObjectUrisByIdsL( matchingObjectIdArray, uriArray );
+                            TRAP( err, e.TriggerL( EObjectNotifyModifyWithUri, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
+                        else
+                            {
+                            TRAP( err, e.TriggerL( EObjectNotifyModify, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
 	            		}
-
 	            	if( err != KErrNone )
 		            	{
 		            	e.TriggerError( err );
@@ -808,39 +1055,72 @@ void CMdSNotifier::NotifyModifiedL(const RArray<TItemId>& aObjectIds)
             		{
 					if( allMatches )
 	            		{
-	            		// all matches so send whole object ID array
-            			TRAP_IGNORE( e.CacheL( EObjectNotifyModify, 
-            					aObjectIds ) );
+                        // all matches so send whole object ID array
+                        if( e.iType & EObjectNotifyModifyWithUri )
+                            {
+                            if( !allUrisFetched )
+                                {
+                                aMEngine->GetObjectUrisByIdsL( aObjectIds, allUrisArray );
+                                allUrisFetched = ETrue;
+                                }
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyModifyWithUri, 
+                                     aObjectIds, allUrisArray ) );
+                            }
+                        else
+                            {
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyModify, 
+                                     aObjectIds, uriArray ) );
+                            }
 	            		}
 	            	else
 	            		{
-	            		TRAP_IGNORE( e.CacheL( EObjectNotifyModify, 
-	            				matchingObjectIdArray ) );
+                        if( e.iType & EObjectNotifyModifyWithUri )
+                            {
+                            aMEngine->GetObjectUrisByIdsL( matchingObjectIdArray, uriArray );
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyModifyWithUri, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
+                        else
+                            {
+                            TRAP_IGNORE( e.CacheL( EObjectNotifyModify, 
+                                    matchingObjectIdArray, uriArray ) );
+                            }
 	            		}
             		}
             	}
-
-			CleanupStack::PopAndDestroy( &matchingObjectIdArray );
+			CleanupStack::PopAndDestroy( 2, &matchingObjectIdArray ); // matchingObjectIdArray, uriArray
             }
         }
+    CleanupStack::PopAndDestroy( &allUrisArray );
 	}
 
 // ------------------------------------------------
 // NotifyRemoved
 // ------------------------------------------------
 //
-void CMdSNotifier::NotifyRemovedL(const RArray<TItemId>& aItemIdArray)
+void CMdSNotifier::NotifyRemovedL(const RArray<TItemId>& aItemIdArray,
+                                                          CMdSManipulationEngine* aMEngine)
 	{
-    const TInt entriesCount( iEntries.Count() );
-    for( TInt i=0; i<entriesCount; ++i )
+    if (aItemIdArray.Count() == 0)
+        {
+        return;
+        }
+    
+    RPointerArray<HBufC> uriArray;
+    CleanupResetAndDestroyPushL( uriArray );
+    TBool urisFetched( EFalse );
+	
+    for( TInt i = iEntries.Count()- 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
         if( e.iType & EObjectNotifyRemove )
         	{
+        	RPointerArray<HBufC> nullArray; // For when uris are not needed
+        	CleanupResetAndDestroyPushL( nullArray );
             if( e.IsPending() )
             	{
-	            TRAPD( err, e.TriggerL( EObjectNotifyRemove, aItemIdArray ) );
+	            TRAPD( err, e.TriggerL( EObjectNotifyRemove, aItemIdArray, nullArray ) );
 	            if( err != KErrNone )
 	            	{
 	            	e.TriggerError( err );
@@ -848,10 +1128,32 @@ void CMdSNotifier::NotifyRemovedL(const RArray<TItemId>& aItemIdArray)
             	}
             else
             	{
-            	TRAP_IGNORE( e.CacheL( EObjectNotifyRemove, aItemIdArray ) );
+            	TRAP_IGNORE( e.CacheL( EObjectNotifyRemove, aItemIdArray, nullArray ) );
             	}
+            CleanupStack::PopAndDestroy( &nullArray );
         	}
+        else if( e.iType & EObjectNotifyRemoveWithUri )
+            {
+            if( !urisFetched && aMEngine )
+                {
+                aMEngine->GetObjectUrisByIdsL( aItemIdArray, uriArray );
+                urisFetched = ETrue;
+                }
+            if( e.IsPending() )
+                {
+                TRAPD( err, e.TriggerL( EObjectNotifyRemoveWithUri, aItemIdArray, uriArray ) );
+                if( err != KErrNone )
+                    {
+                    e.TriggerError( err );
+                    }
+                }
+            else
+                {
+                TRAP_IGNORE( e.CacheL( EObjectNotifyRemoveWithUri, aItemIdArray, uriArray ) );
+                }
+            }
         }
+    CleanupStack::PopAndDestroy( &uriArray );
 	}
 
 // ------------------------------------------------
@@ -865,9 +1167,7 @@ void CMdSNotifier::NotifyObjectPresent(TBool aPresent, const RArray<TItemId>& aO
     	return;
     	}
 
-    const TInt count = iEntries.Count();
-    
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
@@ -878,10 +1178,11 @@ void CMdSNotifier::NotifyObjectPresent(TBool aPresent, const RArray<TItemId>& aO
             const TMdSObserverNotificationType objectState = 
             	aPresent ? EObjectNotifyPresent : EObjectNotifyNotPresent;
 
+            RPointerArray<HBufC> nullArray; // For when uris are not needed
             if( e.IsPending() )
             	{
             	// match found. trigger notifier entry !
-	            TRAPD( err, e.TriggerL( objectState, aObjectIds ) );
+	            TRAPD( err, e.TriggerL( objectState, aObjectIds, nullArray ) );
 	            if( err != KErrNone )
 	            	{
 	            	e.TriggerError( err );
@@ -889,8 +1190,9 @@ void CMdSNotifier::NotifyObjectPresent(TBool aPresent, const RArray<TItemId>& aO
             	}
             else
             	{
-            	TRAP_IGNORE( e.CacheL( objectState, aObjectIds ) );
+            	TRAP_IGNORE( e.CacheL( objectState, aObjectIds, nullArray ) );
             	}
+            nullArray.Close();
             }
         }
     }
@@ -906,9 +1208,7 @@ void CMdSNotifier::NotifyRelationPresent(TBool aPresent, const RArray<TItemId>& 
     	return;
     	}
 
-    const TInt count = iEntries.Count();
-    
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
@@ -919,10 +1219,11 @@ void CMdSNotifier::NotifyRelationPresent(TBool aPresent, const RArray<TItemId>& 
             const TMdSObserverNotificationType relationState = 
             	aPresent ? ERelationNotifyPresent : ERelationNotifyNotPresent;
 
+            RPointerArray<HBufC> nullArray; // For when uris are not needed
             if( e.IsPending() )
             	{
             	// match found. trigger notifier entry !
-	            TRAPD( err, e.TriggerL( relationState, aRelationIds ) );
+	            TRAPD( err, e.TriggerL( relationState, aRelationIds, nullArray ) );
 	            if( err != KErrNone )
 	            	{
 	            	e.TriggerError( err );
@@ -930,8 +1231,9 @@ void CMdSNotifier::NotifyRelationPresent(TBool aPresent, const RArray<TItemId>& 
             	}
             else
             	{
-            	TRAP_IGNORE( e.CacheL( relationState, aRelationIds ) );
+            	TRAP_IGNORE( e.CacheL( relationState, aRelationIds, nullArray ) );
             	}
+            nullArray.Close();
             }
         }
     }
@@ -943,9 +1245,7 @@ void CMdSNotifier::NotifyRelationPresent(TBool aPresent, const RArray<TItemId>& 
 //
 void CMdSNotifier::NotifySchemaAddedL()
     {
-    const TInt count = iEntries.Count();
-    
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         TEntry& e = iEntries[i];
 
@@ -973,9 +1273,7 @@ void CMdSNotifier::NotifySchemaAddedL()
 //
 TBool CMdSNotifier::CheckForNotifier( TUint32 aNotifyTypes )
     {
-    const TInt count = iEntries.Count();
-    
-    for( TInt i = 0; i < count; ++i )
+    for( TInt i = iEntries.Count() - 1; i >=0; i-- )
         {
         if ( iEntries[i].iType & aNotifyTypes )
         	{
@@ -994,8 +1292,7 @@ void CMdSNotifier::NotifyRemovedRelationItemsL(
 
 	if( items.iRelations.iPtr.iCount )
 		{
-		const TInt entriesCount = iEntries.Count();
-	    for( TInt i = 0; i < entriesCount; ++i )
+		for( TInt i = iEntries.Count() - 1; i >=0; i-- )
 	        {
 	        TEntry& e = iEntries[i];
 	        

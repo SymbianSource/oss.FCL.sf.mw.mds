@@ -57,6 +57,7 @@ void CMdSDiskSpaceNotifierAO::RunL()
 		switch( status )
 			{
 			case KErrNone:
+			    {
 				const TInt error = iFileServerSession.Volume( volumeInfo, iDrive );
 				if( error != KErrNone )
 				    {
@@ -83,6 +84,7 @@ void CMdSDiskSpaceNotifierAO::RunL()
 					}
 				StartNotifier();
 				break;
+			    }
 
 			case KErrArgument:
 				User::Leave( status );

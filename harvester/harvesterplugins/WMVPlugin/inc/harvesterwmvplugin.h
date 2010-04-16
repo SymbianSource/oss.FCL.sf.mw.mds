@@ -40,6 +40,13 @@ class CHarvesterWmvPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iLastModifiedDatePropertyDef;
 		CMdEPropertyDef* iSizePropertyDef;
 		CMdEPropertyDef* iItemTypePropertyDef;
+        CMdEPropertyDef* iTitlePropertyDef;
+		
+        // Media property definitions
+        CMdEPropertyDef* iDrmPropertyDef;
+        CMdEPropertyDef* iDescriptionPropertyDef;
+        CMdEPropertyDef* iAuthorPropertyDef;
+        CMdEPropertyDef* iGenrePropertyDef;
 		
 	private:
 		CHarvesterWmvPluginPropertyDefs();
@@ -89,6 +96,12 @@ public:
     */
     TUint32 iFileSize;
 
+    TBuf<KMaxDataTypeLength> iDescription;
+    TBuf<KMaxDataTypeLength> iTitle;
+    TBuf<KMaxDataTypeLength> iAuthor;
+    TBuf<KMaxDataTypeLength> iGenre;
+    TBool iDrmProtected;  
+    
 private:
 
     /**

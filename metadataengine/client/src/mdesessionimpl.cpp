@@ -2678,8 +2678,7 @@ void CMdESessionImpl::RemoveEventObserverL(
 TInt CMdESessionImpl::FindNotifier( TUint32 aNotifyType, TAny* aObserver, 
 									CMdENamespaceDef& aNamespaceDef )
     {
-    const TInt notifiersCount = iNotifiers.Count();
-    for( TInt i = 0; i < notifiersCount; ++i )
+    for( TInt i = iNotifiers.Count() - 1; i >=0; i-- )
         {
         if ( iNotifiers[i]->Match( aNotifyType, aObserver, aNamespaceDef ) )
         	{
@@ -2944,3 +2943,93 @@ CMdENamespaceDef* CMdESessionImpl::GetNamespaceDefL(
     	return &GetDefaultNamespaceDefL();
     	}
 	}
+	
+void CMdESessionImpl::AddObjectObserverWithUriL( MMdEObjectObserverWithUri& aObserver,
+                                          CMdELogicCondition* aCondition, 
+                                          TUint32 aNotificationType,
+                                          CMdENamespaceDef* aNamespaceDef )
+    {
+    CleanupStack::PushL( aCondition );
+    
+    // if condition is given, check that it is correct type
+    if( aCondition && ( EConditionTypeLogic != aCondition->Type() ) )
+        {
+        User::Leave( KErrArgument );
+        }
+
+    // if namespace is not given get default namespace definition
+    CMdENamespaceDef* namespaceDef = NULL;
+    if ( !aNamespaceDef )
+        {
+        namespaceDef = &GetDefaultNamespaceDefL();
+        }
+    else
+        {
+        namespaceDef = aNamespaceDef;
+        }
+
+    TUint32 type = 0;
+    if ( aNotificationType & ENotifyAdd )
+        {
+        type |= EObjectNotifyAddWithUri;
+        }
+    if ( aNotificationType & ENotifyModify )
+        {
+        type |= EObjectNotifyModifyWithUri;
+        }
+    if ( aNotificationType & ENotifyRemove )
+        {
+        type |= EObjectNotifyRemoveWithUri;
+        }
+        
+    TInt err = FindNotifier( type, &aObserver, *namespaceDef );
+    
+    if ( err != KErrNotFound )
+        {
+        if ( err >= 0 )
+            {
+            err = KErrAlreadyExists;
+            }
+        User::LeaveIfError( err );
+        }
+
+    CMdENotifierAO* notifier = CMdENotifierAO::NewLC( *this, iSession );
+    notifier->RegisterL( type, &aObserver, aCondition, *namespaceDef );
+
+    CleanupStack::Pop( notifier );
+    iNotifiers.Append( notifier );
+    
+    CleanupStack::PopAndDestroy( aCondition );
+    }
+
+void CMdESessionImpl::RemoveObjectObserverWithUriL( 
+        MMdEObjectObserverWithUri& aObserver, CMdENamespaceDef* aNamespaceDef )
+    {
+    // if namespace is not given get default namespace definition
+    CMdENamespaceDef* namespaceDef = NULL;
+    if ( !aNamespaceDef )
+        {
+        namespaceDef = &GetDefaultNamespaceDefL();
+        }
+    else
+        {
+        namespaceDef = aNamespaceDef;
+        }
+
+    const TInt index = FindNotifier( 
+            EObjectNotifyAddWithUri | EObjectNotifyModifyWithUri | EObjectNotifyRemoveWithUri,
+            &aObserver, *namespaceDef );
+    if ( index != KErrNotFound )
+        {
+        iNotifiers[index]->Cancel();
+        delete iNotifiers[index];
+        iNotifiers[index] = NULL;
+        iNotifiers.Remove( index );
+        iNotifiers.Compress();
+        }
+    else
+        {
+        User::Leave( KErrNotFound );
+        }
+    }
+

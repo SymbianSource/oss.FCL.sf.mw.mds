@@ -66,7 +66,6 @@ CRestoreWatcher::CRestoreWatcher() : iPropertyWatcher( NULL ), iClients( 0 )
 //
 CRestoreWatcher::~CRestoreWatcher()
 	{
-	
 	if( iPropertyWatcher )
 		{
 		iPropertyWatcher->StopListeningKeyChanges( 
@@ -80,6 +79,8 @@ CRestoreWatcher::~CRestoreWatcher()
 		
 		iPropertyWatcher->Delete(); // Release connection to TLS object.
 		}
+	
+	iFs.Close();
 	}
 
 // -----------------------------------------------------------------------------
@@ -91,6 +92,8 @@ void CRestoreWatcher::ConstructL()
 	{
 	WRITELOG("CRestoreWatcher::ConstructL()");
 
+    User::LeaveIfError( iFs.Connect() );
+	
 	CreateFileNameL();
 	CheckRestoreL();
     WRITELOG1("CRestoreWatcher::ConstructL() - iRestoreDone: %d", iRestoreDone );
@@ -136,17 +139,12 @@ void CRestoreWatcher::CreateFileNameL()
 	TInt drive ( 0 );
 	User::LeaveIfError( 
 			DriveInfo::GetDefaultDrive( DriveInfo::EDefaultSystem, drive ) );
-
-    RFs fsSession;
-    User::LeaveIfError( fsSession.Connect() );
   
     TChar driveLetter;
-    fsSession.DriveToChar( drive, driveLetter );
+    iFs.DriveToChar( drive, driveLetter );
 	
     iFileName.Append( driveLetter );
     iFileName.Append( KRestoreFile );  // result-> C:\\private\\200009F5\\restoredone
- 
-    fsSession.Close();
 	}
 
 
@@ -274,22 +272,17 @@ void CRestoreWatcher::UnregisterL()
 //
 void CRestoreWatcher::SetRestoreFlagL( TBool aRestoreDone )
 	{	
-	RFs fs;
-	User::LeaveIfError( fs.Connect() );
-	
 	iRestoreDone = aRestoreDone;
 	if( aRestoreDone )
 		{	
 		RFile64 file;
-		file.Replace( fs, iFileName, EFileWrite );
+		file.Replace( iFs, iFileName, EFileWrite );
 		file.Close();
 		}
 	else
 		{
-		fs.Delete( iFileName );
+		iFs.Delete( iFileName );
 		}
-	
-	fs.Close();
 	}
 
 // -----------------------------------------------------------------------------
@@ -299,13 +292,10 @@ void CRestoreWatcher::SetRestoreFlagL( TBool aRestoreDone )
 //
 void CRestoreWatcher::CheckRestoreL()
 	{
-	RFs fs;
 	RFile64 file;
-	User::LeaveIfError( fs.Connect() );
 	TInt fileError( KErrNotFound );
-	fileError = file.Open( fs, iFileName, EFileRead );
+	fileError = file.Open( iFs, iFileName, EFileRead );
 	file.Close();
-	fs.Close();
     
 	WRITELOG1("CRestoreWatcher::StartMonitoring - fileError: %d", fileError);
 	
