@@ -17,7 +17,7 @@
 &EN
 
 ;packet-header (name, uid, major, minor, build, type)
-#{"Metadata System Upgrade"},(0x200009F5), 9, 20, 11, TYPE=SA, RU
+#{"Metadata System Upgrade"},(0x200009F5), 9, 20, 13, TYPE=SA, RU
 
 ; Localised vendor name
 %{"Nokia"}
@@ -31,7 +31,7 @@
 ; CenRep
 "..\..\clfwrapper\conf\102828AC.txt"-"c:\private\10202be9\102828AC.txt"
 "..\..\harvester\common\data\200009FE.txt"-"c:\private\10202be9\200009FE.txt"
-"..\..\locationmanager\conf\200071BE.txt"-"c:\private\10202be9\200071BE.txt"
+"..\..\locationmanager\data\200071BE.txt"-"c:\private\10202be9\200071BE.txt"
 
 ; contextengine
 "\EPOC32\RELEASE\ARMV5\UREL\contextengine.dll" -"c:\sys\bin\contextengine.dll"

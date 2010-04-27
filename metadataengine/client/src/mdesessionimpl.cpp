@@ -42,6 +42,9 @@
 #include "mdeobjectcondition.h"
 #include "mdscommoninternal.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 RMdESessionAsyncRequest::RMdESessionAsyncRequest( TRequestType aRequestType, 
 	CMdCSerializationBuffer* aBuffer, CMdCSerializationBuffer& aResultBuffer,
 	TRequestStatus& aRequestStatus) : 
@@ -1840,6 +1843,8 @@ void CMdESessionImpl::DeserializeQueryResultL(
 		CMdCSerializationBuffer& aBuffer, 
 		RPointerArray<CMdEInstanceItem>& aItems )
 	{
+    CleanupResetAndDestroyPushL( aItems );
+    
 	const TMdCItems& items = TMdCItems::GetFromBufferL( aBuffer );
 
     CMdENamespaceDef& namespaceDef = GetNamespaceDefL( items.iNamespaceDefId );
@@ -1881,6 +1886,8 @@ void CMdESessionImpl::DeserializeQueryResultL(
 			CleanupStack::Pop( relation );
 			}
 		}
+	
+	CleanupStack::Pop( &aItems );
 	}
 
 TItemId CMdESessionImpl::AddObjectL( CMdEObject& aObject )
@@ -2527,7 +2534,6 @@ void CMdESessionImpl::RemoveObjectObserverL(
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
-    	iNotifiers[index]->Cancel();
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
@@ -2549,7 +2555,6 @@ void CMdESessionImpl::RemoveObjectPresentObserverL(
     		&aObserver, namespaceDef );
     if ( index != KErrNotFound )
         {
-    	iNotifiers[index]->Cancel();
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
@@ -2580,7 +2585,6 @@ void CMdESessionImpl::RemoveRelationObserverL(
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
-    	iNotifiers[index]->Cancel();
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
@@ -2612,7 +2616,6 @@ void CMdESessionImpl::RemoveRelationItemObserverL(
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
-    	iNotifiers[index]->Cancel();
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
@@ -2634,7 +2637,6 @@ void CMdESessionImpl::RemoveRelationPresentObserverL(
     		&aObserver, namespaceDef );
     if ( index != KErrNotFound )
         {
-    	iNotifiers[index]->Cancel();
     	delete iNotifiers[index];
     	iNotifiers[index] = NULL;
     	iNotifiers.Remove( index );
@@ -2664,7 +2666,6 @@ void CMdESessionImpl::RemoveEventObserverL(
     		&aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
-	    iNotifiers[index]->Cancel();
 	    delete iNotifiers[index];
 	    iNotifiers[index] = NULL;
 	    iNotifiers.Remove( index );
@@ -2891,6 +2892,8 @@ void CMdESessionImpl::GetCountL( CMdCSerializationBuffer* aBuffer,
 void CMdESessionImpl::GetItemIdL( CMdCSerializationBuffer* aBuffer, 
 		RArray<TItemId>& aIdArray )
 	{
+    CleanupClosePushL( aIdArray );
+    
 	const TMdCItemIds& itemIds = TMdCItemIds::GetFromBufferL( *aBuffer );
 
 	if( itemIds.iObjectIds.iPtr.iCount > 0 ) 
@@ -2917,6 +2920,8 @@ void CMdESessionImpl::GetItemIdL( CMdCSerializationBuffer* aBuffer,
 	    aBuffer->ReceiveL( id );
 	    aIdArray.AppendL( id );
 	    }
+	
+	CleanupStack::Pop( &aIdArray );
 	}
 
 void CMdESessionImpl::GetDistinctValuesL( CMdCSerializationBuffer& aBuffer, 
@@ -3021,7 +3026,6 @@ void CMdESessionImpl::RemoveObjectObserverWithUriL(
             &aObserver, *namespaceDef );
     if ( index != KErrNotFound )
         {
-        iNotifiers[index]->Cancel();
         delete iNotifiers[index];
         iNotifiers[index] = NULL;
         iNotifiers.Remove( index );

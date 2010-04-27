@@ -29,6 +29,9 @@
 #include    <collate.h>
 #include    "MGDebugPrint.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 // CONSTANTS
 const TInt KCLFResourceVersionNumber( 1 );
 const TInt KCLFEmptyArrayGranularity( 1 );
@@ -443,10 +446,12 @@ void CCLFItemListModelImpl::RefreshL( TInt32 aRefreshType )
 void CCLFItemListModelImpl::CopyArrayL( const TArray<MCLFItem*>& aSource,
                                         RPointerArray<MCLFItem>& aDest )
     {
+    CleanupResetAndDestroyPushL( aDest );
     for( TInt i = aSource.Count() - 1; i >=0; i--)
         {
         aDest.AppendL( aSource[i] );
         }
+    CleanupStack::Pop( &aDest );
     }
 
 // -----------------------------------------------------------------------------

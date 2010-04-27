@@ -15,6 +15,7 @@
 */
 
 // INCLUDE FILES
+#include <mdequery.h>
 #include "mdsfindsqlclause.h"
 #include "mdsfindsqlclausedef.h"
 #include "mdsclausebuffer.h"
@@ -2642,10 +2643,13 @@ void CMdSFindSqlClause::AppendGroupByL()
 			{
 			case EQueryResultModeItem:
 			case EQueryResultModeId:
+                {
+                // "GROUP BY BO.ObjectId "
+                iQueryBuf->AppendL( KGroupByObjectId );
+                }
+                break;
 			case EQueryResultModeCount:
 				{
-				// "GROUP BY BO.ObjectId "
-				iQueryBuf->AppendL( KGroupByObjectId );
 				}
 				break;
 
@@ -2664,6 +2668,12 @@ void CMdSFindSqlClause::AppendGroupByL()
 //
 void CMdSFindSqlClause::AppendOrderByL()
     {
+    if( iSearchCriteria->iQueryResultType == EQueryResultModeCount )
+        {
+        // No need to sort or group if only one count is returned
+        return;
+        }
+    
 	if( iSearchCriteria->iOrderRules.iPtr.iCount > 0 )
 		{
 		iQueryBuf->AppendL( KOrderBy );
@@ -2828,7 +2838,7 @@ void CMdSFindSqlClause::AppendLimitAndOffsetL()
     	iQueryBuf->AppendL( KComma );
     	iQueryBuf->BufferL().AppendNum( iSearchCriteria->iOffset );
     	}
-    else if ( iSearchCriteria->iLimit != KMaxTUint32 )
+    else if ( iSearchCriteria->iLimit != KMdEQueryDefaultMaxCount )
     	{
     	// 10 is maximum length of text format TUint32
     	iQueryBuf->ReserveSpaceL( iQueryBuf->ConstBufferL().Length() + 

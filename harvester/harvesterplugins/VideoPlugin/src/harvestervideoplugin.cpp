@@ -178,44 +178,44 @@ void CHarvesterVideoPlugin::ConstructL()
 	// MPEG4
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMp4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMpg4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMpeg4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionM4v(), KMimeTypeVideoMp4(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KVideo(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionM4a(), KMimeTypeAudioMp4(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KAudio(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KAudio(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 
 	// 3GP
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3gp(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3gpp(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3g2(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 
@@ -837,6 +837,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         }
     else if( mapping->iHandler.iLibrary == TVideoMetadataHandling::EMp4LibHandling )
         {
+#ifdef MDS_MP4LIB_USAGE
         MP4Handle handle( 0 );
         MP4Err mp4err = MP4_OK;
         
@@ -926,6 +927,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             {
             WRITELOG( "CHarvesterVideoPlugin - Error closing file handle" );
             }
+#endif
         }
     WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
     CleanupStack::PopAndDestroy( &file );        
@@ -1049,7 +1051,7 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     	        }
     		}
     	}
-    
+
     // Copyright
     if( aVHD.iCopyright && aVHD.iCopyright->Length() < iMaxTextLength )
     	{
@@ -1099,8 +1101,9 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
         }
     }
 
+#ifdef MDS_MP4LIB_USAGE 
 void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
-	{
+    {
     WRITELOG( "CHarvesterVideoPlugin::GetMp4Mime - MP4ParseOpenFileHandle - start" );
     MP4Handle handle;
 
@@ -1139,6 +1142,11 @@ void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
 
     MP4ParseClose( handle );
 	}
+#else
+void CHarvesterVideoPlugin::GetMp4Type( RFile64& /*aFile*/, TDes& /*aType*/ )
+    {
+    }
+#endif
 
 void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	{

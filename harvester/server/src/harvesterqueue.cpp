@@ -75,6 +75,11 @@ CHarvesterQueue::~CHarvesterQueue()
     iItemQueue.Close();
     iFs.Close();
     RMediaIdUtil::ReleaseInstance();
+    
+    if (iHEM)
+        {
+        iHEM->ReleaseInstance();
+        }
     }
 
 // ---------------------------------------------------------------------------
@@ -86,6 +91,7 @@ void CHarvesterQueue::ConstructL()
     WRITELOG( "CHarvesterQueue::ConstructL()" );
     User::LeaveIfError( iFs.Connect() );
 	iMediaIdUtil = &RMediaIdUtil::GetInstanceL();
+    iHEM = CHarvesterEventManager::GetInstanceL();
     }
 
 // ---------------------------------------------------------------------------
@@ -148,6 +154,8 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
         		aItem->Uri(), mediaId, time ) )
             {
             WRITELOG( "CHarvesterQueue::Append() - found a blacklisted file" );
+            TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypePlaceholder ) );
+            TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypeMMC ) );
             if( aItem->EventType() == EHarvesterEdit )
                 {
                 // Remove possible placeholder items from DB if file was blacklisted during harvesting

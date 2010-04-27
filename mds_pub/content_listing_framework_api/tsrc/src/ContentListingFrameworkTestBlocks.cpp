@@ -1497,7 +1497,7 @@ TInt CContentListingFrameworkTest::UpdateItemsTestL( CStifItemParser& /* aItem *
     CreateNewFileL( 5, iFileName );
 
 // update server
-// to aTInt incorrect test result
+// to avoid incorrect test result
     CreateNewFileL( 0, iFileName );
     iEngine->UpdateItemsL();
 

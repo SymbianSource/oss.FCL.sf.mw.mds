@@ -262,6 +262,9 @@ void CHarvesterAO::ConstructL()
     iHarvesterPluginFactory = CHarvesterPluginFactory::NewL();
     iHarvesterPluginFactory->SetBlacklist( *iBlacklist );
     
+    // Reset harvesting status for clients in case blacklisted file was handled
+    iHarvesterPluginFactory->SendHarvestingStatusEventL( EFalse );
+    
     iCameraExtensionArray = new ( ELeave ) CDesCArraySeg( 6 );
     iCameraExtensionArray->InsertIsqL( KExtensionMp4 );
     iCameraExtensionArray->InsertIsqL( KExtensionMpg4 );
@@ -523,8 +526,6 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
         TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, removed ) );
 	    }
 	
-	iMediaIdUtil->RemoveMediaId( aMediaId );
-	
 	removed = 0;
 	
 	RPointerArray<CHarvesterPluginInfo>& hpiArray = iHarvesterPluginFactory->GetPluginInfos();
@@ -569,6 +570,8 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
             TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, removed ) );
 		    }
 		}
+	
+    iMediaIdUtil->RemoveMediaId( aMediaId );
 	
 	// resume harvesting from last state
     if( !iRamFull && !iDiskFull )
@@ -818,6 +821,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		CMdEObjectDef& mdeObjectDef = defNS.GetObjectDefL( objDefStr );
 
 		CMdEObject* mdeObject = iMdESession->NewObjectL( mdeObjectDef, hd->Uri() );
+		CleanupStack::PushL( mdeObject );
 		
 		CPlaceholderData* phData = NULL;
 
@@ -953,9 +957,12 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		
 		hd->SetMdeObject( mdeObject );
 		
-		mdeObjectArray.Append( mdeObject );
+		// Ownership of mdeObject transferred to the array
+		mdeObjectArray.AppendL( mdeObject );
 		
 	    CleanupStack::PopAndDestroy( phData );
+	    
+	    CleanupStack::Pop( mdeObject );
 		
 		iReadyPHArray.Append( hd );
 		iPHArray.Remove( i );
