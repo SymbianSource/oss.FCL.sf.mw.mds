@@ -329,11 +329,10 @@ EXPORT_C void CHarvesterEventManager::RegisterEventObserverL( const RMessage2& a
 		THarvesterEventQueue* msgQueue = new (ELeave) THarvesterEventQueue;
 		CleanupStack::PushL( msgQueue );
 
-		TInt err = msgQueue->Open( aMessage, 1 );
+		User::LeaveIfError( msgQueue->Open( aMessage, 1 ) );
 
-		User::LeaveIfError( err );
-
-		iEventQueues.AppendL( msgQueue );
+		User::LeaveIfError( iEventQueues.InsertInOrderAllowRepeats(msgQueue, 
+		                                 TLinearOrder<THarvesterEventQueue>(CHarvesterEventManager::CompareProperties))); 
 		observerInfo->iQueuePtr = msgQueue;
 		
 		CleanupStack::Pop( msgQueue );
@@ -396,17 +395,31 @@ EXPORT_C TInt CHarvesterEventManager::UnregisterEventObserver( const RMessage2& 
 		// was the last observer which used it
 		if( !otherObserverFound )
 			{
-			for(TInt i = iEventQueues.Count(); --i >= 0;)
-				{
-				THarvesterEventQueue* queue = iEventQueues[i];
-				if( queue->Handle() == serverQueueHandle )
-					{
-					iEventQueues.Remove( i );
-					queue->Close();
-					delete queue;
-					break;
-					}
-				}
+	        TInt low( 0 );
+	        TInt high( iEventQueues.Count() );
+	    
+	        while( low < high )
+	            {
+	            TInt mid( (low+high)>>1 );
+	        
+	            const TInt compare( serverQueueHandle - iEventQueues[mid]->Handle() );
+	            if( compare == 0 )
+	                {
+	                THarvesterEventQueue* queue = iEventQueues[mid];
+                    iEventQueues.Remove( mid );
+                    queue->Close();
+                    delete queue;
+                    break;
+	                }
+	            else if( compare > 0 )
+	                {
+	                low = mid + 1;
+	                }
+	            else
+	                {
+	                high = mid;
+	                }
+	            }
 			iEventQueues.Compress();
 			}
 
@@ -460,3 +473,9 @@ EXPORT_C TUint CHarvesterEventManager::GetLastClientId()
 	// deprecated method, just return something
 	return 0;
 	}
+
+TInt CHarvesterEventManager::CompareProperties(const THarvesterEventQueue& aFirst, const THarvesterEventQueue& aSecond)
+    {
+    return aFirst.Handle() - aSecond.Handle();
+    }
+

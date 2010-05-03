@@ -187,7 +187,7 @@ void CUpdateIDsHandler::HandleObjectNotification( const TItemId aId, TObserverNo
     {
     iWasNotificationHandled = EFalse;
 
-    const TInt index = iIdsPendingUpdate.Find( aId );
+    const TInt index = iIdsPendingUpdate.FindInOrder( aId );
     if ( index != KErrNotFound )
         {
         iWasNotificationHandled = ETrue;
@@ -213,9 +213,9 @@ inline CUpdateIDsHandler::CUpdateIDsHandler( const TArray< TCLFItemId >& aItemID
     const TInt idCount( aItemIDArray.Count() );
     for ( TInt i = 0; i < idCount; ++i )
         {
-        if ( iIdsPendingUpdate.Find( aItemIDArray[ i ] ) == KErrNotFound )
+        if ( iIdsPendingUpdate.FindInOrder( aItemIDArray[ i ] ) == KErrNotFound )
             {
-            iIdsPendingUpdate.Append( aItemIDArray[ i ] );
+            iIdsPendingUpdate.InsertInOrder( aItemIDArray[ i ] );
             }
         }
     }
@@ -271,7 +271,7 @@ void CItemsDeletedHandler::StartHandlingL()
         
         if ( id != KNoId )
             {
-            iIdsPendingRemoval.Append( id );
+            iIdsPendingRemoval.InsertInOrder( id );
             }
         }
     iObjectsPendingRemoval.ResetAndDestroy();
@@ -287,7 +287,7 @@ void CItemsDeletedHandler::HandleObjectNotification( const TItemId aId, TObserve
 
     if ( aType == ENotifyRemove )
         {
-        const TInt index = iIdsPendingRemoval.Find( aId );
+        const TInt index = iIdsPendingRemoval.FindInOrder( aId );
         if ( index != KErrNotFound )
             {
             iWasNotificationHandled = ETrue;
@@ -420,7 +420,7 @@ void CUpdateFoldersHandler::HandleObjectNotification( const TItemId aId, TObserv
 
     if ( aType == ENotifyRemove )
         {
-        const TInt index = iIdsPendingRemoval.Find( aId );
+        const TInt index = iIdsPendingRemoval.FindInOrder( aId );
         
         if ( index != KErrNotFound )
             {
@@ -430,12 +430,12 @@ void CUpdateFoldersHandler::HandleObjectNotification( const TItemId aId, TObserv
         }
     else if ( aType == ENotifyAdd || aType == ENotifyModify )
         {
-        const TInt index = iIdsPendingUpdate.Find( aId );
+        const TInt index = iIdsPendingUpdate.FindInOrder( aId );
         
         if ( index != KErrNotFound )
             {
             iIdsPendingUpdate.Remove( index );
-            const TInt handledIndex = iIdsHandled.Find( aId );
+            const TInt handledIndex = iIdsHandled.FindInOrder( aId );
             if( handledIndex != KErrNotFound )
                 {
                 iIdsHandled.Remove( handledIndex );
@@ -444,7 +444,7 @@ void CUpdateFoldersHandler::HandleObjectNotification( const TItemId aId, TObserv
             }
         else if( iHarvestingOngoing )
             { 
-            iIdsHandled.Append( aId );
+            iIdsHandled.InsertInOrder( aId );
             iWasNotificationHandled = ETrue;
             }
         }
@@ -596,7 +596,7 @@ void CUpdateFoldersHandler::DetermineIdsToRemoveL ( const CMdEObjectQuery& aQuer
                 id = iMdESession.RemoveObjectL( object.Id() );
                 if ( id != KNoId )
                     {
-                    iIdsPendingRemoval.Append( id );
+                    iIdsPendingRemoval.InsertInOrder( id );
                     }
                 }
             }
@@ -687,14 +687,14 @@ void CUpdateFoldersHandler::DoHarvestL( const TDesC& aUri )
         object = iMdESession.GetObjectL( aUri );
         if( object )
             {
-            const TInt index = iIdsHandled.Find( object->Id() );
+            const TInt index = iIdsHandled.FindInOrder( object->Id() );
             if( index != KErrNotFound )
                 {
                 iIdsHandled.Remove( index );
                 }
             else
                 {
-                iIdsPendingUpdate.Append( object->Id() ); 
+                iIdsPendingUpdate.InsertInOrder( object->Id() ); 
                 }
             }
         }

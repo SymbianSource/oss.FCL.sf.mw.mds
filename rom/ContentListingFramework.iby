@@ -21,9 +21,6 @@
 file=ABI_DIR\BUILD_DIR\ContentListingFramework.dll                     SHARED_LIB_DIR\ContentListingFramework.dll
 file=ABI_DIR\BUILD_DIR\MediaCollectionManager.dll                      SHARED_LIB_DIR\MediaCollectionManager.dll
 
-// Backup registration
-data=ZPRIVATE\101F8857\backup_registration.xml                         	private\101F8857\backup_registration.xml
-
 // Stubs
 //data=ZSYSTEM\install\ContentListingFrameworkStub.sis    System\Install\ContentListingFrameworkStub.sis
 

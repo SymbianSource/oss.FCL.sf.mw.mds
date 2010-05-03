@@ -31,6 +31,9 @@
 #include <harvesterdata.h>
 #include "harvesterpluginfactory.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 _LIT( KBackslash, "\\");
 
 const TInt KEntryBufferSize = 100;
@@ -87,6 +90,9 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 		RPointerArray<CPlaceholderData>& aEntryArray )
 	{
 	WRITELOG( "CMmcFileList::BuildFileListL - start" );
+	
+	CleanupResetAndDestroyPushL( aEntryArray );
+	
 	CDesCArrayFlat* path = new(ELeave) CDesCArrayFlat( 10 );
 	CleanupStack::PushL( path );
 	TFileName firstPath;
@@ -179,6 +185,8 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 		}
 	
 	CleanupStack::PopAndDestroy( path );
+	
+	CleanupStack::Pop( &aEntryArray );
 	
 	WRITELOG( "CMmcFileList::BuildFileListL - end" );
 	}

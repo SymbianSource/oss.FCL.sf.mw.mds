@@ -28,6 +28,9 @@
 #include "mdsutils.h"
 #include "harvesterlog.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 const TInt KCacheItemCountForEventCaching = 1;
 
 // ---------------------------------------------------------------------------
@@ -36,7 +39,7 @@ const TInt KCacheItemCountForEventCaching = 1;
 //
 CHarvesterPluginFactory::CHarvesterPluginFactory() :
     iBlacklist( NULL ),
-    iHarvesting( NULL ),
+    iHarvesting( EFalse ),
     iHarvesterEventManager( NULL )
 	{
 	WRITELOG( "CHarvesterPluginFactory::CHarvesterPluginFactory()" );
@@ -338,6 +341,8 @@ void CHarvesterPluginFactory::AddNewPluginL( const TDesC8& aType,
 void CHarvesterPluginFactory::GetSupportedPluginsL(
 		RPointerArray<CHarvesterPluginInfo>& aSupportedPlugins, const TDesC& aExt )
 	{
+    CleanupResetAndDestroyPushL( aSupportedPlugins );
+    
 	const TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
 	TInt extCount = 0;
 	for ( TInt i = pluginInfoCount; --i >= 0; )
@@ -358,6 +363,8 @@ void CHarvesterPluginFactory::GetSupportedPluginsL(
                 }
             }
         }	
+	
+	CleanupStack::Pop( &aSupportedPlugins );
 	}
 
 EXPORT_C TBool CHarvesterPluginFactory::IsSupportedFileExtension( const TDesC& aFileName )

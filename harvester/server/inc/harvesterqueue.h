@@ -19,6 +19,7 @@
 
 #include <monitorplugin.h>
 #include "harvestermediaidutil.h"
+#include "harvestereventmanager.h"
 
 // FORWARD DECLARATION
 class CHarvesterAO;
@@ -118,6 +119,8 @@ class CHarvesterQueue : public CBase,
         
         // not own
         CHarvesterMediaIdUtil* iMediaIdUtil;
+        
+        CHarvesterEventManager* iHEM;
     };
 
 #endif

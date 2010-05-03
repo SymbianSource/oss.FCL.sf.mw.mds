@@ -161,6 +161,7 @@ CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	{
 	delete iPropDefs;
 	iMimeTypeMappings.Close();
+    RMediaIdUtil::ReleaseInstance();
 
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
@@ -177,44 +178,44 @@ void CHarvesterVideoPlugin::ConstructL()
 	// MPEG4
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMp4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMpg4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionMpeg4(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionM4v(), KMimeTypeVideoMp4(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KVideo(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtensionM4a(), KMimeTypeAudioMp4(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KAudio(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KAudio(),
     				KMimeTypeVideoMp4(), KMimeTypeAudioMp4() ) ), 
     		cmp ) );
 
 	// 3GP
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3gp(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3gpp(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 	User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
     		KExtension3g2(), KNullDesC(), 
-    		TVideoMetadataHandling( TVideoMetadataHandling::EMp4LibHandling, KNullDesC(),
+    		TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KNullDesC(),
     				KMimeTypeVideo3gpp(), KMimeTypeAudio3gpp() ) ), 
     		cmp ) );
 
@@ -268,6 +269,7 @@ void CHarvesterVideoPlugin::ConstructL()
                     KMimeTypeWmv(), KMimeTypeWmv() ) ), 
             cmp ) );
     
+    iMediaIdUtil = &RMediaIdUtil::GetInstanceL();
     }
 
 
@@ -835,6 +837,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         }
     else if( mapping->iHandler.iLibrary == TVideoMetadataHandling::EMp4LibHandling )
         {
+#ifdef MDS_MP4LIB_USAGE
         MP4Handle handle( 0 );
         MP4Err mp4err = MP4_OK;
         
@@ -924,6 +927,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             {
             WRITELOG( "CHarvesterVideoPlugin - Error closing file handle" );
             }
+#endif
         }
     WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
     CleanupStack::PopAndDestroy( &file );        
@@ -948,6 +952,8 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     	{
     	CMdEObjectDef& objectDef = mdeObject.Def();
     	iPropDefs = CHarvesterVideoPluginPropertyDefs::NewL( objectDef );
+    	// Prefetch max text lengt for validity checking
+    	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
     	}
 
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
@@ -1047,31 +1053,31 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     	}
 
     // Copyright
-    if( aVHD.iCopyright )
+    if( aVHD.iCopyright && aVHD.iCopyright->Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCopyrightPropertyDef, aVHD.iCopyright, aIsAdd );
     	}
 
     // Author
-    if( aVHD.iAuthor )
+    if( aVHD.iAuthor && aVHD.iAuthor->Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iAuthorPropertyDef, aVHD.iAuthor, aIsAdd );
     	}
 
     // Genre
-    if( aVHD.iGenre )
+    if( aVHD.iGenre && aVHD.iGenre->Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iGenrePropertyDef, aVHD.iGenre, aIsAdd );
     	}
 
     // Artist
-    if( aVHD.iPerformer )
+    if( aVHD.iPerformer && aVHD.iPerformer->Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iArtistPropertyDef, aVHD.iPerformer, aIsAdd );
     	}
 
     // Description
-    if( aVHD.iDescription )
+    if( aVHD.iDescription && aVHD.iDescription->Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDescriptionPropertyDef, aVHD.iDescription, aIsAdd );
     	}
@@ -1083,7 +1089,7 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
         }
     
     // Title
-    if( aVHD.iTitle )
+    if( aVHD.iTitle && aVHD.iTitle->Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTitlePropertyDef, aVHD.iTitle, EFalse );
         }
@@ -1095,8 +1101,9 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
         }
     }
 
+#ifdef MDS_MP4LIB_USAGE 
 void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
-	{
+    {
     WRITELOG( "CHarvesterVideoPlugin::GetMp4Mime - MP4ParseOpenFileHandle - start" );
     MP4Handle handle;
 
@@ -1135,6 +1142,11 @@ void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
 
     MP4ParseClose( handle );
 	}
+#else
+void CHarvesterVideoPlugin::GetMp4Type( RFile64& /*aFile*/, TDes& /*aType*/ )
+    {
+    }
+#endif
 
 void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	{
@@ -1143,6 +1155,29 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
 	CleanupStack::PushL( helixMetadata );
 
+	TFileName tempName;
+	TUint32 mediaId( 0 );
+	TInt blackListError( KErrNone );
+	
+    if( iBlacklist )
+        {
+        WRITELOG( "CHarvesterVideoPlugin::GetRmTypeL - Adding URI to blacklist" );
+        blackListError = aFile.FullName( tempName );
+        if( blackListError == KErrNone )
+            {
+            blackListError = iMediaIdUtil->GetMediaId( tempName, mediaId );
+            if( blackListError == KErrNone )
+                {
+                TTime modified ( 0 );
+                blackListError = iFs.Modified( tempName, modified );
+                if( blackListError == KErrNone )
+                    {
+                    iBlacklist->AddFile( tempName, mediaId, modified );
+                    }
+                }
+            }
+        }
+	
 	TRAPD( err, helixMetadata->OpenFileL( aFile ) );
 
 	if( err == KErrNone )
@@ -1226,6 +1261,12 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		{
 		aType.Copy( KVideo );
 		}
+	
+    if ( iBlacklist && blackListError == KErrNone )
+        {
+        WRITELOG( "CHarvesterVideoPlugin::GetRmTypeL - Removing URI from blacklist" );
+        iBlacklist->RemoveFile( tempName, mediaId );
+        }
     
 	helixMetadata->ResetL();
     CleanupStack::PopAndDestroy( helixMetadata );

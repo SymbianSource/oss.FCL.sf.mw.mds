@@ -108,6 +108,8 @@ NONSHARABLE_CLASS(CMdESessionStartupAO) : public CActive
 
         /** the session */
         RMdEEngineSession& iSession;
+        
+        RTimer iTimer;
     };
 
 #endif //__MDESESSIONSTARTUPAO_H__

@@ -523,19 +523,14 @@ static TInt CreateServerProcess()
     {
     WRITELOG( "CreateServerProcess() - begin" );
     RProcess server;
-    TInt result = server.Create( KHarvesterServerExe, KNullDesC );
-
-    if( result == KErrAlreadyExists )
-    	{
-    	return KErrNone;
-    	}
-    
+    TInt result = server.Create( KHarvesterServerExe, KNullDesC );   
     if ( result != KErrNone )
         {
         WRITELOG1( "CreateServerProcess() - failed to create server process, error: %d", result );
         return result;
         }
  
+    // Process created successfully
     TRequestStatus stat( 0 );
     server.Rendezvous( stat );
     

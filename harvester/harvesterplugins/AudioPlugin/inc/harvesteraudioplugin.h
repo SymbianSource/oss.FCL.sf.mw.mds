@@ -154,6 +154,8 @@ class CHarvesterAudioPlugin : public CHarvesterPlugin,
 		
 		CThumbnailManager* iTNM;
 		TBool iHarvestAlbumArt;
+		
+		TInt iMaxTextLength;
 	};
 
 

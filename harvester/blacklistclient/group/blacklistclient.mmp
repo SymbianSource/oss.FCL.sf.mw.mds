@@ -37,6 +37,7 @@ SOURCE            blacklistitem.cpp
 
 LIBRARY        	  euser.lib
 LIBRARY           mdccommon.lib
+LIBRARY           efsrv.lib
 
 #if defined(WINSCW)
 deffile ../bwincw/blacklistclientwinscw.def

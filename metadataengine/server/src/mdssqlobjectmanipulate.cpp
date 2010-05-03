@@ -647,23 +647,31 @@ void CMdSSqlObjectManipulate::SetFilesToNotPresentL(TUint32 aMediaId, TBool aSta
 		aObjectIds.AppendL( objectId );
 		}
 
-	_LIT( KSetFilesToNotPresent, "UPDATE Object%u SET Flags=Flags|? WHERE MediaId=?;" );
-	clauseBuffer.ReserveSpaceL( 
-			KSetFilesToNotPresent.iTypeLength + 
-			KMaxUintValueLength ); // TUint32 max value's lenght is 10 numbers so %u + 8
-	clauseBuffer.BufferL().Format( KSetFilesToNotPresent, KDefaultNamespaceDefId );
-
-	var.Free(); 
-	var.Reset();
-
+    var.Free(); 
+    var.Reset();
+	
 	if( aStartUp )
-		{
-		var.AppendL( TColumn( EMdEObjectFlagStartUpNotPresent ) ); // set not present flag
-		}
-	else 
-		{
-		var.AppendL( TColumn( EMdEObjectFlagNotPresent ) ); // set not present flag
-		}
+	    {
+        _LIT( KSetFilesToNotPresentBoot, "UPDATE Object%u SET Flags=Flags|? WHERE MediaId=?;" );
+        clauseBuffer.ReserveSpaceL( 
+                KSetFilesToNotPresentBoot.iTypeLength + 
+                KMaxUintValueLength ); // TUint32 max value's lenght is 10 numbers so %u + 8
+        clauseBuffer.BufferL().Format( KSetFilesToNotPresentBoot, KDefaultNamespaceDefId );
+
+        var.AppendL( TColumn( EMdEObjectFlagStartUpNotPresent ) ); // set not present flag
+	    }
+	else
+	    {
+        _LIT( KSetFilesToNotPresent, "UPDATE Object%u SET Flags=Flags|? WHERE NOT (Flags&?)<>0 AND MediaId=?;" );
+        clauseBuffer.ReserveSpaceL( 
+                KSetFilesToNotPresent.iTypeLength + 
+                KMaxUintValueLength ); // TUint32 max value's lenght is 10 numbers so %u + 8
+        clauseBuffer.BufferL().Format( KSetFilesToNotPresent, KDefaultNamespaceDefId );
+
+        var.AppendL( TColumn( EMdEObjectFlagNotPresent ) ); // set not present flag	
+        var.AppendL( TColumn( EMdEObjectFlagNotPresent ) ); // check not present flag 
+	    }
+
 	var.AppendL( TColumn( aMediaId ) );
 
     connection.ExecuteL( clauseBuffer.ConstBufferL(), var );
@@ -681,7 +689,7 @@ void CMdSSqlObjectManipulate::SetRelationsToNotPresentL(
 	// RelationIDs query sql statement
 	RClauseBuffer commonClauseOne(*this, 
 			KSearchPresentRelations.iTypeLength + 
-			2*KMaxUintValueLength  );
+			10*KMaxUintValueLength  );
     CleanupClosePushL( commonClauseOne );
 	CMdsClauseBuffer& clauseBufferOne = commonClauseOne.BufferL();
 	clauseBufferOne.BufferL().Format( KSearchPresentRelations, 
@@ -718,7 +726,8 @@ void CMdSSqlObjectManipulate::SetRelationsToNotPresentL(
 	
     // Set objects' relations not present by MediaID
 	RClauseBuffer commonClauseTwo(*this, 
-			KSetRelationsToPresent.iTypeLength + 
+			KSetRelationsToPresent.iTypeLength + 			 
+            KMaxUintValueLength +
 			clauseBufferOne.ConstBufferL().Length() );
 	
     CleanupClosePushL( commonClauseTwo );
@@ -1058,9 +1067,8 @@ void CMdSSqlObjectManipulate::CheckMassStorageMediaIdL( const TUint32 aMediaId )
         CleanupClosePushL( objectIds );
         MMdsPreferences::UpdateL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet, (TUint32) aMediaId );
         SetFilesToNotPresentL( oldMediaId, EFalse, objectIds );
-        objectIds.Reset();
-        RemoveFilesNotPresentL( oldMediaId, &objectIds );
         CleanupStack::PopAndDestroy( &objectIds );
+        RemoveFilesNotPresentL( oldMediaId, NULL );
         }
     }
 
@@ -2039,7 +2047,7 @@ void CMdSSqlObjectManipulate::CollectRemovedItemsL( RArray<TItemId>& aRemoveIds,
 
 	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
 	
-	const TInt clauseSize( KCollectGetDeleteId1().Length() + KMaxUintValueLength +
+	const TInt clauseSize( KCollectGetDeleteId1().Length() + 2*KMaxUintValueLength +
                                       (removeIdsCount-1) * KCollectMiddle().Length() +
                                       KCollectEnd1().Length() +
                                       KCollectGetDeleteId2().Length() + KMaxUintValueLength +

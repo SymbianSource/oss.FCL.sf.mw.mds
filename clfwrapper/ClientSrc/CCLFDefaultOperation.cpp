@@ -26,6 +26,9 @@
 #include    <badesca.h>
 #include    "MGDebugPrint.h"
 
+// for CleanupResetAndDestroyPushL
+#include <mmf/common/mmfcontrollerpluginresolver.h>
+
 // CONSTANTS
 const TInt KCLFGroupedItemArrayGranularity( 4 );
 const TInt KCLFSortingStyleArrayGranularity( 3 );
@@ -475,6 +478,8 @@ void CCLFDefaultOperation::DoMusicAlbumGroupingL(
                                     const TArray<MCLFItem*>& aSourceList,
                                     RPointerArray<MCLFItem>& aGroupedList )
     {
+    CleanupResetAndDestroyPushL( aGroupedList );
+    
     CDesCArray* tempAlbumNameArray =
                 new (ELeave) CDesCArraySeg( KCLFGroupedItemArrayGranularity );
     CleanupStack::PushL( tempAlbumNameArray );
@@ -511,6 +516,8 @@ void CCLFDefaultOperation::DoMusicAlbumGroupingL(
             }
         }
     CleanupStack::PopAndDestroy( tempAlbumNameArray );
+    
+    CleanupStack::Pop( &aGroupedList );
     }
 
 //  End of File

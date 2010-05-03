@@ -101,19 +101,6 @@ class CMdSServer : public CPolicyServer, public MMdSDiskSpaceNotifierObserver,
         static TInt ThreadFunction( TAny* aStarted );
 
         /**
-        * IncrementSessions.
-        * Increments the count of the active sessions for this server.
-        */
-        void IncrementSessions();
-
-        /**
-        * DecrementSessions.
-        * Decrements the count of the active sessions for this server.
-        * If no more sessions are in use the server terminates.
-        */
-        void DecrementSessions();
-
-        /**
         * Reference to the schema
         */
         CMdsSchema& Schema();

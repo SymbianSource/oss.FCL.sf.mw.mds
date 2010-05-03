@@ -134,6 +134,8 @@ class CMdsFileServerPlugin : public CFsPlugin
         void PrintDebugEvents( TInt aFunction );
 #endif
     	
+        static TInt Compare(const TDesC& aFirst, const TDesC& aSecond);
+        
     private:
 
         CFsPluginConnRequest* iNotification;

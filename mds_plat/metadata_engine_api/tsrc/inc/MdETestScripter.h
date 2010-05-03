@@ -115,6 +115,7 @@ class CMdETestScripterAO;
 NONSHARABLE_CLASS(CMdETestScripter) : public CScriptBase,
                                       public MMdESchemaObserver,
                                       public MMdEObjectObserver,
+                                      public MMdEObjectObserverWithUri,
                                       public MMdEObjectPresentObserver,
                                       public MMdERelationObserver,
                                       public MMdERelationItemObserver,
@@ -193,6 +194,8 @@ NONSHARABLE_CLASS(CMdETestScripter) : public CScriptBase,
         virtual TInt RemoveSchemaObserverL( CStifItemParser& aItem );
         virtual TInt AddObjectObserverL( CStifItemParser& aItem );
         virtual TInt RemoveObjectObserverL( CStifItemParser& aItem );
+        virtual TInt AddObjectObserverWithUriL( CStifItemParser& aItem );
+        virtual TInt RemoveObjectObserverWithUriL( CStifItemParser& aItem );
         virtual TInt AddObjectPresentObserverL( CStifItemParser& aItem );
         virtual TInt RemoveObjectPresentObserverL( CStifItemParser& aItem );
         virtual TInt AddRelationObserverL( CStifItemParser& aItem );
@@ -377,6 +380,10 @@ NONSHARABLE_CLASS(CMdETestScripter) : public CScriptBase,
         void HandleObjectNotification( CMdESession& aSession, 
             TObserverNotificationType aType,
             const RArray<TItemId>& aObjectIdArray );
+        void HandleUriObjectNotification(CMdESession& aSession, 
+            TObserverNotificationType aType,
+            const RArray<TItemId>& aObjectIdArray,
+            const RPointerArray<HBufC>& aObjectUriArray);
         void HandleObjectPresentNotification(CMdESession& aSession, 
             TBool aPresent, const RArray<TItemId>& aObjectIdArray);
         void HandleRelationNotification( CMdESession& aSession, 

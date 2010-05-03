@@ -155,6 +155,14 @@ void CLocationManagerServer::ConstructL()
         iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
         }
     
+    TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );    
+    if ( error != KErrNone )
+        {
+        LOG("CLocationManagerServer::ConstructL - iTimer not created");
+        iTimer = NULL;
+        }  
+    
+    
     LOG ("CLocationManagerServer::ConstructL() end");
     }
 
@@ -326,8 +334,7 @@ void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCapture
     
     if ( iTimer )
     	{
-    	delete iTimer;
-    	iTimer = NULL;
+    	iTimer->Cancel();
     	}
     
     iLocationRecord->StartL( aCaptureSetting );
@@ -348,19 +355,26 @@ void CLocationManagerServer::StopGPSPositioningL()
      
     if( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
-        TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );
-        
-        if ( error != KErrNone )
+        if(!iTimer)
             {
-            // If timer can't be created we stop the location trail immediately.
+            TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );    
+            if ( error != KErrNone )
+                {
+                LOG("CLocationManagerServer::StopGPSPositioningL() - iTimer not created");
+                iTimer = NULL;
+                }
+            }        
+        if(iTimer)
+            {
+			iTimer->Cancel();
+            iLocationRecord->SetStateToStopping();
+            iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( CheckForRemappingCallback, this ) );
+            }
+        else
+            {
             iLocationRecord->Stop();
-            StopTrackLogL();
-            return;
-            }   
-        
-        iLocationRecord->SetStateToStopping();
-        iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( CheckForRemappingCallback, this ) );
-    	}
+            }
+        }
     
     // Always stop tracklog.
     StopTrackLogL();
@@ -375,8 +389,11 @@ void CLocationManagerServer::StopRecording()
     LOG( "CLocationManagerServer::StopRecording()" );    
     iWaitForPositioningStopTimeout = EFalse;
     iLocationRecord->Stop();		
-	delete iTimer;
-	iTimer = NULL;
+	if(iTimer)
+	    {
+        iTimer->Cancel();
+	    }
+	
 	}
 
 // --------------------------------------------------------------------------

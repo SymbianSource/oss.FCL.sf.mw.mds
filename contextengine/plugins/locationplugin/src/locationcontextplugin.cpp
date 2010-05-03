@@ -235,7 +235,6 @@ void CLocationContextPlugin::ContextSnapshot( MContextPluginObserver& aObserver,
 	        	{
 	        	ret = KErrNone;
 	        	}
-
     		}
         }
 
@@ -255,6 +254,7 @@ void CLocationContextPlugin::ContextSnapshot( MContextPluginObserver& aObserver,
 void CLocationContextPlugin::GetMdeObjectCreationTimeL( CMdEObject& aObject, 
 	CMdEProperty*& aProperty )
     {
+    User::LeaveIfNull( iMdeSession );
     CMdENamespaceDef& namespaceDef = iMdeSession->GetDefaultNamespaceDefL();
 
     CMdEObjectDef& objectDef = namespaceDef.GetObjectDefL( Object::KBaseObject );

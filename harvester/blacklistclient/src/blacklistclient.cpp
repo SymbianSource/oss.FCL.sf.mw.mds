@@ -43,6 +43,7 @@ EXPORT_C RBlacklistClient::~RBlacklistClient()
     iBlacklistMemoryTable.ResetAndDestroy();
     iBlacklistMemoryTable.Close();
 	iBlacklistChunk.Close();
+	iFs.Close();
 
     WRITELOG( "RBlacklistClient::~RBlacklistClient - end" );
     }
@@ -56,8 +57,15 @@ EXPORT_C TInt RBlacklistClient::Connect()
     WRITELOG( "RBlacklistClient::Connect - begin" );
 
     iSessionOk = EFalse;
+    
+    TInt error = iFs.Connect();
+    
+    if( error != KErrNone )
+        {
+        return error;
+        }
       
-    TInt error = StartServer();
+    error = StartServer();
 
     if ( error == KErrNone || error == KErrAlreadyExists )
         {
@@ -68,6 +76,10 @@ EXPORT_C TInt RBlacklistClient::Connect()
     if( error == KErrNone )
         {
         iSessionOk = ETrue;
+        }
+    else
+        {
+        iFs.Close();
         }
     
     WRITELOG( "RBlacklistClient::Connect - end" );
@@ -116,7 +128,7 @@ TInt RBlacklistClient::StartServer()
         }
 
     User::WaitForRequest( status );
-    error = server.ExitType() == EExitPanic ? KErrGeneral : status.Int();
+    error = server.ExitType() == EExitPanic ? KErrCommsBreak : status.Int();
     server.Close();
 
     WRITELOG( "RBlacklistClient::StartServer - end" );
@@ -273,21 +285,37 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
 // RBlacklistClient::IsBlacklistedL()
 // ---------------------------------------------------------------------------
 //
-EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMediaId, TTime aLastModifiedTime )
+EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMediaId, TTime /*aLastModifiedTime*/ )
     {
     WRITELOG( "RBlacklistClient::IsBlacklistedL - begin" );
 
+    if ( !iSessionOk )
+        {
+        return EFalse;
+        }
+    
     const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
+        TEntry entry;
+        const TInt errorcode = iFs.Entry( aUri, entry );
+        
+        if ( errorcode != KErrNone )
+            {
+            return EFalse;
+            }
+        
+        TTime fileLastModified( 0 );
+        fileLastModified = entry.iModified;
+    
         TInt64 modified( 0 );
         modified = iBlacklistMemoryTable[index]->Modified();
         
         if( modified > 0 )
             {
-            if ( modified == aLastModifiedTime.Int64() )
+            if ( modified == fileLastModified.Int64() )
                 {
-                WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is different" );
+                WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is the same" );
                 return ETrue;
                 }
             else

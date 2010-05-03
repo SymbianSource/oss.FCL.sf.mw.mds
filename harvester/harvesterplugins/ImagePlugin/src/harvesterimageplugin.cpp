@@ -385,6 +385,8 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         if( !iPropDefs )
         	{
         	iPropDefs = CHarvesterImagePluginPropertyDefs::NewL( objectDef );
+        	// Prefetch max text lengt for validity checking
+        	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
         	}
         
         aMetadataObject.Property( *iPropDefs->iSizePropertyDef, prop );
@@ -679,6 +681,8 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
     if( !iPropDefs )
     	{
     	iPropDefs = CHarvesterImagePluginPropertyDefs::NewL( mdeObject.Def() );
+    	// Prefetch max text lengt for validity checking
+    	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
     	}
 
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
@@ -775,16 +779,25 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
     if ( aFileData.iExifSupported )
         {
        	// MediaObject - Description
-       	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDescriptionPropertyDef, aHd.iDescription16, aIsAdd );
+        if( aHd.iDescription16 && aHd.iDescription16->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDescriptionPropertyDef, aHd.iDescription16, aIsAdd );
+            }     	
 
         // MediaObject - Comment (user comment)
-    	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCommentPropertyDef, aHd.iComment16, aIsAdd );
+        if( aHd.iComment16 && aHd.iComment16->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCommentPropertyDef, aHd.iComment16, aIsAdd );
+            }
         
         // MediaObject - Release date
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iReleaseDatePropertyDef, &localModifiedDate, aIsAdd );
 
         // MediaObject - Copyright
-    	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCopyrightPropertyDef, aHd.iCopyright16, aIsAdd );
+        if( aHd.iCopyright16 && aHd.iCopyright16->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCopyrightPropertyDef, aHd.iCopyright16, aIsAdd );
+            }
         
         // Data & time original
         if ( aHd.iDateOriginal8 )
@@ -818,7 +831,10 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
             }
         
         // Artist    
-        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iArtistPropertyDef, aHd.iArtist, aIsAdd );
+        if( aHd.iArtist && aHd.iArtist->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iArtistPropertyDef, aHd.iArtist, aIsAdd );
+            }
 
         // Image - White balance
         if ( aHd.iStoreWhiteBalance )
@@ -838,11 +854,17 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
             CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iExposureProgramPropertyDef, &aHd.iExposureProgram, aIsAdd );
             }     
          
-         // Make string            
-        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iMakePropertyDef, aHd.iMake, aIsAdd );
+         // Make string   
+        if( aHd.iMake && aHd.iMake->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iMakePropertyDef, aHd.iMake, aIsAdd );
+            }
             
         // Model string
-        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iModelPropertyDef, aHd.iModel, aIsAdd );
+        if( aHd.iModel && aHd.iModel->Length() < iMaxTextLength )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iModelPropertyDef, aHd.iModel, aIsAdd );
+            }
                     
         // Orientation
         if ( aHd.iStoreOrientation )
@@ -980,7 +1002,7 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
             }
             
         // Related soundfile            
-        if ( aHd.iRelatedSoundFile && aHd.iRelatedSoundFile->Length() > 0 )
+        if ( aHd.iRelatedSoundFile && aHd.iRelatedSoundFile->Length() > 0 && aHd.iRelatedSoundFile->Length() < iMaxTextLength )
             {
             CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iRelatedSoundFilePropertyDef, aHd.iRelatedSoundFile, aIsAdd );
             }

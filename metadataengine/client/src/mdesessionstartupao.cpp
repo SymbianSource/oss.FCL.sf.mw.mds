@@ -20,6 +20,9 @@
 #include "mdeenginesession.h"
 #include "mdesessionimpl.h"
 
+const TInt KRetryDelay = 2; //  2 seconds
+const TInt KMillion = 1000000;
+
 // ========================= MEMBER FUNCTIONS ==================================
 
 CMdESessionStartupAO* CMdESessionStartupAO::NewL(
@@ -54,6 +57,7 @@ CMdESessionStartupAO::CMdESessionStartupAO(
 
 void CMdESessionStartupAO::ConstructL()
     {
+    iTimer.CreateLocal();
 	SetActive();
 	TRequestStatus* status = &iStatus;
 	User::RequestComplete( status, KErrNone );
@@ -62,26 +66,28 @@ void CMdESessionStartupAO::ConstructL()
 CMdESessionStartupAO::~CMdESessionStartupAO()
     {
     Cancel(); // Causes call to DoCancel()
+    iTimer.Close();
     }
 
 void CMdESessionStartupAO::DoCancel()
     {
-    iSession.OpenCancel( iStatus );
+    iTimer.Cancel();
+    iSession.OpenCancel();
     }
 
 void CMdESessionStartupAO::RunL()
     {
-    const TInt status = iStatus.Int();
-    
     switch ( iState )
         {
         case EStartupOpenServer:
         	{
-        	iSession.OpenL( iStatus );
+        	iSession.OpenL();
 
 			iState = EStartupConnect;
 
         	SetActive();
+            TRequestStatus* status = &iStatus;
+            User::RequestComplete( status, KErrNone );
 
         	break;
         	}
@@ -125,7 +131,41 @@ void CMdESessionStartupAO::RunL()
 
 TInt CMdESessionStartupAO::RunError(TInt aError)
     {
-    iSessionImpl.NotifyError( aError );
+    // If server was not fully initialized when session was tried to be
+    // created, try to establish session again
+    if( iState == EStartupOpenServer &&
+        (aError == KErrNotReady ||
+         aError == KErrAlreadyExists ) )
+        {
+        TTimeIntervalMicroSeconds32 delay( KRetryDelay * KMillion ); 
+        iState = EStartupOpenServer;
+        iTimer.After( iStatus, delay );
+        SetActive();    
+        }        
+    else if( iState == EStartupConnect &&
+        ( aError == KErrCommsBreak ||
+          aError == KErrServerTerminated ||
+          aError == KErrNotReady ) )
+        {
+        TTimeIntervalMicroSeconds32 delay( KRetryDelay * KMillion ); 
+        iState = EStartupOpenServer;
+        iTimer.After( iStatus, delay );
+        SetActive();
+        }
+    // If schema was not loaded already when it was
+    // attempted to be loaded, try to load schema again
+    else if( iState == EStartupLoadSchema &&
+                aError == KErrNotReady )
+        {
+        TTimeIntervalMicroSeconds32 delay( KRetryDelay * KMillion ); 
+        iState = EStartupLoadSchema;
+        iTimer.After( iStatus, delay );
+        SetActive();
+        }       
+    else
+        {
+        iSessionImpl.NotifyError( aError );
+        }
 
     return KErrNone;
     }

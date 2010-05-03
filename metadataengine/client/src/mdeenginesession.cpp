@@ -32,46 +32,57 @@ RMdEEngineSession::RMdEEngineSession(CMdESessionImpl& aSession)
    	iIsSessionProcessOpen = EFalse;
     }
 
-void RMdEEngineSession::OpenL(TRequestStatus& aStatus)
+void RMdEEngineSession::OpenL()
     {
     TFindServer findMdEServer( KMdSServerName );
     TFullName name;
-
-    const TInt result = findMdEServer.Next( name );
+    
+    TInt result = findMdEServer.Next( name );
+    // Server already running
     if( result == KErrNone )
         {
-        // Server already running
-		iIsSessionProcessOpen = ETrue;
-
-		TRequestStatus* status = &aStatus;
-        User::RequestComplete( status, KErrNone );
-
-        return;
+        TFindProcess findProcess( KMdSServerProcessString );
+        result = findProcess.Next( name );
+        if ( result == KErrNone )
+            {
+            result = iServerProcess.Open( name );
+            if( result != KErrNone )
+                {
+                User::Leave( KErrNotReady );
+                }
+            iIsSessionProcessOpen = ETrue;
+            return;
+            }
+        else
+            {
+            User::Leave( KErrNotReady );
+            }
         }
 
-    User::LeaveIfError( iServerProcess.Create( KMdSServerFilename, 
-    		KNullDesC ) );
-
-	iIsSessionProcessOpen = ETrue;
-
-    iServerProcess.Rendezvous( aStatus );
-
-    if( aStatus != KRequestPending )
+    User::LeaveIfError( iServerProcess.Create( KMdSServerName, 
+    		KNullDesC ) );  
+     
+    TRequestStatus stat( 0 );
+    iServerProcess.Rendezvous( stat );
+	
+    if( stat != KRequestPending )
     	{
         iServerProcess.Kill( 0 );   // abort startup
     	}
     else
     	{
         iServerProcess.Resume();    // logon OK - start the server   
-    	}
+    	}	
+
+    User::WaitForRequest( stat ); 
+    
+    iIsSessionProcessOpen = ETrue;
     }
 
-void RMdEEngineSession::OpenCancel(TRequestStatus& aStatus)
+void RMdEEngineSession::OpenCancel()
 	{
 	if( iIsSessionProcessOpen )
 		{		
-		iServerProcess.RendezvousCancel( aStatus );
-
 		iServerProcess.Close();
 	
 		iIsSessionProcessOpen = EFalse;
@@ -82,7 +93,7 @@ void RMdEEngineSession::ConnectL()
     {
     if( iIsSessionProcessOpen )
     	{
-	    TBool error = (iServerProcess.ExitType() != EExitPending);
+	    const TBool error = (iServerProcess.ExitType() != EExitPending);
 
     	iServerProcess.Close();
 
@@ -109,23 +120,17 @@ void RMdEEngineSession::ConnectL()
     	}
     }
 
-TInt RMdEEngineSession::Shutdown()
+void RMdEEngineSession::Shutdown()
     {
-    TInt err = KErrNone;
-
     if( iIsSessionOpen )
     	{
-	    err = SendReceive( EShutdown );
+	    SendReceive( EShutdown );
     	}
 
 	if( iIsSessionProcessOpen )
 		{		
 		iServerProcess.Close();
-
-		iIsSessionProcessOpen = EFalse;
 		}
-
-    return err;
     }
 
 TVersion RMdEEngineSession::Version() const

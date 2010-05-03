@@ -232,12 +232,9 @@ void CHarvesterAO::ConstructL()
     CActiveScheduler::Add( this );
 
 	User::LeaveIfError( iFs.Connect() );
-
+	
     // Setting up MdE Session
 	iMdESession = CMdESession::NewL( *this );
- 	
-    // Setting up context Engine (initialization is ready when ContextInitializationStatus -callback is called)
-    iCtxEngine = CContextEngine::GetInstanceL( this ); // Create the context engine
 
     iBackupSubscriber = CBackupSubscriber::NewL( *this );
 	
@@ -264,6 +261,9 @@ void CHarvesterAO::ConstructL()
     
     iHarvesterPluginFactory = CHarvesterPluginFactory::NewL();
     iHarvesterPluginFactory->SetBlacklist( *iBlacklist );
+    
+    // Reset harvesting status for clients in case blacklisted file was handled
+    iHarvesterPluginFactory->SendHarvestingStatusEventL( EFalse );
     
     iCameraExtensionArray = new ( ELeave ) CDesCArraySeg( 6 );
     iCameraExtensionArray->InsertIsqL( KExtensionMp4 );
@@ -526,8 +526,6 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
         TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, removed ) );
 	    }
 	
-	iMediaIdUtil->RemoveMediaId( aMediaId );
-	
 	removed = 0;
 	
 	RPointerArray<CHarvesterPluginInfo>& hpiArray = iHarvesterPluginFactory->GetPluginInfos();
@@ -572,6 +570,8 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
             TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, removed ) );
 		    }
 		}
+	
+    iMediaIdUtil->RemoveMediaId( aMediaId );
 	
 	// resume harvesting from last state
     if( !iRamFull && !iDiskFull )
@@ -821,6 +821,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		CMdEObjectDef& mdeObjectDef = defNS.GetObjectDefL( objDefStr );
 
 		CMdEObject* mdeObject = iMdESession->NewObjectL( mdeObjectDef, hd->Uri() );
+		CleanupStack::PushL( mdeObject );
 		
 		CPlaceholderData* phData = NULL;
 
@@ -956,9 +957,12 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		
 		hd->SetMdeObject( mdeObject );
 		
-		mdeObjectArray.Append( mdeObject );
+		// Ownership of mdeObject transferred to the array
+		mdeObjectArray.AppendL( mdeObject );
 		
 	    CleanupStack::PopAndDestroy( phData );
+	    
+	    CleanupStack::Pop( mdeObject );
 		
 		iReadyPHArray.Append( hd );
 		iPHArray.Remove( i );
@@ -1259,6 +1263,7 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
 void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
     {
     WRITELOG( "HarvesterThread::HandleSessionOpened()" );
+    
     if ( KErrNone == aError )
         {
         TBool isTNMDaemonEnabled( EFalse );
@@ -1279,6 +1284,13 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
             WRITELOG( "CHarvesterAO::HandleSessionOpened() - error creating mde harvester session" );
         	}
 
+        // Setting up context Engine (initialization is ready when ContextInitializationStatus -callback is called)
+        TRAP( errorTrap, iCtxEngine = CContextEngine::GetInstanceL( this ) ); // Create the context engine 
+        if ( errorTrap != KErrNone )
+                {
+                WRITELOG( "CHarvesterAO::HandleSessionOpened() - Context Engine creation failed" );
+                }
+        
 #ifdef _DEBUG        
         TRAP( errorTrap, iMdeObjectHandler = CMdeObjectHandler::NewL( *iMdESession ) );
         if ( errorTrap != KErrNone )
@@ -1313,11 +1325,6 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         TRAP_IGNORE( LoadMonitorPluginsL() );
         TRAP_IGNORE( StartComposersL() );        
 #endif
-
-        if ( iContextEngineInitialized )
-            {
-            iCtxEngine->SetMdeSession( iMdESession );
-            }
 
             // Starting monitor plugins
         StartMonitoring();
@@ -1413,7 +1420,7 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
 // ---------------------------------------------------------------------------
 //
 void CHarvesterAO::HandleSessionError( CMdESession& /*aSession*/, TInt aError )
-    {    
+    {       
     if ( KErrNone != aError )
         {
         WRITELOG1( "HarvesterThread::HandleSessionError() - Error: %d!", aError );        
@@ -2821,5 +2828,13 @@ TBool CHarvesterAO::CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef )
             }
         }
     return EFalse;
+    }
+
+void CHarvesterAO::RemoveBlacklistedFile( CHarvesterData* aItem )
+    {
+    if( iMdeSessionInitialized )
+        {
+        TRAP_IGNORE( iMdESession->RemoveObjectL( aItem->Uri() ) );
+        }
     }
 

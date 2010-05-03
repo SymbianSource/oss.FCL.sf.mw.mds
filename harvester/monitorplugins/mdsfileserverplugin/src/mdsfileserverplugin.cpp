@@ -25,7 +25,7 @@ _LIT( KMdsFileServerPlugin, "MdsFileServerPlugin" );
 /* Server name */
 _LIT( KHarvesterServerName, "HarvesterServer" );
 
-const TInt KCleanQueueTreshoald( 1000 );
+const TInt KCleanQueueTreshold( 1000 );
 
 //-----------------------------------------------------------------------------
 // CMdsFileServerPlugin implementation
@@ -753,7 +753,7 @@ TInt CMdsFileServerPlugin::RegisterNotification( CFsPluginConnRequest& aRequest 
 TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aRequest )
     {
     WRITELOG( "CMdsFileServerPlugin::AddNotificationPath()" );
-    TInt err = KErrNone;
+    TInt err( KErrNone );
     
     TMdsFSPStatusPckg pckg;
     TRAP( err, aRequest.ReadParam1L(pckg) );
@@ -767,22 +767,20 @@ TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aReq
     
     if ( status.iFileName.Length() > 0 )
         {
-        // check if already exists
-        const TInt count( iPaths.Count() );
-        for ( TInt i = count; --i >= 0; )
+        // check if already exist
+        const TInt ret = iPaths.FindInOrder(&status.iFileName,
+                                     TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare));
+
+        if( ret >= 0 )
             {
-            TDesC* tf = iPaths[i];
-            if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
-                {
-                return KErrNone;
-                }
-            }
+            return KErrNone;
+            }     
 
         WRITELOG1( "CMdsFileServerPlugin::AddNotificationPath() - add path: %S", &status.iFileName );
         HBufC* fn = status.iFileName.Alloc();
         if ( fn )
             {
-            iPaths.Append( fn );
+            iPaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare)); 
             }
         else
             {
@@ -804,7 +802,7 @@ TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aReq
 TInt CMdsFileServerPlugin::RemoveNotificationPath( const CFsPluginConnRequest& aRequest )
     {
     WRITELOG( "CMdsFileServerPlugin::RemoveNotificationPath()" );
-    TInt err = KErrNone;
+    TInt err( KErrNone );
     
     TMdsFSPStatusPckg pckg;
     TRAP( err, aRequest.ReadParam1L(pckg) );
@@ -818,17 +816,16 @@ TInt CMdsFileServerPlugin::RemoveNotificationPath( const CFsPluginConnRequest& a
     
     if ( status.iFileName.Length() > 0 )
         {
-        for ( TInt i = iPaths.Count(); --i >= 0; )
+        const TInt ret = iPaths.FindInOrder(&status.iFileName,
+                                     TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare));
+
+        if( ret >= 0 )
             {
-            TDesC* tf = iPaths[i];
-            if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
-                {
-                WRITELOG1( "CMdsFileServerPlugin::RemoveNotificationPath() - remove path: %S", &status.iFileName );
-                delete tf;
-                tf = NULL;
-                iPaths.Remove( i );
-                }
-            }
+            WRITELOG1( "CMdsFileServerPlugin::RemoveNotificationPath() - remove path: %S", &status.iFileName );
+            delete iPaths[ret];
+            iPaths[ret] = NULL;
+            iPaths.Remove( ret );
+            }    
         iPaths.Compress();
         }
     else
@@ -846,7 +843,7 @@ TInt CMdsFileServerPlugin::RemoveNotificationPath( const CFsPluginConnRequest& a
 TInt CMdsFileServerPlugin::AddIgnorePath( const CFsPluginConnRequest& aRequest )
     {
     WRITELOG( "CMdsFileServerPlugin::AddIgnorePath()" );
-    TInt err = KErrNone;
+    TInt err( KErrNone );
     
     TMdsFSPStatusPckg pckg;
     TRAP( err, aRequest.ReadParam1L(pckg) );
@@ -861,20 +858,19 @@ TInt CMdsFileServerPlugin::AddIgnorePath( const CFsPluginConnRequest& aRequest )
     if ( status.iFileName.Length() > 0 )
         {
         // check if already exist
-        for ( TInt i = iIgnorePaths.Count(); --i >= 0; )
+        const TInt ret = iIgnorePaths.FindInOrder(&status.iFileName,
+                                     TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare));
+    
+        if( ret >= 0 )
             {
-            TDesC* tf = iIgnorePaths[i];
-            if ( MdsUtils::Compare( status.iFileName, *tf ) == 0 )
-                {
-                return KErrNone;
-                }
+            return KErrNone;
             }
             
         WRITELOG1( "CMdsFileServerPlugin::AddIgnorePath() - add path: %S", &status.iFileName );
         HBufC* fn = status.iFileName.Alloc();
         if ( fn )
             {
-            iIgnorePaths.Append( fn ); // ownership is transferred
+            iIgnorePaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare)); 
             }
         else
             {
@@ -896,7 +892,7 @@ TInt CMdsFileServerPlugin::AddIgnorePath( const CFsPluginConnRequest& aRequest )
 TInt CMdsFileServerPlugin::RemoveIgnorePath( const CFsPluginConnRequest& aRequest )
     {
     WRITELOG( "CMdsFileServerPlugin::RemoveIgnorePath()" );
-    TInt err = KErrNone;
+    TInt err( KErrNone );
     
     TMdsFSPStatusPckg pckg;
     TRAP( err, aRequest.ReadParam1L(pckg) );
@@ -910,18 +906,16 @@ TInt CMdsFileServerPlugin::RemoveIgnorePath( const CFsPluginConnRequest& aReques
     
     if ( status.iFileName.Length() > 0 )
         {
-        // check if already exist
-        for ( TInt i = iIgnorePaths.Count(); --i >= 0; )
+        const TInt ret = iIgnorePaths.FindInOrder(&status.iFileName,
+                                     TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare));
+
+        if( ret >= 0 )
             {
-            TDesC* tf = iIgnorePaths[i];
-            if ( MdsUtils::Compare(status.iFileName, *tf ) == 0 )
-                {
-                WRITELOG1( "CMdsFileServerPlugin::RemoveIgnorePath() - remove path: %S", &status.iFileName );
-                delete tf;
-                tf = NULL;
-                iIgnorePaths.Remove( i );
-                }
-            }
+            WRITELOG1( "CMdsFileServerPlugin::RemoveIgnorePath() - remove path: %S", &status.iFileName );
+            delete iIgnorePaths[ret];
+            iIgnorePaths[ret] = NULL;
+            iIgnorePaths.Remove( ret );
+            }    
         iIgnorePaths.Compress();
         }
     else
@@ -938,8 +932,15 @@ TInt CMdsFileServerPlugin::RemoveIgnorePath( const CFsPluginConnRequest& aReques
 //
 TBool CMdsFileServerPlugin::CheckPath( const TDesC& aFilename ) const
     {
-    // check if ignored pathlist
-    for ( TInt i = iIgnorePaths.Count(); --i >= 0; )
+    // check if ignored pathlist   
+#ifdef __WINSCW__
+    // start checking from beginning of list as if the path is ignored, there
+    // is higher possibility that it is located on beginning side of the list
+    const TInt count( iIgnorePaths.Count() );
+    for ( TInt i = 0; i < count; i++ )   
+#else    
+    for ( TInt i = iIgnorePaths.Count(); --i >= 0; )    
+#endif
         {    
         TDesC* pathName = iIgnorePaths[i];
         if ( MdsUtils::Find( aFilename, *pathName ) != KErrNotFound )
@@ -951,7 +952,14 @@ TBool CMdsFileServerPlugin::CheckPath( const TDesC& aFilename ) const
     // check if notification path
     if ( iPaths.Count() > 0 )
         {
+#ifdef __WINSCW__
+        // start checking from beginning of list as if the path is supported, there
+        // is higher possibility that it is located on beginning side of the list
+        const TInt count( iPaths.Count() );
+        for ( TInt i = 0; i < count; i++ )   
+#else            
         for ( TInt i = iPaths.Count(); --i >= 0; )
+#endif
             {
             TDesC* pathName = iPaths[i];
             if ( MdsUtils::Find( aFilename, *pathName ) != KErrNotFound )
@@ -1042,7 +1050,7 @@ TBool CMdsFileServerPlugin::CheckHarvesterStatus()
     {
     WRITELOG( "CMdsFileServerPlugin::CheckHarvesterStatus() - begin" );
 
-    if( iPendingEvents <= KCleanQueueTreshoald )
+    if( iPendingEvents <= KCleanQueueTreshold )
         {
         WRITELOG( "CMdsFileServerPlugin::CheckHarvesterStatus() - end" );
         return ETrue;
@@ -1287,3 +1295,9 @@ void CMdsFileServerPlugin::PrintDebugEvents( TInt aFunction )
         }
     }
 #endif
+
+TInt CMdsFileServerPlugin::Compare(const TDesC& aFirst, const TDesC& aSecond)
+    {
+    return aFirst.CompareF( aSecond );
+    }
+

@@ -99,7 +99,7 @@ void CProcessOriginMapper::RegisterProcessL( const TUid& aProcessId,
     if ( index < 0 ) // not found
         {
         TProcessOriginPair pair = { aProcessId, aOrigin };
-        iProcessOriginMap.AppendL( pair );
+        User::LeaveIfError( iProcessOriginMap.InsertInOrder(pair, TLinearOrder<TProcessOriginPair>(CProcessOriginMapper::Compare))); 
         }
     else if ( index < iProcessOriginMap.Count() )
         {
@@ -320,12 +320,25 @@ TInt CProcessOriginMapper::Count()
 //
 TInt CProcessOriginMapper::FindProcess( const TUid& aProcessId )
     {
-    const TInt count = iProcessOriginMap.Count();
-    for ( TInt i( 0 ); i < count; i++ )
+    TInt low( 0 );
+    TInt high( iProcessOriginMap.Count() );
+    
+    while( low < high )
         {
-        if ( iProcessOriginMap[i].iProcessId == aProcessId )
+        TInt mid( (low+high)>>1 );
+        
+        const TInt compare( aProcessId.iUid - iProcessOriginMap[mid].iProcessId.iUid );
+        if( compare == 0 )
             {
-            return i;
+            return mid;
+            }
+        else if( compare > 0 )
+            {
+            low = mid + 1;
+            }
+        else
+            {
+            high = mid;
             }
         }
 
@@ -417,5 +430,10 @@ void CProcessOriginMapper::WriteProcessOriginPairL( TUid& aProcessId,
     ptr.Num( aOrigin );
     iWriteStream.WriteL( ptr );
     iWriteStream.WriteL( KLineFeed );
+    }
+
+TInt CProcessOriginMapper::Compare(const TProcessOriginPair& aFirst, const TProcessOriginPair& aSecond)
+    {
+    return aFirst.iProcessId.iUid - aSecond.iProcessId.iUid;
     }
 

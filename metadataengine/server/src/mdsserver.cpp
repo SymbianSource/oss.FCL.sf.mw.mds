@@ -354,10 +354,6 @@ void CMdSServer::ConstructL()
     __INIT_LOGGER;
     StartL( KMdSServerName );
     __LOGLB( ELogAlways, "Server start" );
-
-    RProcess process;
-    process.SetPriority( EPriorityBackground );
-    process.Close();
     
     CheckInitSriptL();
     
@@ -388,7 +384,7 @@ void CMdSServer::ConstructL()
     
     // create shutdown observer
     iShutdownObserver = CMDSShutdownObserver::NewL( *this );
-    iShutdown = EFalse;    
+    iShutdown = EFalse;   
     }
 
 void CMdSServer::InitializeL()
@@ -493,26 +489,6 @@ CSession2* CMdSServer::NewSessionL( const TVersion& aVersion, const RMessage2& /
     __LOGLB( ELogAlways, "New Session" );
     // Make new session
     return CMdSServerSession::NewL( *const_cast<CMdSServer*> ( this ) );
-    }
-
-
-void CMdSServer::IncrementSessions()
-    {
-    iSessionCount++;
-    }
-
-
-void CMdSServer::DecrementSessions()
-    {
-    iSessionCount--;
-    if ( iSessionCount <= 0 )
-        {        
-        if (!iShutdown)
-            {
-            CActiveScheduler::Stop();
-            iShutdown = ETrue;
-            }
-        }
     }
 
 CMdsSchema& CMdSServer::Schema()

@@ -33,10 +33,6 @@
 // 27 = 1 asynchronous find + max.25 pending notifier hooks + 1 extra
 const TUint KMetadataMessageSlots = 27;
 
-const TUid KServerUid3 = { 0x0765EEC3 }; // Server UID
-
-_LIT( KMdSServerFilename, "MdSServer" );
-
 // FORWARD DECLARATIONS
 class CMdESessionImpl;
 class CMdESchemaItem;
@@ -68,14 +64,14 @@ class RMdEEngineSession : public RSessionBase
         * Connects to the server.
         * @return Error code.
         */
-        void OpenL(TRequestStatus& aStatus);
+        void OpenL();
         
         /**
         * Cancel server opening.
         * Cancels server opening.
         * @return Error code.
         */
-       void OpenCancel(TRequestStatus& aStatus);
+       void OpenCancel();
 
         /**
         * Connect session to server.
@@ -87,9 +83,8 @@ class RMdEEngineSession : public RSessionBase
         /**
         * Shut down session
         * Performs session shutdown activities in server end
-        * @return Error code.
         */
-        TInt Shutdown();
+        void Shutdown();
 
         /**
         * Version.

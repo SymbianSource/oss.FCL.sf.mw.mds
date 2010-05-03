@@ -147,6 +147,11 @@ NONSHARABLE_CLASS( RBlacklistClient ) : public RSessionBase
   
     private: // private data
        
+        /** 
+         * Handle to File server session.
+         */
+        RFs iFs;
+        
         /*! @var iSessionOk flag to indicate if session is ok or not.*/
         TBool iSessionOk;
        

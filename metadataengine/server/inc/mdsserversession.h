@@ -436,6 +436,10 @@ class CMdSServerSession : public CSession2
         * Cache of notification events
         */        
     	RPointerArray<CNotificationCacheItem> iNotificationCache;
+    	
+	private: // Compare methods
+    	
+        static TInt ComparePropertiesCacheItem( const CNotificationCacheItem& aFirst, const CNotificationCacheItem& aSecond );
     };
 
 #endif // __MDESERVERSESSION_H__
