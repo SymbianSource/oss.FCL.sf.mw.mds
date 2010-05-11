@@ -28,6 +28,7 @@
 #include "harvesteraudioplugin.h"
 #include "harvesteraudiopluginutils.h"
 #include "mdsutils.h"
+#include "mdscommoninternal.h"
 
 #include "harvesterlog.h"
 
@@ -399,7 +400,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
 	
     if ( song.Length() > 0
-        && song.Length() < iMaxTextLength )
+        && song.Length() < KMaxTitleFieldLength )
         {    
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iTitlePropertyDef, &song, EFalse );

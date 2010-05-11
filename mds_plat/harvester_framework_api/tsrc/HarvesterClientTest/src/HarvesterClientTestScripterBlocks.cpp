@@ -77,6 +77,11 @@ TInt CHarvesterClientTestScripter::RunMethodL(
         ENTRY( "Results", CHarvesterClientTestScripter::Results ),     
         ENTRY( "AddHarvesterEventObserver", CHarvesterClientTestScripter::AddHarvesterEventObserverL ),
         ENTRY( "RemoveHarvesterEventObserver", CHarvesterClientTestScripter::RemoveHarvesterEventObserverL ),
+        ENTRY( "SetUpBlacklist", CHarvesterClientTestScripter::SetUpBlacklistL ),
+        ENTRY( "TearDownBlacklist", CHarvesterClientTestScripter::TearDownBlacklistL ),
+        ENTRY( "AddFileToBlacklist", CHarvesterClientTestScripter::AddFileToBlacklistL ),
+        ENTRY( "CheckBlacklist", CHarvesterClientTestScripter::CheckBlacklistL ),
+        ENTRY( "RemoveFileFromBlacklist", CHarvesterClientTestScripter::RemoveFileFromBlacklistL ),
         };
 
     const TInt count = sizeof( KFunctions ) / sizeof( TStifFunctionInfo );
@@ -485,6 +490,174 @@ TInt CHarvesterClientTestScripter::RemoveHarvesterEventObserverL( CStifItemParse
 	    TL( err == KErrNone );
 		}
     
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterClientTest::SetUpBlacklistL
+// -----------------------------------------------------------------------------
+//
+TInt CHarvesterClientTestScripter::SetUpBlacklistL( CStifItemParser& /*aItem*/ )
+    {
+    _LIT( KMsg1, "Enter SetUpBlacklistL" );
+    iLog->Log( KMsg1 );
+    RDebug::Print( KMsg1 );
+    
+    User::LeaveIfError( iBlacklistClient.Connect() );
+    iBlacklistClient.LoadBlacklistL();
+    iMediaIdUtil = &RMediaIdUtil::GetInstanceL();
+    User::LeaveIfError( iFs.Connect() );
+    
+    _LIT( KMsg2, "Exit SetUpBlacklistL" );
+    iLog->Log( KMsg2 );
+    RDebug::Print( KMsg2 );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterClientTest::TearDownBlacklistL
+// -----------------------------------------------------------------------------
+//
+TInt CHarvesterClientTestScripter::TearDownBlacklistL( CStifItemParser& /*aItem*/ )
+    {
+    _LIT( KMsg1, "Enter TearDownBlacklistL" );
+    iLog->Log( KMsg1 );
+    RDebug::Print( KMsg1 );
+   
+    iBlacklistClient.CloseDBL();
+    iBlacklistClient.Close();
+    RMediaIdUtil::ReleaseInstance();
+    iMediaIdUtil = NULL;
+    iFs.Close();
+    
+    _LIT( KMsg2, "Exit TearDownBlacklistL" );
+    iLog->Log( KMsg2 );
+    RDebug::Print( KMsg2 );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterClientTest::AddFileToBlacklistL
+// -----------------------------------------------------------------------------
+//
+TInt CHarvesterClientTestScripter::AddFileToBlacklistL( CStifItemParser& aItem )
+    {
+    _LIT( KMsg1, "Enter AddFileToBlacklistL" );
+    iLog->Log( KMsg1 );
+    RDebug::Print( KMsg1 );
+    
+    TPtrC inputFile;
+    User::LeaveIfError( aItem.GetNextString( inputFile ));
+
+    TUint32 mediaId( 0 );
+//    TInt blackListError( KErrNone );
+    TTime modified ( 0 );
+/*    
+    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
+    if( blackListError != KErrNone )
+        {
+        return blackListError;
+        }
+    
+    blackListError = iFs.Modified( inputFile, modified );
+    if( blackListError != KErrNone )
+        {
+        return blackListError;
+        }
+*/    
+    TRAPD( err, iBlacklistClient.AddL( inputFile, mediaId, modified ) );
+    if( err != KErrNone )
+        {
+        return err;
+        }
+
+    _LIT( KMsg2, "Exit AddFileToBlacklistL" );
+    iLog->Log( KMsg2 );
+    RDebug::Print( KMsg2 );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterClientTest::CheckBlacklistL
+// -----------------------------------------------------------------------------
+//
+TInt CHarvesterClientTestScripter::CheckBlacklistL( CStifItemParser& aItem )
+    {
+    _LIT( KMsg1, "Enter CheckBlacklistL" );
+    iLog->Log( KMsg1 );
+    RDebug::Print( KMsg1 );
+
+//    iBlacklistClient.LoadBlacklistL();
+    
+    TPtrC inputFile;
+    User::LeaveIfError( aItem.GetNextString( inputFile ));
+    
+    TUint32 mediaId( 0 );
+//    TInt blackListError( KErrNone );
+    TTime modified ( 0 );
+/*    
+    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
+    if( blackListError != KErrNone )
+        {
+        return blackListError;
+        }
+  
+    blackListError = iFs.Modified( inputFile, modified );
+    if( blackListError != KErrNone )
+        {
+        return blackListError;
+        }
+*/    
+    TBool isBlacklisted( EFalse );
+    TRAP_IGNORE( isBlacklisted = iBlacklistClient.IsBlacklistedL( inputFile, mediaId, modified ) );
+    if( !isBlacklisted )
+        {
+        return KErrNotFound;
+        }
+
+    _LIT( KMsg2, "Exit CheckBlacklistL" );
+    iLog->Log( KMsg2 );
+    RDebug::Print( KMsg2 );
+
+    return KErrNone;
+    }
+
+// -----------------------------------------------------------------------------
+// CHarvesterClientTest::RemoveFileFromBlacklistL
+// -----------------------------------------------------------------------------
+//
+TInt CHarvesterClientTestScripter::RemoveFileFromBlacklistL( CStifItemParser& aItem )
+    {
+    _LIT( KMsg1, "Enter CheckBlacklistL" );
+    iLog->Log( KMsg1 );
+    RDebug::Print( KMsg1 );
+    
+    TPtrC inputFile;
+    User::LeaveIfError( aItem.GetNextString( inputFile ));
+    
+    TUint32 mediaId( 0 );
+//    TInt blackListError( KErrNone );
+    TTime modified ( 0 );
+/*    
+    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
+    if( blackListError != KErrNone )
+        {
+        return blackListError;
+        }
+*/    
+    TRAPD( err, iBlacklistClient.RemoveL( inputFile, mediaId ) );
+    if( err != KErrNone )
+        {
+        return err;
+        }
+
+    _LIT( KMsg2, "Exit CheckBlacklistL" );
+    iLog->Log( KMsg2 );
+    RDebug::Print( KMsg2 );
+
     return KErrNone;
     }
 

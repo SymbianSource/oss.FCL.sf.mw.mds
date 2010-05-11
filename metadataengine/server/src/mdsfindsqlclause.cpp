@@ -659,7 +659,7 @@ void CMdSFindSqlClause::AppendFromForObjectL()
 	iQueryBuf->AppendL( KAsBaseObject );
 
 	// if object definitions is BaseObject
-	if( KBaseObjectDefId != iSourceObjectDef->GetId() )
+	if( iSourceObjectDef && KBaseObjectDefId != iSourceObjectDef->GetId() )
 		{
 		// "," + object def's table + namespace def id + " AS O ON BO.ObjectId=O.ObjectId "
         iQueryBuf->AppendL( KComma );
@@ -1314,6 +1314,26 @@ void CMdSFindSqlClause::AppendObjectConditionL(TBool aNegated)
 			iQueryBuf->AppendL( KObjectUriBeginsWith );			
 			}
 			break;
+		 case EObjectConditionCompareUriContains:
+            {
+            TPtrC16 uriPtr = iSerializedBuffer->ReceivePtr16L();
+
+            HBufC16* pattern = HBufC16::NewLC( uriPtr.Length() + 2 );  // prepare for %uri%
+
+            TPtr16 modPattern = pattern->Des();
+
+            // add wildcard before and after URI "%uri%"
+            modPattern.Append( KWildcard );
+            modPattern.Append( uriPtr );
+            modPattern.Append( KWildcard );
+
+            iVariables.AppendL( TColumn( pattern ) );
+
+            CleanupStack::Pop( pattern );
+
+            iQueryBuf->AppendL( KObjectUriBeginsWith );         
+            }
+            break;
 		case EObjectConditionCompareFreeText:
 			{
 			TPtrC16 freetextPtr = iSerializedBuffer->ReceivePtr16L();
@@ -1538,7 +1558,7 @@ void CMdSFindSqlClause::AppendPropertyConditionL(TBool aNegated)
 	// (not multi object query or (multi object query and WHERE to search from 
 	// doesn't match with WHAT to search))
 	if( KBaseObjectDefId != objectDefId && ( !iSourceObjectDefs || 
-			( iSourceObjectDefs && iObjectDef != iSourceObjectDef ) ) )
+			( iSourceObjectDefs && iSourceObjectDef && iObjectDef != iSourceObjectDef ) ) )
 		{
 		objectDefId = iSourceObjectDef->GetId();
 		}
@@ -1576,7 +1596,7 @@ void CMdSFindSqlClause::AppendPropertyConditionL(TBool aNegated)
 TDefId CMdSFindSqlClause::ObjectDefForPropertyCondition(TDefId aObjectDefId)
 	{
 	// if object def is not base object def
-	if( KBaseObjectDefId != aObjectDefId )
+	if( iSourceObjectDef && KBaseObjectDefId != aObjectDefId )
 		{
 		const CMdsObjectDef* parent = iSourceObjectDef->GetParent();
 

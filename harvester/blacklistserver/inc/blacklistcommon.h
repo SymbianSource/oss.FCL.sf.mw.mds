@@ -19,8 +19,8 @@
 
 #include <e32base.h>
 
-_LIT( KBlacklistServerName, "BlacklistServer" );
-_LIT( KBlacklistServerExe,  "BlacklistServer.exe" ); // 0x0 2001B2EB = server uid
+_LIT( KBlacklistServerName, "!BlacklistServer" );
+_LIT( KBlacklistServerExe,  "!BlacklistServer.exe" ); // 0x0 2001B2EB = server uid
 _LIT( KBlacklistChunkName,  "BlacklistServerChunk" );
 
 const TUid KUidKBlacklistServer = { 0x2001B2EB };  

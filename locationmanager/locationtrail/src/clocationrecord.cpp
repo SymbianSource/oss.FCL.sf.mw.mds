@@ -27,6 +27,7 @@
 #include "locationtrailpskeys.h"
 #include "mdeconstants.h"
 #include <centralrepository.h>
+#include <hwrmpowerstatesdkpskeys.h>
 
 
 using namespace MdeConstants;
@@ -1117,5 +1118,24 @@ EXPORT_C TBool CLocationRecord::RemappingNeeded()
 	{
 	return iRemapper->ItemsInQueue();
 	}
+
+EXPORT_C TBool CLocationRecord::IsLowBattery()
+    {
+    LOG("CLocationRecord::IsLowBattery()");
+    RProperty batteryProperty;
+    TInt batteryStatus;
+
+    TInt error = batteryProperty.Get(KPSUidHWRMPowerState, KHWRMBatteryStatus, batteryStatus);
+    LOG1("CLocationRecord::IsLowBattery() - battery status %d", batteryStatus );
+    if( error != KErrNone || batteryStatus == EBatteryStatusOk )
+        {
+        return EFalse;
+        }
+    else
+        {
+        return ETrue;
+        }
+    
+    }
 
 // End of file

@@ -419,7 +419,7 @@ EXPORT_C void RBlacklistClient::CloseDBL()
         }
     else
         {
-        Send( EBlacklistCloseDB );
+        SendReceive( EBlacklistCloseDB );
         }
 
     WRITELOG( "RBlacklistClient::CloseDBL - end" );

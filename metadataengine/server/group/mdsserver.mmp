@@ -19,7 +19,7 @@
 #include <data_caging_paths.hrh>
 
 VERSION           10.0
-TARGET            mdsserver.exe
+TARGET            !mdsserver.exe
 TARGETTYPE        exe
 UID               0x0 0x200009F3
 TARGETPATH	      SHARED_LIB_DIR
@@ -31,13 +31,13 @@ EPOCHEAPSIZE      0x4000 0x200000
 EPOCHEAPSIZE      0x8000 0x400000 
 #endif
 
-CAPABILITY        CAP_SERVER AllFiles
+CAPABILITY        CAP_SERVER ProtServ
 VENDORID        	VID_DEFAULT
 
 MACRO             LOG_MASTER_FLAG
 //MACRO             LOG_QUERY
-MACRO          	  LOG_DB
-// MACRO          LOG_MUTEX
+//MACRO             LOG_DB
+//MACRO             LOG_MUTEX
 MACRO             LOG_SERVER
 
 SYSTEMINCLUDE     /epoc32/include/ecom

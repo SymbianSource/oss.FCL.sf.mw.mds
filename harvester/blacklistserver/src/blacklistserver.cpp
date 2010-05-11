@@ -290,15 +290,15 @@ void CBlacklistServer::OpenDatabaseL()
     iDatabaseOpen = ETrue; 
     CleanupStack::PopAndDestroy( databasePath );
 
+    if ( !TableExistsL() )
+        {
+        CreateBlacklistTableL();
+        }
+    
     // Add or remove operations when DB connection was off  
     if ( iDBUpdateNeeded )
         {
         CommitBufferedItemsL();        
-        }
-
-    if ( !TableExistsL() )
-        {
-        CreateBlacklistTableL();
         }
     
     LoadDatabaseToMemoryL();

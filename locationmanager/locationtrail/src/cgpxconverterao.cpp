@@ -25,7 +25,9 @@
 // Default constructor.
 // ---------------------------------------------------------------------------
 //
-CGpxConverterAO::CGpxConverterAO() : CActive( CActive::EPriorityStandard )
+CGpxConverterAO::CGpxConverterAO() : CActive( CActive::EPriorityStandard ),
+        iTempFile(NULL),
+        iBoundaries(NULL)
     {
     }
 
@@ -75,7 +77,10 @@ CGpxConverterAO::~CGpxConverterAO()
     
     iBoundQueue.ResetAndDestroy();
     iBoundQueue.Close();
-    
+
+    delete iTempFile;
+    delete iBoundaries;
+        
     delete iWriteBuf;
     delete iFormatBuf;
     }
@@ -158,10 +163,12 @@ void CGpxConverterAO::RunL()
 				{
 				TInt err;
 				iFixLost = ETrue;
+                delete iTempFile;
+                delete iBoundaries;
 				// get next temp-file from queue
-				iTempFile = *iFileQueue[0];
+				iTempFile = iFileQueue[0];
 				iBoundaries = iBoundQueue[0];
-				err = iReader.Open( iFs, iTempFile, EFileRead );				
+				err = iReader.Open( iFs, *iTempFile, EFileRead );				
 				// remove from queue				
 				iFileQueue.Remove( 0 );
 				iBoundQueue.Remove( 0 );
@@ -201,7 +208,7 @@ void CGpxConverterAO::RunL()
 				{
 				TInt err;
 				iReader.Close();
-				err = iReader.Open( iFs, iTempFile, EFileRead );
+				err = iReader.Open( iFs, *iTempFile, EFileRead );
 				if( err != KErrNone )
 					{
 					SetState( ENextFile );
@@ -216,7 +223,7 @@ void CGpxConverterAO::RunL()
 			{
 			LOG("CGpxConverterAO::RunL - EStartFile");
 			_LIT( KExtGPX, ".gpx" );
-			TParsePtrC parse( iTempFile );
+			TParsePtrC parse( *iTempFile );
 			
 			TRAPD(err, GetTrackLogPathL( iGpxPath ));
 			
@@ -288,8 +295,15 @@ void CGpxConverterAO::RunL()
 				iObservers[i]->GpxFileCreated( iGpxPath, iTagId, distance, iStartTime, iEndTime );
 				}
 			
+			
+			iFs.Delete( *iTempFile );
+			
+			delete iTempFile;
+			iTempFile = NULL;
+			
 			delete iBoundaries;
-			iFs.Delete( iTempFile );
+			iBoundaries = NULL;
+			
 			SetState( ENextFile );
 			break;
 			}

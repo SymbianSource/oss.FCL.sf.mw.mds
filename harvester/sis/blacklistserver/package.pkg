@@ -26,6 +26,6 @@
 :"Nokia"
 
 ;Files
-"\EPOC32\RELEASE\ARMV5\UREL\blacklistserver.exe" -"c:\sys\bin\blacklistserver.exe"
+"\EPOC32\RELEASE\ARMV5\UREL\!blacklistserver.exe" -"c:\sys\bin\!blacklistserver.exe"
 "\EPOC32\RELEASE\ARMV5\UREL\blacklistclient.dll" -"c:\sys\bin\blacklistclient.dll"
 

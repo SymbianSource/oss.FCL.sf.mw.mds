@@ -284,17 +284,12 @@ public:
 	 * Starts a query operation and returns immediately. The observers of 
      * the query instance will be notified when the query is completed, or 
      * if it fails. The query parameters (order rules, search conditions, 
-     * property filters) must be configured before FindL() is called. FindL() 
-     * may be called several times, but the query parameters that were in 
-     * effect for the first FindL() are used for all subsequent calls. Any 
-     * previously fetched query results remain in the query instance's
-     * list of result items; any new result items are appended to the end of
-     * the list.
+     * property filters) must be configured before FindL() is called. 
      *
      * The caller can perform a find operation in several steps by using a
-     * sufficiently small maximum number of result items. Subsequent calls to
-     * FindL() work incrementally, continuing the previously started find 
-     * operation.
+     * sufficiently small maximum number of result items. Notifications 
+     * about progress of query is returned is steps, continuing the previously 
+     * started find operation.
      *
      * @param aMaxCount     Maximum number of result items. Defaults to 
      *                      unlimited. 

@@ -22,6 +22,7 @@
 #include "harvestereventobserverao.h"
 #include "harvesterlog.h"
 #include "harvesterclientao.h"
+#include "harvestersessionwatcher.h"
 #include "mdsutils.h"
 #include "harvesterrequestactive.h"
 #include "mdscommoninternal.h"
@@ -163,6 +164,8 @@ EXPORT_C TInt RHarvesterClient::Resume()
 EXPORT_C void RHarvesterClient::Close()
     {
     WRITELOG( "RHarvesterClient::Close()" );
+    
+    delete iSessionWatcher;
     
     // cancels Harvest Complete request if it exist at server
     UnregisterHarvestComplete();
@@ -404,6 +407,33 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
         {
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         delete harvestFileActive;
+        }
+    }
+
+// ----------------------------------------------------------------------------------------
+// AddSessionObserver
+// ----------------------------------------------------------------------------------------
+//
+EXPORT_C void RHarvesterClient::AddSessionObserverL( MHarvesterSessionObserver& aObserver  )
+    {
+    if( iSessionWatcher )
+        {
+        delete iSessionWatcher;
+        iSessionWatcher = NULL;
+        }
+    iSessionWatcher = CHarvesterSessionWatcher::NewL( aObserver );
+    }
+
+// ----------------------------------------------------------------------------------------
+// RemoveSessionObserver
+// ----------------------------------------------------------------------------------------
+//
+EXPORT_C void RHarvesterClient::RemoveSessionObserver()
+    {
+    if( iSessionWatcher )
+        {
+        delete iSessionWatcher;
+        iSessionWatcher = NULL;
         }
     }
 

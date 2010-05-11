@@ -780,8 +780,6 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 
 	TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
 	
-	TInt fastHarvestPlaceholderCount = 0;
-	
 	TInt endindex( iPHArray.Count() );
 	for( TInt i = 0; i < endindex; i++ )
 		{
@@ -846,6 +844,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 				iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
 				CleanupStack::PopAndDestroy( entry );
 				CleanupStack::PopAndDestroy( phData );
+				CleanupStack::PopAndDestroy( mdeObject );
 				continue;
 		    	}
 		    phData->SetUri( uri );
@@ -872,6 +871,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	            i--;
 	            endindex--;
 				iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
+				CleanupStack::PopAndDestroy( mdeObject );
 				continue;
 		    	}	
 			CleanupStack::PushL( phData );
@@ -946,7 +946,6 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		// skip 
 		if( hd->TakeSnapshot() )
 			{
-			fastHarvestPlaceholderCount++;
 			hd->SetObjectType( EFastHarvest );
 			}
 		else
@@ -983,15 +982,10 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		    iMdESession->AddObjectsL( mdeObjectArray );
 		    }
 
-		const TInt eventObjectCount = objectCount - fastHarvestPlaceholderCount;
-
-		if( eventObjectCount > 0 )
-			{
-			iHarvesterEventManager->IncreaseItemCount( EHEObserverTypePlaceholder, 
-					eventObjectCount );
-			iHarvesterEventManager->SendEventL( EHEObserverTypePlaceholder, EHEStateStarted, 
-					iHarvesterEventManager->ItemCount( EHEObserverTypePlaceholder ) );
-			}
+	    iHarvesterEventManager->IncreaseItemCount( EHEObserverTypePlaceholder, 
+		        objectCount );
+		iHarvesterEventManager->SendEventL( EHEObserverTypePlaceholder, EHEStateStarted, 
+				iHarvesterEventManager->ItemCount( EHEObserverTypePlaceholder ) );
 		
 #ifdef _DEBUG
 		for (TInt i = 0; i < objectCount; ++i)
@@ -2457,7 +2451,7 @@ void CHarvesterAO::BootPartialRestoreScanL()
 	// check if partial restore was done before last boot
 	TBool partialRestore = iRestoreWatcher->Register();
 	
-#ifdef __WINSCW__
+#if defined(__WINSCW__) || defined(FF_PLATFORM_SIMULATOR)
 	partialRestore = ETrue;
 #endif
 	

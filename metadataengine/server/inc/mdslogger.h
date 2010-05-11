@@ -57,10 +57,6 @@ _LIT(KDirectory, "Metadata");
 _LIT(KFilename, "server.txt");
 _LIT(KAltFilename, "server2.txt");
 
-#ifdef LOG_QUERY
-#define MDE_FILE_LOGGING
-#endif
-
 // CLASS DECLARATION
 /**
 * CMdSLogger.

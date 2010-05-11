@@ -280,11 +280,11 @@ void CLocationManagerSession::RetrieveLocationL( const RMessage2& aMessage )
 //    
 void CLocationManagerSession::CurrentLocationL( const RMessage2& aMessage )
     {
-    LOG ("CLocationManagerSession::StartLocationTrailL begin");
+    LOG ("CLocationManagerSession::CurrentLocationL begin");
     iLocationHandle = aMessage.Handle();
     // server creates completion after it has received current location data
     Server().RequestCurrentLocationL( aMessage );
-    LOG ("CLocationManagerSession::StartLocationTrailL end");
+    LOG ("CLocationManagerSession::CurrentLocationL end");
     }
 
 // --------------------------------------------------------------------------
