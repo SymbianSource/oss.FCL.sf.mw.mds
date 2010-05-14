@@ -27,7 +27,7 @@
 rem - MdE binaries
 file=ABI_DIR\BUILD_DIR\mdeclient.dll		SHARED_LIB_DIR\mdeclient.dll
 file=ABI_DIR\BUILD_DIR\mdccommon.dll		SHARED_LIB_DIR\mdccommon.dll
-file=ABI_DIR\BUILD_DIR\mdsserver.exe		PROGRAMS_DIR\mdsserver.exe
+file=ABI_DIR\BUILD_DIR\!mdsserver.exe		PROGRAMS_DIR\!mdsserver.exe
 
 rem - MdE data files
 data=EPOCROOT##epoc32\data\z\Private\200009F3\schema.mde                PRIVATE\200009F3\schema.mde
@@ -45,20 +45,20 @@ file=ABI_DIR\BUILD_DIR\harvesterdata.dll		    SHARED_LIB_DIR\harvesterdata.dll
 file=ABI_DIR\BUILD_DIR\mdsfileserverplugin.pxt			SHARED_LIB_DIR\mdsfileserverplugin.pxt
 ECOM_PLUGIN(HarvesterImagePlugin.dll,HarvesterImagePlugin.rsc)
 ECOM_PLUGIN(HarvesterVideoPlugin.dll,HarvesterVideoPlugin.rsc)
-//ECOM_PLUGIN(HarvesterMessagePlugin.dll,HarvesterMessagePlugin.rsc)
+ECOM_PLUGIN(HarvesterMessagePlugin.dll,HarvesterMessagePlugin.rsc)
 ECOM_PLUGIN(harvesteromadrmplugin.dll,harvesteromadrmplugin.rsc)
 ECOM_PLUGIN(harvesterwmvplugin.dll,harvesterwmvplugin.rsc)
 ECOM_PLUGIN(harvesterrtpplugin.dll,harvesterrtpplugin.rsc)
 ECOM_PLUGIN(harvesteraudioplugin.dll,harvesteraudioplugin.rsc)
 
 rem - Blacklist server binaries
-file=ABI_DIR\BUILD_DIR\blacklistserver.exe		        PROGRAMS_DIR\blacklistserver.exe
+file=ABI_DIR\BUILD_DIR\!blacklistserver.exe		        PROGRAMS_DIR\!blacklistserver.exe
 file=ABI_DIR\BUILD_DIR\blacklistclient.dll		        SHARED_LIB_DIR\blacklistclient.dll
 
 file=ABI_DIR\BUILD_DIR\MonitorPluginInterface.dll		SHARED_LIB_DIR\MonitorPluginInterface.dll
 ECOM_PLUGIN(MMCMonitorPlugin.dll,MMCMonitorPlugin.rsc)
 ECOM_PLUGIN(FileMonitorPlugin.dll,FileMonitorPlugin.rsc)
-//ECOM_PLUGIN(MessageMonitorPlugin.dll,MessageMonitorPlugin.rsc)
+ECOM_PLUGIN(MessageMonitorPlugin.dll,MessageMonitorPlugin.rsc)
 ECOM_PLUGIN(mdsoomplugin.dll,mdsoomplugin.rsc)
 
 file=ABI_DIR\BUILD_DIR\ContextPluginInterface.dll		SHARED_LIB_DIR\ContextPluginInterface.dll

@@ -53,4 +53,5 @@ EXPORTS
 	_ZN9CTrackLogD0Ev @ 52 NONAME
 	_ZN9CTrackLogD1Ev @ 53 NONAME
 	_ZN9CTrackLogD2Ev @ 54 NONAME
+	_ZN15CLocationRecord12IsLowBatteryEv @ 55 NONAME
 

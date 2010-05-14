@@ -420,7 +420,7 @@ TInt CLocationManagerServer::CheckForRemappingCallback( TAny* aAny )
 
     self->iTimer->Cancel();    
     
-    if ( self->iLocationRecord->RemappingNeeded() )
+    if ( self->iLocationRecord->RemappingNeeded() && !self->iLocationRecord->IsLowBattery())
         {     
         self->iTimer->Start( self->iLocManStopRemapDelay * 1000000, 0, TCallBack( PositioningStopTimeout, self ) );
         self->iWaitForPositioningStopTimeout = ETrue;

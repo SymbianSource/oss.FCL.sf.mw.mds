@@ -561,16 +561,34 @@ void CFileEventHandlerAO::ReplaceL( const TDesC& aOldUrl, const TDesC& aNewUrl,
     // check if not in mde, harvest
     if ( !oldObject && !newObject )
         {
-        HBufC* fn = NULL;        
-
-        if (aNewUrl.Length() > 0)
-        	{
-        	fn = aNewUrl.AllocLC();
-        	}
+        HBufC* fn = NULL; 
+    
+        // ignore created file event if extension is not supported by any harverter plugin
+        if( aNewUrl.Length() > 0 )
+            {
+            if( iHarvesterPluginFactory->IsSupportedFileExtension( aNewUrl ) )
+                {
+                fn = aNewUrl.AllocLC();
+                }
+            else
+                {
+                WRITELOG1( "CFileEventHandlerAO::ReplaceL - file extension not supported: %S", &aNewUrl );
+                return;           
+                }
+            }
         else
-        	{
-        	fn = aOldUrl.AllocLC();
-        	}
+            {
+            if( iHarvesterPluginFactory->IsSupportedFileExtension( aOldUrl ) )
+                {
+                fn = aOldUrl.AllocLC();
+                }
+            else
+                {
+                WRITELOG1( "CFileEventHandlerAO::ReplaceL - file extension not supported: %S", &aOldUrl );
+                return;           
+                }        
+            }
+
         CHarvesterData* hd = CHarvesterData::NewL( fn );
         CleanupStack::Pop( fn );
         hd->SetEventType( EHarvesterAdd );

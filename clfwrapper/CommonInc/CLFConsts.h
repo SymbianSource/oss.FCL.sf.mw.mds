@@ -30,8 +30,6 @@ const TInt KCLFServerMajor( 1 );
 const TInt KCLFServerCollectionManagerMajor( 2 );
 const TInt KCLFServerMinor( 1 );
 const TInt KCLFServerBuild( 1 );
-_LIT( KCLFServerName, "ContentListingFrameworkServer" );
-_LIT( KCLFServerExe, "ContentListingServer.exe" );
 
 // Message slots
 // RCLFDatabase::PrepareItemIds

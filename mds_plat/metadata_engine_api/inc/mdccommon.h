@@ -274,6 +274,9 @@ enum TObjectConditionCompareMethod
 
     /** Usage count */
     EObjectConditionCompareUsageCount,
+    
+    /** Object URIcontains specified string. */
+    EObjectConditionCompareUriContains,
 
     EObjectConditionCompareLast
     };

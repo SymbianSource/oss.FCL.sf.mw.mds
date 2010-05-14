@@ -265,6 +265,11 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 	            mountData->iMountType = TMountData::EUnmount;
 	            iMountTask->StartUnmount( *mountData );
             	}
+            else
+                {
+                delete mountData;
+                mountData = NULL;
+                }
             }
         break;
         

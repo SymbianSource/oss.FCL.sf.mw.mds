@@ -23,6 +23,7 @@
 #include "harvesterlog.h"
 #include "harvestercommon.h"
 #include "harvesterwmvplugin.h"
+#include "mdscommoninternal.h"
 #include <mdenamespacedef.h>
 #include <mdeobjectdef.h>
 #include "mdeobject.h"
@@ -310,7 +311,7 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
                 *iPropDefs->iDrmPropertyDef, &aClipDetails.iDrmProtected, aIsAdd );
         } 
     // Title (is set from URI by default)
-    if( aClipDetails.iTitle.Length() > 0 && aClipDetails.iTitle.Length() < iMaxTextLength )
+    if( aClipDetails.iTitle.Length() > 0 && aClipDetails.iTitle.Length() < KMaxTitleFieldLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iTitlePropertyDef, &aClipDetails.iTitle, EFalse );

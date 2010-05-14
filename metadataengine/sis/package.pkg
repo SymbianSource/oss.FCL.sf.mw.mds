@@ -28,4 +28,4 @@
 ;Files
 "\EPOC32\RELEASE\ARMV5\UREL\mdeclient.dll" -"c:\sys\bin\mdeclient.dll"
 "\EPOC32\RELEASE\ARMV5\UREL\mdccommon.dll" -"c:\sys\bin\mdccommon.dll"
-"\EPOC32\RELEASE\ARMV5\UREL\mdsserver.exe" -"c:\sys\bin\mdsserver.exe"
+"\EPOC32\RELEASE\ARMV5\UREL\!mdsserver.exe" -"c:\sys\bin\!mdsserver.exe"

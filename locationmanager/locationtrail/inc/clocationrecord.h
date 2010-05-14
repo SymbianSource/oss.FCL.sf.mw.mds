@@ -216,6 +216,8 @@ public:
     TTime GetMdeObjectTimeL( TItemId aObjectId );
     
     IMPORT_C TBool RemappingNeeded();
+    
+    IMPORT_C TBool IsLowBattery();
 
 public: // from MNetworkInfoObserver.
     /**

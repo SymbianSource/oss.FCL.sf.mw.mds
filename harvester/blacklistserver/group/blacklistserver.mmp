@@ -16,13 +16,13 @@
 
 #include <platform_paths.hrh>
 VERSION					  10.0
-TARGET            blacklistserver.exe
+TARGET            !blacklistserver.exe
 TARGETTYPE        exe
 UID               0x0 0x2001B2EB 
 
 VENDORID          VID_DEFAULT
 
-CAPABILITY        CAP_SERVER 
+CAPABILITY        CAP_SERVER ProtServ
 
 MW_LAYER_SYSTEMINCLUDE
 SYSTEMINCLUDE	  /epoc32/include/connect

@@ -75,14 +75,22 @@ void CMdSSqLiteConnection::ConstructL()
 
 void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
     {
-    _LIT8( KMdsSqlDbaConfig, "cache_size=10000; page_size=4096; encoding=\"UTF-16\";");
-
-    TInt err = KErrNone;
+    _LIT8( KMdsSqlDbaConfig, "cache_size=8000; page_size=2048; encoding=\"UTF-16\";");
+    _LIT8( KBlacklistSqlDbaConfig, "cache_size=4000; page_size=1024; encoding=\"UTF-16\";");
 
     delete iDbFileName;
     iDbFileName = NULL; // in case AllocL leaves
     iDbFileName = aDbFileName.AllocL();
 
+    TBool setupForMdsServer( EFalse );
+    // Check if it is MDS server DB that is accessed, otherwise setup will be for Blacklist Server
+    if( iDbFileName->Des().FindF( KMdsSqlDbDefaultName ) != KErrNotFound )
+        {
+        setupForMdsServer = ETrue;
+        }
+    
+    TInt err = KErrNone;
+    
     // we need to set up policy, because we use secure database
 	TSecurityPolicy defaultPolicy(TSecurityPolicy::EAlwaysPass);
     RSqlSecurityPolicy sqlSecurityPolicy;
@@ -99,7 +107,14 @@ void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
      *   First we try to open db. If this fails because db not creater yer, then
      *   try to create it. Otherwise we cannot open it and we leave
      */
-    err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
+    if( setupForMdsServer )
+        {
+        err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
+        }
+    else
+        {
+        err = iMdeSqlDb.Open( *iDbFileName, &KBlacklistSqlDbaConfig );
+        }
     if ( err != KErrNone )
         {
         __LOG1( ELogDb, "Cannot open database %d", err );
@@ -107,7 +122,14 @@ void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
         if( err == KErrNotFound )
             {
             __LOG1( ELogDb, "Cannot find database %d", err );
-            err = iMdeSqlDb.Create( *iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+            if( setupForMdsServer )
+                {
+                err = iMdeSqlDb.Create( *iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+                }
+            else
+                {
+                err = iMdeSqlDb.Create( *iDbFileName, sqlSecurityPolicy, &KBlacklistSqlDbaConfig );
+                }
             if( err != KErrNone )
                 {
                 __LOG1( ELogDb, "Unknown error while creating %d", err );
@@ -118,11 +140,25 @@ void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
                 err == KSqlErrCorrupt )
             {
             __LOGLB( ELogDb, "Warning: Database is corrupted, will delete and re-create it." );
-            err = DeleteAndReCreateDB( iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+            if( setupForMdsServer )
+                {
+                err = DeleteAndReCreateDB( iDbFileName, sqlSecurityPolicy, &KMdsSqlDbaConfig );
+                }
+            else
+                {
+                err = DeleteAndReCreateDB( iDbFileName, sqlSecurityPolicy, &KBlacklistSqlDbaConfig );
+                }
         
             if ( KErrNone == err  )
                 {
-                err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
+                if( setupForMdsServer )
+                    {
+                    err = iMdeSqlDb.Open( *iDbFileName, &KMdsSqlDbaConfig );
+                    }
+                else
+                    {
+                    err = iMdeSqlDb.Open( *iDbFileName, &KBlacklistSqlDbaConfig );
+                    }
                 if ( err != KErrNone )
                     {
                     __LOG1( ELogDb, "Cannot open database again after delete and re-create %d", err );

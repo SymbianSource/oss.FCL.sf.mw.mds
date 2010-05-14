@@ -32,7 +32,7 @@ class CMdCSerializationBuffer;
 class CMdSSqlObjectManipulate;
 
 // CONSTANT DECLARATION
-const TInt KGarbageCollectionDelay = 60; // test 1 minute
+const TInt KGarbageCollectionDelay = 60; // 1 minute
 
 // CLASS DECLARATION
 

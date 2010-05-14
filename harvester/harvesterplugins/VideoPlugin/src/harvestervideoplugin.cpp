@@ -27,6 +27,7 @@
 #include "harvesterlog.h"
 #include "harvesterblacklist.h"
 #include "mdeobjectwrapper.h"
+#include "mdscommoninternal.h"
 
 #include <mdenamespacedef.h>
 #include <mdeobjectdef.h>
@@ -1089,7 +1090,7 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
         }
     
     // Title
-    if( aVHD.iTitle && aVHD.iTitle->Length() < iMaxTextLength )
+    if( aVHD.iTitle && aVHD.iTitle->Length() < KMaxTitleFieldLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTitlePropertyDef, aVHD.iTitle, EFalse );
         }

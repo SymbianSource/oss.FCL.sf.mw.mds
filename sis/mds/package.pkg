@@ -17,7 +17,7 @@
 &EN
 
 ;packet-header (name, uid, major, minor, build, type)
-#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 6, TYPE=SA, RU
+#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 7, TYPE=SA, RU
 
 ; Localised vendor name
 %{"Nokia"}
@@ -31,7 +31,7 @@
 ; CenRep
 "..\..\clfwrapper\conf\102828AC.txt"-"c:\private\10202be9\102828AC.txt"
 "..\..\harvester\common\data\200009FE.txt"-"c:\private\10202be9\200009FE.txt"
-"..\..\locationmanager\conf\200071BE.txt"-"c:\private\10202be9\200071BE.txt"
+"..\..\locationmanager\data\200071BE.txt"-"c:\private\10202be9\200071BE.txt"
 
 ; contextengine
 "\EPOC32\RELEASE\ARMV5\UREL\contextengine.dll" -"c:\sys\bin\contextengine.dll"
@@ -46,7 +46,7 @@
 "\EPOC32\RELEASE\ARMV5\UREL\ContentListingFramework.dll" -"c:\sys\bin\ContentListingFramework.dll"
 
 ; blacklist 
-"\EPOC32\RELEASE\ARMV5\UREL\blacklistserver.exe" -"c:\sys\bin\blacklistserver.exe"
+"\EPOC32\RELEASE\ARMV5\UREL\!blacklistserver.exe" -"c:\sys\bin\!blacklistserver.exe"
 "\EPOC32\RELEASE\ARMV5\UREL\blacklistclient.dll" -"c:\sys\bin\blacklistclient.dll"
 
 ; composer plugins
@@ -97,7 +97,7 @@
 ; metadata engine
 "\EPOC32\RELEASE\ARMV5\UREL\mdeclient.dll" -"c:\sys\bin\mdeclient.dll"
 "\EPOC32\RELEASE\ARMV5\UREL\mdccommon.dll" -"c:\sys\bin\mdccommon.dll"
-"\EPOC32\RELEASE\ARMV5\UREL\mdsserver.exe" -"c:\sys\bin\mdsserver.exe"
+"\EPOC32\RELEASE\ARMV5\UREL\!mdsserver.exe" -"c:\sys\bin\!mdsserver.exe"
 
 "\epoc32\release\armv5\udeb\mdswatchdog.exe"-"c:\sys\bin\mdswatchdog.exe"
 

@@ -154,7 +154,10 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
         		aItem->Uri(), mediaId, time ) )
             {
             WRITELOG( "CHarvesterQueue::Append() - found a blacklisted file" );
-            TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypePlaceholder ) );
+            if( aItem->ObjectType() == EPlaceholder )
+                {
+                TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypePlaceholder ) );
+                }
             TRAP_IGNORE( iHEM->DecreaseItemCountL( EHEObserverTypeMMC ) );
             if( aItem->EventType() == EHarvesterEdit )
                 {

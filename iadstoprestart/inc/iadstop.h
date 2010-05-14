@@ -25,8 +25,8 @@ _LIT( KHarvesterServerName, "HarvesterServer" );
 _LIT( KHarvesterServerProcess, "*HarvesterServer*");
 _LIT( KHarvesterServerExe, "harvesterserver.exe" );
 
-_LIT( KMdsServerName, "MdSServer" );
-_LIT( KMdSServerProcess, "*mdsserver*");
+_LIT( KMdsServerName, "!MdSServer" );
+_LIT( KMdSServerProcess, "*!mdsserver*");
 
 _LIT( KTAGDaemonName, "ThumbAGDaemon" );
 _LIT( KTAGDaemonProcess, "*ThumbAGDaemon*" );

@@ -162,7 +162,7 @@ class CGpxConverterAO : public CActive
     	RPointerArray<TFileName> iFileQueue;
     	RPointerArray<TBoundaries> iBoundQueue;
     	
-    	TFileName iTempFile;
+    	TFileName* iTempFile;    	
     	TBoundaries* iBoundaries;
     	TCoordinate* iLastCoords;
     	TFileName iGpxFileName;

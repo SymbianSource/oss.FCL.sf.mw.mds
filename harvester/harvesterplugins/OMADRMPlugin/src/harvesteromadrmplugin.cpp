@@ -22,6 +22,7 @@
 #include "harvesteromadrmplugin.h"
 #include "harvesterlog.h"
 #include "mdeobjectwrapper.h"
+#include "mdscommoninternal.h"
 #include <harvesterdata.h>
 
 #include <mdenamespacedef.h>
@@ -37,6 +38,8 @@ _LIT(KAudio, "Audio");
 _LIT(KRmMimetype, "realmedia");
 
 _LIT( KSvgMime, "image/svg+xml" );
+
+_LIT(KInUse, "InUse");
 
 CHarvesterOmaDrmPluginPropertyDefs::CHarvesterOmaDrmPluginPropertyDefs() : CBase()
 	{
@@ -301,7 +304,7 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     		*iPropDefs->iDrmPropertyDef, &aVHD.iDrmProtected, aIsAdd );
     
     // Title (is set from URI by default)
-    if( aVHD.iTitle.Length() > 0 && aVHD.iTitle.Length() < iMaxTextLength )
+    if( aVHD.iTitle.Length() > 0 && aVHD.iTitle.Length() < KMaxTitleFieldLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iTitlePropertyDef, &aVHD.iTitle, EFalse );
@@ -341,6 +344,12 @@ void CHarvesterOMADRMPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType
 		err = content->GetStringAttribute( ContentAccess::EMimeType, mime );
 		delete content;
 		}
+	
+	if( err == KErrInUse || err == KErrLocked )
+	    {
+	    aObjectType.Copy( KInUse() );
+	    return;
+	    }
     
 	if( mime == KSvgMime )
 	    {

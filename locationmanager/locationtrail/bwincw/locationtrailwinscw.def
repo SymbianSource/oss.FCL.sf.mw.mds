@@ -31,4 +31,5 @@ EXPORTS
 	?SetStateToStopping@CLocationRecord@@QAEXXZ @ 30 NONAME ; void CLocationRecord::SetStateToStopping(void)
 	?LocationSnapshotL@CLocationRecord@@QAEXABI@Z @ 31 NONAME ; void CLocationRecord::LocationSnapshotL(unsigned int const &)
 	?RemappingNeeded@CLocationRecord@@QAEHXZ @ 32 NONAME ; int CLocationRecord::RemappingNeeded(void)
+	?IsLowBattery@CLocationRecord@@QAEHXZ @ 33 NONAME ; int CLocationRecord::IsLowBattery(void)
 

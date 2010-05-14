@@ -46,8 +46,10 @@ const TItemId KSystemFavouritesAlbumId = 1;
 const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
 
-_LIT( KMdSServerName,"MdSServer" ); // Server name
-_LIT( KMdSServerProcessString,"MdSServer*" ); 
+const TInt KMaxTitleFieldLength = 255;
+
+_LIT( KMdSServerName,"!MdSServer" ); // Server name
+_LIT( KMdSServerProcessString,"!MdSServer*" ); 
 _LIT( KSchemaChunkName, "MdSSchema" );
 
 _LIT( KCMediaIdKey, "CDriveMediaId" );

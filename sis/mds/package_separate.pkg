@@ -17,7 +17,7 @@
 &EN
 
 ;packet-header (name, uid, major, minor, build, type)
-#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 6, TYPE=SA, RU
+#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 7, TYPE=SA, RU
 
 ; Localised vendor name
 %{"Nokia"}

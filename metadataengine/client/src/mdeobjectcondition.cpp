@@ -309,6 +309,7 @@ TUint32 CMdEObjectCondition::RequiredBufferSize() const
 
 	    case EObjectConditionCompareUri:
 	    case EObjectConditionCompareUriBeginsWith:
+	    case EObjectConditionCompareUriContains:
 	    case EObjectConditionCompareFreeText:
 	    case EObjectConditionCompareFreeTextContains:
 	    case EObjectConditionCompareFreeTextBeginsWith:
@@ -410,6 +411,7 @@ void CMdEObjectCondition::SerializeL(CMdCSerializationBuffer& aBuffer,
 
 	    case EObjectConditionCompareUri:
 	    case EObjectConditionCompareUriBeginsWith:
+	    case EObjectConditionCompareUriContains:
 	    case EObjectConditionCompareFreeText:
 	    case EObjectConditionCompareFreeTextContains:
 	    case EObjectConditionCompareFreeTextBeginsWith:

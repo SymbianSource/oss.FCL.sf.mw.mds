@@ -354,6 +354,10 @@ void CMdSServer::ConstructL()
     __INIT_LOGGER;
     StartL( KMdSServerName );
     __LOGLB( ELogAlways, "Server start" );
+
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
     
     CheckInitSriptL();
     
