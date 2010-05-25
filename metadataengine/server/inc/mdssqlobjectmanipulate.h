@@ -483,6 +483,11 @@ class CMdSSqlObjectManipulate: public CBase
 				RArray<TItemId>& aObjectIds);
 
 		void CheckMassStorageMediaIdL( const TUint32 aMediaId );
+
+        /**
+        * Analyze the  database after enough items have been added or modified
+        */    
+        void AnalyzeL();
 		
     protected: // personal methods
 
@@ -569,6 +574,8 @@ class CMdSSqlObjectManipulate: public CBase
 	    HBufC* iUri;
 	
 	    TBuf<256> iLastAddedObjName;
+	    
+	    TBool iDictionaryToBeCleaned;
 	    
 	private:
 		class RClauseBuffer

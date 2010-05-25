@@ -552,21 +552,8 @@ TInt CHarvesterClientTestScripter::AddFileToBlacklistL( CStifItemParser& aItem )
     User::LeaveIfError( aItem.GetNextString( inputFile ));
 
     TUint32 mediaId( 0 );
-//    TInt blackListError( KErrNone );
     TTime modified ( 0 );
-/*    
-    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
-    if( blackListError != KErrNone )
-        {
-        return blackListError;
-        }
-    
-    blackListError = iFs.Modified( inputFile, modified );
-    if( blackListError != KErrNone )
-        {
-        return blackListError;
-        }
-*/    
+
     TRAPD( err, iBlacklistClient.AddL( inputFile, mediaId, modified ) );
     if( err != KErrNone )
         {
@@ -590,27 +577,12 @@ TInt CHarvesterClientTestScripter::CheckBlacklistL( CStifItemParser& aItem )
     iLog->Log( KMsg1 );
     RDebug::Print( KMsg1 );
 
-//    iBlacklistClient.LoadBlacklistL();
-    
     TPtrC inputFile;
     User::LeaveIfError( aItem.GetNextString( inputFile ));
     
     TUint32 mediaId( 0 );
-//    TInt blackListError( KErrNone );
     TTime modified ( 0 );
-/*    
-    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
-    if( blackListError != KErrNone )
-        {
-        return blackListError;
-        }
-  
-    blackListError = iFs.Modified( inputFile, modified );
-    if( blackListError != KErrNone )
-        {
-        return blackListError;
-        }
-*/    
+
     TBool isBlacklisted( EFalse );
     TRAP_IGNORE( isBlacklisted = iBlacklistClient.IsBlacklistedL( inputFile, mediaId, modified ) );
     if( !isBlacklisted )
@@ -639,15 +611,8 @@ TInt CHarvesterClientTestScripter::RemoveFileFromBlacklistL( CStifItemParser& aI
     User::LeaveIfError( aItem.GetNextString( inputFile ));
     
     TUint32 mediaId( 0 );
-//    TInt blackListError( KErrNone );
     TTime modified ( 0 );
-/*    
-    blackListError = iMediaIdUtil->GetMediaId( inputFile, mediaId );
-    if( blackListError != KErrNone )
-        {
-        return blackListError;
-        }
-*/    
+
     TRAPD( err, iBlacklistClient.RemoveL( inputFile, mediaId ) );
     if( err != KErrNone )
         {

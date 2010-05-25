@@ -111,10 +111,15 @@ class CMdsFileServerPlugin : public CFsPlugin
          * 
          * @param aFilename  Filename to check.
          * @param aIsDirectory ETrue if filename points to directory.
+         * @param aFsPlugin Reference to Fileserver Plugin.
+         * @param aDelete Indicates if file deletion is in question.
          * 
          * @return EFalse, if path or file has a hidden or system attribute set.
          */
-        TBool CheckAttribs( const TDesC& aFilename, TBool& aIsDirectory ) const;
+        TBool CheckAttribs( const TDesC& aFilename, 
+                                        TBool& aIsDirectory, 
+                                        RFsPlugin& aFsPlugin,
+                                        TBool aDelete) const;
 
         /**
          * Check if directory is named correctly and ends with backslash.
@@ -127,6 +132,19 @@ class CMdsFileServerPlugin : public CFsPlugin
          * Check if harvester (main observer) is alive
          */
         TBool CheckHarvesterStatus();
+
+        /**
+         * Checks file entry path and attributes for validity
+         * 
+         * @param aFilename  Filename to check.
+         * @param aIsDirectory ETrue if filename points to directory.
+         * @param aRequest Reference to request from file server.
+         * @param aDelete Indicates if file deletion is in question.
+         * 
+         * @return EFalse if file is not to be handled
+         */
+        TBool CheckIfValidFile( const TDesC& aFilename, 
+                TBool& aIsDirectory, TFsPluginRequest& aRequest, TBool aDelete );
         
 #ifdef _DEBUG_EVENTS
         void RegisterDebugEventsL();
@@ -151,12 +169,7 @@ class CMdsFileServerPlugin : public CFsPlugin
         RPointerArray<CMdsFSPQueueItem> iQueue;
 
         RPointerArray<TDesC> iIgnorePaths;
-
-        /**
-         * File system client session.
-         */
-        RFs iFsSession;
-
+        
         RPointerArray<TDesC> iCreatedFiles;
         RPointerArray<TDesC> iModifiedFiles;
         

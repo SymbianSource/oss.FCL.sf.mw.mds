@@ -43,6 +43,7 @@ class CHarvesterRtpPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iSizePropertyDef;
 		CMdEPropertyDef* iItemTypePropertyDef;
 		CMdEPropertyDef* iTitlePropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 	
 		// Media property definitions
 		CMdEPropertyDef* iCaptureDatePropertyDef;

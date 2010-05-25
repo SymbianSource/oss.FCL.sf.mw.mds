@@ -63,6 +63,7 @@ class CHarvesterAoPropertyDefs : public CBase
 		CMdEPropertyDef* iOriginPropertyDef;
 		CMdEPropertyDef* iItemTypePropertyDef;
 		CMdEPropertyDef* iTitlePropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 		
 		// Media property definitions
 		CMdEPropertyDef* iPreinstalledPropertyDef;
@@ -305,6 +306,8 @@ class CHarvesterAO : public CActive,
     private:
         
         TBool CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef );
+        
+        void AddDefaultFolderDataL( CMdEObject* aObject );
         
 	private:
 		
@@ -568,6 +571,15 @@ class CHarvesterAO : public CActive,
         TBool iFastHarvestNeeded;
         
         TBool iHarvestingPlaceholders;
+        
+        HBufC* iPhoneImagesPath;
+        HBufC* iMmcImagesPath;
+        
+        HBufC* iPhoneVideosPath;
+        HBufC* iMmcVideosPath;
+        
+        HBufC* iPhoneSoundsPath;
+        HBufC* iMmcSoundsPath;
 	};
 	
 #endif //__CHARVESTERAO_H__

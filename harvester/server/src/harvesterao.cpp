@@ -22,6 +22,7 @@
 #include <rlocationobjectmanipulator.h>
 #include <placeholderdata.h>
 #include <harvesterclientdata.h>
+#include <pathinfo.h>
 
 using namespace ContentAccess;
 
@@ -34,6 +35,7 @@ using namespace ContentAccess;
 #include "harvesterdata.h"
 #include "ondemandao.h"
 #include "harvestercommon.h"
+#include "mdscommoninternal.h"
 #include "processoriginmapperinterface.h"
 #include "mdeobjecthandler.h"
 #include "harvestereventmanager.h"
@@ -79,6 +81,7 @@ void CHarvesterAoPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iOriginPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KOriginProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 	
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
 	iPreinstalledPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KPreinstalledProperty );
@@ -216,6 +219,15 @@ CHarvesterAO::~CHarvesterAO()
 	delete iPropDefs;
 	delete iCameraExtensionArray;
 	
+    delete iPhoneImagesPath;
+    delete iMmcImagesPath;
+    
+    delete iPhoneVideosPath;
+    delete iMmcVideosPath;
+    
+    delete iPhoneSoundsPath;
+    delete iMmcSoundsPath;
+	
 	RMediaIdUtil::ReleaseInstance();
     
     REComSession::FinalClose();
@@ -272,7 +284,40 @@ void CHarvesterAO::ConstructL()
     iCameraExtensionArray->InsertIsqL( KExtension3gp );
     iCameraExtensionArray->InsertIsqL( KExtension3gpp );
     iCameraExtensionArray->InsertIsqL( KExtension3g2 );
-	
+
+    TFileName phoneRoot = PathInfo::PhoneMemoryRootPath();
+    TFileName mmcRoot = PathInfo::MemoryCardRootPath();
+    
+    TFileName images = PathInfo::ImagesPath();
+    
+    TFileName phoneImagePath( phoneRoot );
+    phoneImagePath.Append( images );
+    iPhoneImagesPath = phoneImagePath.AllocL();
+
+    TFileName mmcImagePath( mmcRoot );
+    mmcImagePath.Append( images );
+    iMmcImagesPath = mmcImagePath.Right( mmcImagePath.Length() - 1 ).AllocL();
+    
+    TFileName videos = PathInfo::VideosPath();
+    
+    TFileName phoneVideoPath( phoneRoot );
+    phoneVideoPath.Append( videos );
+    iPhoneVideosPath = phoneVideoPath.AllocL();
+
+    TFileName mmcVideoPath( mmcRoot );
+    mmcVideoPath.Append( videos );
+    iMmcVideosPath = mmcVideoPath.Right( mmcVideoPath.Length() - 1 ).AllocL();
+    
+    TFileName sounds = PathInfo::SoundsPath();
+    
+    TFileName phoneSoundPath( phoneRoot );
+    phoneSoundPath.Append( sounds );
+    iPhoneSoundsPath = phoneSoundPath.AllocL();
+
+    TFileName mmcSoundPath( mmcRoot );
+    mmcSoundPath.Append( sounds );
+    iMmcSoundsPath = mmcSoundPath.Right( mmcSoundPath.Length() - 1 ).AllocL();
+    
     WRITELOG( "CHarvesterAO::ConstructL() - end" );
     }
 
@@ -912,6 +957,16 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
             mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KUndefinedMime );
             }
 		
+        if( hd->Origin() == MdeConstants::Object::ECamera )
+            {
+            TBool inDefaultFolder( ETrue );
+            mdeObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
+            }
+        else
+            {
+            AddDefaultFolderDataL( mdeObject );
+            }       
+        
 	    TPtrC name;
 	    TBool nameFound = MdsUtils::GetName( hd->Uri(), name );
 
@@ -2414,6 +2469,10 @@ void CHarvesterAO::HarvestCompleted( TUid aClientId, const TDesC& aUri, TInt aEr
                 	WRITELOG("CHarvesterAO::HarvestingCompleted() NOT COMPLETING AS msg->iMessage->IsNull returns ETrue");
                 	} 
                 iHarvestFileMessages.Remove( i );
+                if( iHarvestFileMessages.Count() == 0 )
+                    {
+                    iHarvestFileMessages.Compress();
+                    }
                 }
             }
         }
@@ -2832,3 +2891,60 @@ void CHarvesterAO::RemoveBlacklistedFile( CHarvesterData* aItem )
         }
     }
 
+void CHarvesterAO::AddDefaultFolderDataL( CMdEObject* aObject )
+    {
+    TPtrC objectDefName( aObject->Def().Name() );
+    if( objectDefName == MdeConstants::Image::KImageObject )
+        {
+        const TDesC& uri = aObject->Uri();
+        if( uri.FindF( iMmcImagesPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneImagesPath->Des()) != KErrNotFound ||
+            uri.FindF( KDCIMFolder ) != KErrNotFound )
+            {
+            TBool inDefaultFolder( ETrue );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );  
+            }    
+        }
+    else if( objectDefName == MdeConstants::Video::KVideoObject )
+        {
+        const TDesC& uri = aObject->Uri();
+        if( uri.FindF( iMmcVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( KDCIMFolder ) != KErrNotFound )
+            {
+            TBool inDefaultFolder( ETrue );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );   
+            }    
+        }
+    else if( objectDefName == MdeConstants::Audio::KAudioObject )
+        {
+        const TDesC& uri = aObject->Uri();
+        if( uri.FindF( iMmcSoundsPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneSoundsPath->Des()) != KErrNotFound )
+            {
+            TBool inDefaultFolder( ETrue );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );    
+            }     
+        }
+    else
+        {
+        // Other objects are set to be in default location by default
+        TBool inDefaultFolder( ETrue );
+        aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
+        }
+    }

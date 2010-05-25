@@ -23,6 +23,7 @@
 #include <mdeobject.h>
 #include <centralrepository.h>
 #include <caf/caf.h>
+#include <pathinfo.h>
 
 #include "harvestercommon.h"
 #include "harvesteraudioplugin.h"
@@ -35,8 +36,6 @@
 const TInt KMimeLength( 10 );
 const TUid KHarvesterRepoUid = { 0x200009FE };
 const TUint32 KEnableAlbumArtHarvest = 0x00090001;
-
-_LIT( KExtensionWma,    "wma" );
 
 CHarvesterAudioPluginPropertyDefs::CHarvesterAudioPluginPropertyDefs() : CBase()
 	{
@@ -54,6 +53,7 @@ void CHarvesterAudioPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
     iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTimeOffsetProperty );
+    iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 
 	// Media property definitions
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
@@ -121,6 +121,9 @@ CHarvesterAudioPlugin::~CHarvesterAudioPlugin()
 	delete iAudioParser;
 	delete iPropDefs;
 	delete iTNM;
+	
+	delete iPhoneSoundsPath;
+	delete iMmcSoundsPath;
 	}
 
 // ---------------------------------------------------------------------------
@@ -144,6 +147,16 @@ void CHarvesterAudioPlugin::ConstructL()
         }
     
     SetPriority( KHarvesterPriorityHarvestingPlugin - 2 );
+	
+    TFileName sounds = PathInfo::SoundsPath();
+    
+    TFileName phonePath = PathInfo::PhoneMemoryRootPath();
+    phonePath.Append( sounds );
+    iPhoneSoundsPath = phonePath.AllocL();
+
+    TFileName mmcPath = PathInfo::MemoryCardRootPath();
+    mmcPath.Append( sounds );
+    iMmcSoundsPath = mmcPath.Right( mmcPath.Length() - 1 ).AllocL();
 	}
 
 // ---------------------------------------------------------------------------
@@ -248,7 +261,7 @@ void CHarvesterAudioPlugin::GetPropertiesL( CHarvesterData* aHD,
 		// get properties for file types supported by CMetaDataUtility.
     	if( mapping->iHandler == EMetaDataUtilityHandling )
     		{
-    		GetMusicPropertiesL( aHD, aIsAdd );
+    		GetMusicPropertiesL( aHD, aIsAdd, mapping->iMimeType );
     		}
     	}
     }
@@ -331,7 +344,7 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
 // ---------------------------------------------------------------------------
 //    
 void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
-                                      TBool aIsAdd )
+                                      TBool aIsAdd, TPtrC aMimeType )
     {
 #ifdef _DEBUG
     TTime dStart, dStop;
@@ -350,12 +363,17 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         // Prefetch max text lengt for validity checking
         iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
         }
-    
-    TPtrC ext;
-    MdsUtils::GetExt( uri, ext );
-    
-    // Check for possibly protected content
-    if( ext.CompareF( KExtensionWma ) == 0 )
+
+    TBool possiblyProtectedContent( EFalse );
+    if( aMimeType.Length() > 0 )
+        {
+        if( aMimeType == KMimeTypeWma )
+            {
+            possiblyProtectedContent = ETrue;
+            }
+        }
+
+    if( possiblyProtectedContent )
         {
         ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
         ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
@@ -369,7 +387,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
             }
         CleanupStack::PopAndDestroy( 2 ); // content, data
         }
-    
+
     TBool parsed( EFalse );
     TRAPD( parseError, parsed = iAudioParser->ParseL( uri ) );
 
@@ -398,7 +416,22 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
     TInt16 timeOffsetMinutes = timeOffsetSeconds.Int() / 60;
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iTimeOffsetPropertyDef, &timeOffsetMinutes, aIsAdd );
-	
+    
+    if( !mdeObject.Placeholder() )
+        {
+        if( uri.FindF( iMmcSoundsPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneSoundsPath->Des()) != KErrNotFound )
+            {
+            TBool inDefaultFolder( ETrue );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+            }
+        }
+    
     if ( song.Length() > 0
         && song.Length() < KMaxTitleFieldLength )
         {    

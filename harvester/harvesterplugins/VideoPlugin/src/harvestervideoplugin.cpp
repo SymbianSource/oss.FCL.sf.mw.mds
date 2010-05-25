@@ -21,6 +21,7 @@
 #include <hxmetadatautil.h>
 #include <hxmetadatakeys.h>
 #include <caf/caf.h>
+#include <pathinfo.h>
 
 #include "mdsutils.h"
 #include "harvestervideoplugin.h"
@@ -98,6 +99,7 @@ void CHarvesterVideoPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
 
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
 	iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
@@ -164,6 +166,9 @@ CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	iMimeTypeMappings.Close();
     RMediaIdUtil::ReleaseInstance();
 
+    delete iPhoneVideosPath;
+    delete iMmcVideosPath;
+    
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
 
@@ -269,6 +274,16 @@ void CHarvesterVideoPlugin::ConstructL()
             TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
                     KMimeTypeWmv(), KMimeTypeWmv() ) ), 
             cmp ) );
+
+    TFileName videos = PathInfo::VideosPath();
+    
+    TFileName phonePath = PathInfo::PhoneMemoryRootPath();
+    phonePath.Append( videos );
+    iPhoneVideosPath = phonePath.AllocL();
+
+    TFileName mmcPath = PathInfo::MemoryCardRootPath();
+    mmcPath.Append( videos );
+    iMmcVideosPath = mmcPath.Right( mmcPath.Length() - 1 ).AllocL();
     
     iMediaIdUtil = &RMediaIdUtil::GetInstanceL();
     }
@@ -399,7 +414,7 @@ void CHarvesterVideoPlugin::HarvestL( CHarvesterData* aHD )
     	}
     else
         {
-        WRITELOG1( "CHarvesterVideoPlugin::HarvestSingleFileL() - TRAP error: %d", error );
+        WRITELOG1( "CHarvesterVideoPlugin::HarvestL() - TRAP error: %d", error );
         TInt convertedError = KErrNone;
         MdsUtils::ConvertTrapError( error, convertedError );
         aHD->SetErrorCode( convertedError );
@@ -434,6 +449,12 @@ void CHarvesterVideoPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
 void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
 		CVideoHarvestData& aVHD )
     {
+#ifdef _DEBUG
+    TTime dStart, dStop;
+    dStart.UniversalTime();
+    dStop.UniversalTime();
+    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
+#endif
     const TDesC& uri = aMetadataObject.Uri();
     
     WRITELOG1( "CHarvesterVideoPlugin - Gather data from file %S", &uri );
@@ -932,6 +953,11 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
     CleanupStack::PopAndDestroy( &file );        
 
+#ifdef _DEBUG
+    dStop.UniversalTime();
+    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
+#endif  
+    
     WRITELOG( "CHarvesterVideoPlugin - Start adding data to object" );
     }
 
@@ -969,6 +995,21 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     
     	// File size
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iSizePropertyDef, &aVHD.iFileSize, aIsAdd );
+    	
+    	// Default folder
+        const TDesC& uri = mdeObject.Uri();
+        if( uri.FindF( iMmcVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( KDCIMFolder ) != KErrNotFound ) 
+            {
+            TBool inDefaultFolder( ETrue );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+            }
     	}
 
     // Item Type

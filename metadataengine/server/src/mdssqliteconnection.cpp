@@ -75,8 +75,8 @@ void CMdSSqLiteConnection::ConstructL()
 
 void CMdSSqLiteConnection::OpenDbL( const TDesC& aDbFileName )
     {
-    _LIT8( KMdsSqlDbaConfig, "cache_size=8000; page_size=2048; encoding=\"UTF-16\";");
-    _LIT8( KBlacklistSqlDbaConfig, "cache_size=4000; page_size=1024; encoding=\"UTF-16\";");
+    _LIT8( KMdsSqlDbaConfig, "cache_size=2000; page_size=2048; encoding=\"UTF-16\";");
+    _LIT8( KBlacklistSqlDbaConfig, "cache_size=1500; page_size=1024; encoding=\"UTF-16\";");
 
     delete iDbFileName;
     iDbFileName = NULL; // in case AllocL leaves
@@ -639,6 +639,15 @@ void CMdSSqLiteConnection::EnableTransaction( TBool aEnable, RMdsStatement& aQue
         }
     }
 
+void CMdSSqLiteConnection::DoAnalyzeL() 
+    {
+    _LIT( KAnalyze, "ANALYZE;");
+    
+    RRowData emptyRow;
+    CleanupClosePushL( emptyRow );
+    ExecuteL(KAnalyze, emptyRow);
+    CleanupStack::PopAndDestroy( &emptyRow ); 
+    }
 
 TInt CMdSSqLiteConnection::DeleteAndReCreateDB( const HBufC* aDbFileName,
                                                 const RSqlSecurityPolicy& asqlSecurityPolicy,

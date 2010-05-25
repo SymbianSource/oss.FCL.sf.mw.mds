@@ -24,8 +24,7 @@ TARGETTYPE              EXE
 UID                     0x100039ce 0x20022E94
 
 VENDORID                VID_DEFAULT
-//CAPABILITY              ALL -TCB
-CAPABILITY              CAP_GENERAL_DLL
+CAPABILITY              ALL -TCB
 
 SOURCEPATH              ../src
 SOURCE                  iadstop.cpp

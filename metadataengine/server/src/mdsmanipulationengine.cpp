@@ -31,6 +31,7 @@
 #include "mdcserializationbuffer.h"
 #include "mdeinternalerror.h"
 #include "mdeerror.h"
+#include "mdscommoninternal.h"
 
 // for CleanupResetAndDestroyPushL
 #include <mmf/common/mmfcontrollerpluginresolver.h>
@@ -168,6 +169,7 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
             if (err == KErrNone)
                 {
                 aResultBuffer.InsertL( id );
+                iAddedObjectsCount++;
                 }
             else
                 {
@@ -295,6 +297,28 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
 
 	iManipulate->SetNamespace( NULL );
 	iNotifier.NotifyAddedL( aBuffer, aResultBuffer );
+	
+    if( iAddedObjectsCount > KTriggerDbMaintenanceTreasholdValue )
+	   {
+	   RMdSTransaction transaction( connection );
+	   CleanupClosePushL(transaction);
+	   const TInt beginError( transaction.Error() );
+	       
+	   if( beginError != KErrNone )
+	       {
+	       CleanupStack::PopAndDestroy( &transaction );
+	       }
+	       
+	   iManipulate->AnalyzeL();
+	    
+	   if( beginError == KErrNone )
+	       {
+	       transaction.CommitL();
+	       CleanupStack::PopAndDestroy( &transaction );
+	       }
+	       
+	   iAddedObjectsCount = 0;
+	   }
 	}
 
 // ---------------------------------------------------------------------------
@@ -605,6 +629,7 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 			if (err == KErrNone)
 				{
 				aResultBuffer.InsertL( id );
+				iModifiedObjectsCount++;
 				}
 			else
 				{
@@ -689,6 +714,28 @@ void CMdSManipulationEngine::UpdateL( CMdCSerializationBuffer& aBuffer,
 	resultIds.SerializeL( aResultBuffer );
 
 	iNotifier.NotifyModifiedL( aBuffer, aResultBuffer );
+	
+    if( iModifiedObjectsCount > KTriggerDbMaintenanceTreasholdValue )
+       {
+       RMdSTransaction transaction( connection );
+       CleanupClosePushL(transaction);
+       const TInt beginError( transaction.Error() );
+           
+       if( beginError != KErrNone )
+           {
+           CleanupStack::PopAndDestroy( &transaction );
+           }
+           
+       iManipulate->AnalyzeL();
+        
+       if( beginError == KErrNone )
+           {
+           transaction.CommitL();
+           CleanupStack::PopAndDestroy( &transaction );
+           }
+           
+       iModifiedObjectsCount = 0;
+       }
     }
 
 CMdCSerializationBuffer* CMdSManipulationEngine::CheckObjectL( 

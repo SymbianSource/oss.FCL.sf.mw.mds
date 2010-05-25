@@ -365,10 +365,10 @@ void CMdSServer::ConstructL()
     CMdSSqLiteConnection* conn = CMdSSqLiteConnection::NewLC();
     iDefaultDBConnection = conn;
     MMdSDbConnectionPool::SetDefaultDB( conn );
-
-    CMdSMaintenanceEngine::InitConnectionL();
     CleanupStack::Pop( conn );
 
+    CMdSMaintenanceEngine::InitConnectionL();    
+    
     iNotifier = CMdSNotifier::NewL();
 
     InitializeL();

@@ -20,12 +20,14 @@
 #include <e32math.h>
 #include <locationdatatype.h>
 #include <harvesterdata.h>
+#include <pathinfo.h>
 
 #include "harvesterlog.h"
 #include "mdsutils.h"
 #include "harvesterexifutil.h"
 #include "harvesterimageplugin.h"
 #include "mdeobjectwrapper.h"
+#include "mdscommoninternal.h"
 
 using namespace MdeConstants;
 
@@ -82,6 +84,7 @@ void CHarvesterImagePluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
 	iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
 
 	// Media property definitions
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
@@ -191,6 +194,9 @@ CHarvesterImagePlugin::~CHarvesterImagePlugin()
    	
     delete iPropDefs;
     
+    delete iPhoneImagesPath;
+    delete iMmcImagesPath;
+    
     iMimeTypeMappings.Close();
     iFbs.Disconnect();
 	}
@@ -255,7 +261,16 @@ void CHarvesterImagePlugin::ConstructL()
     
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TImageMetadataHandling>(
             KExtOtb(), KOtbMime(), EOtherHandling ), cmp ) );
+
+    TFileName images = PathInfo::ImagesPath();
     
+    TFileName phonePath = PathInfo::PhoneMemoryRootPath();
+    phonePath.Append( images );
+    iPhoneImagesPath = phonePath.AllocL();
+
+    TFileName mmcPath = PathInfo::MemoryCardRootPath();
+    mmcPath.Append( images );
+    iMmcImagesPath = mmcPath.Right( mmcPath.Length() - 1 ).AllocL();
 	}
 
 void CHarvesterImagePlugin::HarvestL( CHarvesterData* aHD )
@@ -711,8 +726,22 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
 	    
 	    // Item Type
 	    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iItemTypePropertyDef, &aFileData.iMime16, aIsAdd );
-    	}
 
+	    const TDesC& uri = mdeObject.Uri();
+	    if( uri.FindF( iMmcImagesPath->Des()) != KErrNotFound ||
+	        uri.FindF( iPhoneImagesPath->Des()) != KErrNotFound ||
+	        uri.FindF( KDCIMFolder ) != KErrNotFound )
+	        {
+	        TBool inDefaultFolder( ETrue );
+	        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+	        }
+	    else
+	        {
+	        TBool inDefaultFolder( EFalse );
+	        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+	        }    	
+    	}
+    
     if( aFileData.iJpeg )
     	{
     	// Time offset
