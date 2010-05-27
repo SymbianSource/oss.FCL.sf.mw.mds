@@ -31,6 +31,9 @@ _LIT( KMdsSqlDbBackupPath, "C:\\private\\200009F5\\[200009f3]metadata.sq" );
 _LIT( KMdsDefaultImportFile, "C:\\private\\200009f3\\defaultimportfile.mde" );
 _LIT( KMdsDefaultRomImportFile, "Z:\\private\\200009f3\\defaultimportfile.mde" );
 
+// Universal image folder
+_LIT( KDCIMFolder, ":\\DCIM");
+
 // schema file version
 const TInt KSchemaFileMajorVersion = 2;
 const TInt KSchemaFileMinorVersion = 0;
@@ -47,6 +50,8 @@ const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
 
 const TInt KMaxTitleFieldLength = 255;
+
+const TInt KTriggerDbMaintenanceTreasholdValue( 2500 );
 
 _LIT( KMdSServerName,"!MdSServer" ); // Server name
 _LIT( KMdSServerProcessString,"!MdSServer*" ); 

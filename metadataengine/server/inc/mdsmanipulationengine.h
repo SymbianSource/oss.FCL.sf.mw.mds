@@ -32,7 +32,7 @@ class CMdCSerializationBuffer;
 class CMdSSqlObjectManipulate;
 
 // CONSTANT DECLARATION
-const TInt KGarbageCollectionDelay = 60; // 1 minute
+const TInt KGarbageCollectionDelay = 90; // 1,5 minutes
 
 // CLASS DECLARATION
 
@@ -342,6 +342,10 @@ class CMdSManipulationEngine : public CBase, public MMdSGarbageCollectorObserver
 		CMdSGarbageCollector* iGarbageCollector;
 		
 		CMdSObjectLockList& iLockList;
+		
+		//For DB maintenance
+		TInt iAddedObjectsCount;
+		TInt iModifiedObjectsCount;
 	};
 
 #endif //__MDSMANIPULATIONENGINE_H__

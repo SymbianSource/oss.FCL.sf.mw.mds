@@ -35,6 +35,7 @@ namespace MdeConstants
         _LIT( KItemTypeProperty, "ItemType" );
         _LIT( KTitleProperty, "Title" );
         _LIT( KTimeOffsetProperty, "TimeOffset" );
+        _LIT( KInDefaultFolder, "InDefaultFolder" );
 
         enum TOrigin
             {

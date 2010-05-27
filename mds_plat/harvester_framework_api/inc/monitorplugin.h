@@ -114,8 +114,8 @@ class TMountData
  *    {
  *	  // Our CMyActiveObjectNotifier notifies us about new file and we notify the Harvester server about it.
  *	  // Before this CMyActiveObjectNotifier has filled the need data to aHarvesterData like:
- *	  // aHarvesterData->SetEventType( EHarvesterAdd );
- *    // aHarvesterData->SetOrigin( aOrigin );
+ *	  aHarvesterData->SetEventType( EHarvesterAdd );
+ *    aHarvesterData->SetOrigin( aOrigin );
  *    iObserver->MonitorEvent( aHarvesterData );
  *    }
  */

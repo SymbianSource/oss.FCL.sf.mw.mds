@@ -32,6 +32,8 @@ class CHarvesterEventObserverAO;
 class MHarvesterEventObserver;
 class CHarvesterRequestActive;
 class CHarvesterRequestQueue;
+class MHarvesterSessionObserver;
+class CHarvesterSessionWatcher;
 
 // default event interval for MHarvesterEventObserver
 const TInt KHarvesterEventInterval = 20;
@@ -171,6 +173,20 @@ public:
 			TInt aItemsLeft ) = 0;
 	};
 
+class MHarvesterSessionObserver
+    {
+public:
+
+    /**
+     * Called to notify the observer that harvester server has been terminated,
+     * thus harvester server sessions created are now invalid and new connection
+     * needs to be established
+     * NOTE! Cliens still have to call Close() on the session to release client side
+     * resources.
+     */
+    virtual void HarvesterServerTerminated() = 0;
+    };
+
 /**
  * Harvester client session class which provides also means to:
  * - Pause/resume the Harvesting framework
@@ -284,7 +300,20 @@ NONSHARABLE_CLASS( RHarvesterClient ) : public RSessionBase
 		                                  RArray<TItemId> &aAlbumIds, 
 										  TBool aAddLocation,
 										  TUid aUid );
-		
+
+        /**
+         * Public method to set observer for notifications about harvester server termination.
+         * Only one observer at a time is currently supported.
+         *
+         * @param aObserver  Pointer to the observer
+         */     
+    	IMPORT_C void AddSessionObserverL( MHarvesterSessionObserver& aObserver  );
+
+        /**
+         * Public method to remove harvester session observer
+         */     
+        IMPORT_C void RemoveSessionObserver();
+    	
         /**
          * Requests a harvest complete event from harvester server.
 		 * On return, aURI is the URI of the harvested file.
@@ -346,6 +375,11 @@ NONSHARABLE_CLASS( RHarvesterClient ) : public RSessionBase
          * Request queue processor.
          */
         CHarvesterRequestQueue* iRequestQueue;
+        
+        /**
+         * Harvester session observer AO.
+         */
+        CHarvesterSessionWatcher* iSessionWatcher;
     	};
 
 #endif // __HARVESTER_CLIENT_H__

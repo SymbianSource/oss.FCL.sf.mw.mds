@@ -50,6 +50,7 @@ void CHarvesterRtpPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
 	iCaptureDatePropertyDef =& mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KCaptureDateProperty );
@@ -285,6 +286,10 @@ void CHarvesterRtpPlugin::HandleObjectPropertiesL(
         // Mime Type
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
+        // Default folder
+        TBool inDefaultFolder( ETrue );
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
+                *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
     	}
 
     // Title (is set from URI by default)

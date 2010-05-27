@@ -113,8 +113,7 @@ TBool CMMCMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
 	TUint32 hdMediaId( 0 );
     hdMediaId = iMountTask->GetInternalDriveMediaId();
     
-    const TInt count( medias.Count() );
-    for ( TInt i = 0; i < count; i++ )
+    for( TInt i = medias.Count() - 1; i >=0; i-- )
     	{
     	TRAP_IGNORE( iMdEClient->GetMediaL( medias[i].iMediaId, driveLetter, presentState ) );
     	
@@ -349,9 +348,11 @@ void CMMCMonitorPlugin::StartMonitoringAllMMCsL( RArray<TMdEMediaInfo>& aMedias 
                 }
             
             iFs.Drive( driveInfo, i );
-            if ( ((driveInfo.iDriveAtt & KDriveAttRemovable) || (driveInfo.iDriveAtt & KDriveAttLogicallyRemovable) ||
-                   (driveInfo.iType == EMediaHardDisk && driveStatus & DriveInfo::EDriveInternal) ) &&
-                   (driveInfo.iType != EMediaNotPresent) )
+            if( ( (driveStatus & DriveInfo::EDriveRemovable) ||
+                   (driveInfo.iType == EMediaHardDisk && driveStatus & DriveInfo::EDriveInternal) ||
+                   (driveInfo.iDriveAtt & KDriveAttLogicallyRemovable) ||
+                   (driveInfo.iDriveAtt & KDriveAttRemovable) ) &&
+                (driveInfo.iType != EMediaNotPresent) )
                 {
                 count++; // DEBUG INFO
                 

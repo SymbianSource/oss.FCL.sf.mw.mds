@@ -56,6 +56,7 @@ class CHarvesterImagePluginPropertyDefs : public CBase
 		CMdEPropertyDef* iCaptureDatePropertyDef;
 		CMdEPropertyDef* iResolutionUnitPropertyDef;
 		CMdEPropertyDef* iArtistPropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 		
 		// Image property definitions
 		CMdEPropertyDef* iPixelYDimensionPropertyDef;
@@ -199,6 +200,9 @@ class CHarvesterImagePlugin : public CHarvesterPlugin
         CHarvesterImagePluginPropertyDefs* iPropDefs;
         
         TInt iMaxTextLength;
+        
+        HBufC* iPhoneImagesPath;
+        HBufC* iMmcImagesPath;
 	};
 
 #endif

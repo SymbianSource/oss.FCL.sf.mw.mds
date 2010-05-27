@@ -24,6 +24,10 @@
 
 #include "mimetypemapping.h"
 
+// Wma extension and mime type are shared with actual audio plugin
+_LIT( KExtensionWma,    "wma" );
+_LIT( KMimeTypeWma,    "audio/x-ms-wma");
+
 enum TAudioMetadataHandling
 	{
 	EMetaDataUtilityHandling,

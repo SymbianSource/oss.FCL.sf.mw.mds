@@ -17,6 +17,7 @@
 
 #include <e32std.h>
 #include <caf/caf.h>
+#include <pathinfo.h>
 
 #include "mdsutils.h"
 #include "harvesterdata.h"
@@ -45,6 +46,7 @@ void CHarvesterWmvPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
     iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+    iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 	
     CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
     iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
@@ -87,6 +89,9 @@ CHarvesterWMVPlugin::~CHarvesterWMVPlugin()
     {
     WRITELOG( "CHarvesterWMVPlugin::~CHarvesterWMVPlugin()" );
     delete iPropDefs;
+    
+    delete iPhoneVideosPath;
+    delete iMmcVideosPath;
     }
 
 // ---------------------------------------------------------------------------
@@ -164,6 +169,17 @@ CHarvesterWMVPlugin::CHarvesterWMVPlugin() : CHarvesterPlugin(), iPropDefs( NULL
 void CHarvesterWMVPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterWMVPlugin::ConstructL()" );
+    
+    TFileName videos = PathInfo::VideosPath();
+    
+    TFileName phonePath = PathInfo::PhoneMemoryRootPath();
+    phonePath.Append( videos );
+    iPhoneVideosPath = phonePath.AllocL();
+
+    TFileName mmcPath = PathInfo::MemoryCardRootPath();
+    mmcPath.Append( videos );
+    iMmcVideosPath = mmcPath.Right( mmcPath.Length() - 1 ).AllocL();
+   
     SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
     }
 
@@ -302,6 +318,20 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
         // Mime Type
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iItemTypePropertyDef, &aClipDetails.iMimeType, aIsAdd );
+
+        const TDesC& uri = mdeObject.Uri();
+        if( uri.FindF( iMmcVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( iPhoneVideosPath->Des()) != KErrNotFound ||
+            uri.FindF( KDCIMFolder ) != KErrNotFound )
+            {
+            TBool inDefaultFolder( ETrue );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+            }
+        else
+            {
+            TBool inDefaultFolder( EFalse );
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+            }
     	}
     
     // DRM protection

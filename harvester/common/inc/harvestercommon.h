@@ -93,6 +93,9 @@ enum TMdsOomStatus
 const TInt KHarvesterGetRootDirFlags = EDirsFirst;
 const TInt KHarvesterGetDirFlags = ESortByDate | EAscending | EDirsFirst;
 
+_LIT( KExludedThumbPath, "_PAlbTN");
+_LIT( KExludedMediaArtPath, ".mediaartlocal");
+
 const TInt KOriginIgnored = 255;
 const TInt KOriginFastHarvest = 254;
 

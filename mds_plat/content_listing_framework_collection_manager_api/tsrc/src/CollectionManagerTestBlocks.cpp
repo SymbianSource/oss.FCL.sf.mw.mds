@@ -471,6 +471,7 @@ TInt CCollectionManagerTest::RemoveFromAllCollectionsL( CStifItemParser& /*aItem
     
     const TInt itemCount( 500 );
     CDesCArray* removeItemArray = new (ELeave) CDesCArrayFlat( itemCount );
+    CleanupStack::PushL( removeItemArray );
 
     for( TInt i = 0 ; i < itemCount ; ++i )
         {
@@ -484,12 +485,12 @@ TInt CCollectionManagerTest::RemoveFromAllCollectionsL( CStifItemParser& /*aItem
     TRAP( error, iCollectionManager->RemoveFromAllCollectionsL( *removeItemArray ) );
     if( error != KErrNotSupported && error != KErrNone )
         {
-        delete removeItemArray;
+        CleanupStack::PopAndDestroy( removeItemArray );
         removeItemArray = NULL;
         return error;
         }
     
-    delete removeItemArray;
+    CleanupStack::PopAndDestroy( removeItemArray );
     removeItemArray = NULL;
     
     _LIT( KMsg2, "Exit RemoveFromAllCollectionsL" );

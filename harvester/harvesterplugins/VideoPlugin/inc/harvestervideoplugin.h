@@ -139,6 +139,7 @@ class CHarvesterVideoPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iArtistPropertyDef;
 		CMdEPropertyDef* iDescriptionPropertyDef;
 		CMdEPropertyDef* iDrmPropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 		
 		CMdEPropertyDef* iAudioFourCCDef;
 	
@@ -234,6 +235,9 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		
 		// not own
 		CHarvesterMediaIdUtil* iMediaIdUtil;
+		
+	    HBufC* iPhoneVideosPath;
+	    HBufC* iMmcVideosPath;
 	};
 
 #endif // __CHARVESTERVIDEOPLUGIN_H__

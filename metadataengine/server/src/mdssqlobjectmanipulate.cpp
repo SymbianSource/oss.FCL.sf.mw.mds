@@ -3309,13 +3309,12 @@ TInt CMdSSqlObjectManipulate::GetPendingL(TDefId aObjectDefId,
 
 TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
 	{
-	_LIT( KDeleteObject,                 "DELETE FROM Object%u WHERE Flags&?;" );
+    _LIT( KDeleteObject,                 "DELETE FROM Object%u WHERE ObjectId IN (SELECT ObjectId FROM Object%u WHERE Flags&? LIMIT 100);" );
 	_LIT( KUpdateDeleteObject,           "UPDATE Object%u SET Flags=Flags|? WHERE Flags&?;" );
 	_LIT( KDeleteRelations,              "DELETE FROM Relations%u WHERE Flags&?;" );
 	_LIT( KUpdateDeleteRelations,        "UPDATE Relations%u SET Flags=Flags|? WHERE Flags&?;" );
 	_LIT( KUpdateDeleteContextObjects,   "UPDATE Object%u SET Flags=Flags|? WHERE ObjectId IN ( SELECT ObjectId FROM Object%u AS O WHERE Flags&? AND UsageCount=0 AND ( SELECT count(*) FROM Relations%u WHERE NOT Flags&? AND ( LeftObjectId = O.ObjectId OR RightObjectId = O.ObjectId ) )= 0 );" );
     _LIT( KDeleteWordFromTextSearchDict, "DELETE FROM TextSearchDictionary%u WHERE NOT EXISTS(SELECT WordId FROM TextSearch%u WHERE WordId = TextSearchDictionary%u.WordId);");
-
 
 	RClauseBuffer commonClauseOne(*this, KUpdateDeleteContextObjects().Length() + 3 * KMaxUintValueLength);
 	CleanupClosePushL( commonClauseOne );
@@ -3325,34 +3324,11 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
     CleanupClosePushL( rowDataDel );
     rowDataDel.AppendL( TColumn( EMdEObjectFlagGarbage ) );
 
-    RRowData rowDataUpd;
-    CleanupClosePushL( rowDataUpd );
-    rowDataUpd.AppendL( TColumn( EMdEObjectFlagGarbage ) );
-    rowDataUpd.AppendL( TColumn( EMdEObjectFlagRemoved ) );
-
-    RRowData rowDataDelRel;
-    CleanupClosePushL( rowDataDelRel );
-    rowDataDelRel.AppendL( TColumn( EMdERelationFlagGarbageDeleted ) );
-
-    RRowData rowDataUpdRel;
-    CleanupClosePushL( rowDataUpdRel );
-    rowDataUpdRel.AppendL( TColumn( EMdERelationFlagGarbageDeleted ) );
-    rowDataUpdRel.AppendL( TColumn( EMdERelationFlagDeleted ) );
-
-    RRowData rowDataDelContext;
-    CleanupClosePushL( rowDataDelContext );
-    rowDataDelContext.AppendL( TColumn( EMdEObjectFlagRemoved ) );
-    rowDataDelContext.AppendL( TColumn( EMdEObjectFlagContext ) );
-    rowDataDelContext.AppendL( TColumn( EMdERelationFlagDeleted ) );
-
-	RRowData emptyRow;
-	CleanupClosePushL( emptyRow );
-
    	const RPointerArray<CMdsNamespaceDef>& namespaceDefs = 
    		iSchema.NamespaceDefs();
 
 	CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
-	TInt deleteObjectResult;
+	TInt deleteObjectResult = 0;
 	TInt updateResult = 0;
 	
 	const TInt count = namespaceDefs.Count();
@@ -3362,14 +3338,43 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
    	    const TDefId nmspId = namespaceDefs[i]->GetId();
 
 		// deleting objects
-		buffer.BufferL().Format( KDeleteObject, nmspId );
+		buffer.BufferL().Format( KDeleteObject, nmspId, nmspId );
    	    User::LeaveIfError( deleteObjectResult = connection.ExecuteL( 
    	    		buffer.ConstBufferL(), rowDataDel ) );
+   	    
+   	    if( deleteObjectResult > 0 )
+   	        {
+   	        // If objects were deleted, continue garbage collection 
+   	        iDictionaryToBeCleaned = ETrue;
+   	        CleanupStack::PopAndDestroy( 2, &commonClauseOne );
+   	        return ETrue;
+   	        }
 
+   	    RRowData rowDataUpd;
+   	    CleanupClosePushL( rowDataUpd );
+   	    rowDataUpd.AppendL( TColumn( EMdEObjectFlagGarbage ) );
+   	    rowDataUpd.AppendL( TColumn( EMdEObjectFlagRemoved ) );
+   	    
         buffer.BufferL().Format( KUpdateDeleteObject, nmspId );
    	    User::LeaveIfError( updateResult += connection.ExecuteL(
    	    		buffer.ConstBufferL(), rowDataUpd ) );
 
+        if( updateResult > 0 )
+            {
+            // If objects were modified, continue garbage collection 
+            CleanupStack::PopAndDestroy( 3, &commonClauseOne );
+            return ETrue;
+            }
+
+        RRowData rowDataDelRel;
+        CleanupClosePushL( rowDataDelRel );
+        rowDataDelRel.AppendL( TColumn( EMdERelationFlagGarbageDeleted ) );
+        
+        RRowData rowDataUpdRel;
+        CleanupClosePushL( rowDataUpdRel );
+        rowDataUpdRel.AppendL( TColumn( EMdERelationFlagGarbageDeleted ) );
+        rowDataUpdRel.AppendL( TColumn( EMdERelationFlagDeleted ) );
+        
 		// deleting relations
 		buffer.BufferL().Format( KDeleteRelations, nmspId );
    	    User::LeaveIfError( connection.ExecuteL( 
@@ -3378,19 +3383,43 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
 		buffer.BufferL().Format( KUpdateDeleteRelations, nmspId );
    	    User::LeaveIfError( updateResult += connection.ExecuteL( 
    	    		buffer.ConstBufferL(), rowDataUpdRel ) );
+   	    
+        if( updateResult > 0 )
+            {
+            // If objects were modified, continue garbage collection 
+            CleanupStack::PopAndDestroy( 5, &commonClauseOne );
+            return ETrue;
+            }
 
+        RRowData rowDataDelContext;
+        CleanupClosePushL( rowDataDelContext );
+        rowDataDelContext.AppendL( TColumn( EMdEObjectFlagRemoved ) );
+        rowDataDelContext.AppendL( TColumn( EMdEObjectFlagContext ) );
+        rowDataDelContext.AppendL( TColumn( EMdERelationFlagDeleted ) );
+        
 		// deleting context objects
 		buffer.BufferL().Format( KUpdateDeleteContextObjects, nmspId, nmspId, nmspId );
    	    User::LeaveIfError( updateResult += connection.ExecuteL( 
    	    		buffer.ConstBufferL(), rowDataDelContext ) );
+   	    
+        if( updateResult > 0 )
+            {
+            // If objects were modified, continue garbage collection 
+            CleanupStack::PopAndDestroy( 6, &commonClauseOne );
+            return ETrue;
+            }
 
+        RRowData emptyRow;
+        CleanupClosePushL( emptyRow );
+        
 		// deleting words from text search dictionary
-		if ( deleteObjectResult > 0 )
+		if ( iDictionaryToBeCleaned )
 			{
 			buffer.BufferL().Format( KDeleteWordFromTextSearchDict, nmspId, nmspId, 
 					nmspId );
 	   	    User::LeaveIfError( connection.ExecuteL( 
 	   	    		buffer.ConstBufferL(), emptyRow ) );
+	   	    iDictionaryToBeCleaned = EFalse;
 			}
    	    }
 
@@ -3405,8 +3434,14 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
 	    }
 #endif
 
-	return updateResult != 0;
+	return EFalse;
 	}
+
+void CMdSSqlObjectManipulate::AnalyzeL()
+    {
+    CMdSSqLiteConnection& db = MMdSDbConnectionPool::GetDefaultDBL();
+    db.DoAnalyzeL();
+    }
 
 #ifdef MDS_PLAYLIST_HARVESTING_ENABLED
 TInt CMdSSqlObjectManipulate::CleanPlaylistsL()

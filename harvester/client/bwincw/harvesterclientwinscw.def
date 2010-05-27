@@ -12,4 +12,6 @@ EXPORTS
 	?Stop@RHarvesterClient@@QAEXXZ @ 11 NONAME ABSENT ; void RHarvesterClient::Stop(void)
 	?HarvestFile@RHarvesterClient@@QAEXABVTDesC16@@AAV?$RArray@K@@H@Z @ 12 NONAME ; void RHarvesterClient::HarvestFile(class TDesC16 const &, class RArray<unsigned long> &, int)
 	?HarvestFileWithUID@RHarvesterClient@@QAEXABVTDesC16@@AAV?$RArray@K@@HVTUid@@@Z @ 13 NONAME ; void RHarvesterClient::HarvestFileWithUID(class TDesC16 const &, class RArray<unsigned long> &, int, class TUid)
+	?AddSessionObserverL@RHarvesterClient@@QAEXAAVMHarvesterSessionObserver@@@Z @ 14 NONAME ; void RHarvesterClient::AddSessionObserverL(class MHarvesterSessionObserver &)
+	?RemoveSessionObserver@RHarvesterClient@@QAEXXZ @ 15 NONAME ; void RHarvesterClient::RemoveSessionObserver(void)
 

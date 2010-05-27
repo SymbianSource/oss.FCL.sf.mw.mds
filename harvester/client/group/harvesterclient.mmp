@@ -41,6 +41,7 @@ USERINCLUDE       ../inc
 SOURCEPATH        ../src
 SOURCE            harvesterclient.cpp
 SOURCE            harvesterclientao.cpp
+SOURCE            harvestersessionwatcher.cpp
 SOURCE		      harvestereventobserverao.cpp 
 SOURCE            harvesterrequestactive.cpp
 SOURCE            harvesterrequestqueue.cpp

@@ -22,6 +22,7 @@
 #include "harvestereventobserverao.h"
 #include "harvesterlog.h"
 #include "harvesterclientao.h"
+#include "harvestersessionwatcher.h"
 #include "mdsutils.h"
 #include "harvesterrequestactive.h"
 #include "mdscommoninternal.h"
@@ -125,6 +126,8 @@ EXPORT_C TInt RHarvesterClient::Connect()
 
     iHEO = NULL;
     
+    iSessionWatcher = NULL;
+    
     return err;
     }
 
@@ -164,6 +167,9 @@ EXPORT_C void RHarvesterClient::Close()
     {
     WRITELOG( "RHarvesterClient::Close()" );
     
+    delete iSessionWatcher;
+    iSessionWatcher = NULL;
+    
     // cancels Harvest Complete request if it exist at server
     UnregisterHarvestComplete();
     
@@ -199,8 +205,8 @@ EXPORT_C void RHarvesterClient::SetObserver( MHarvestObserver* aObserver )
 
     if ( iHarvesterClientAO )
         {
-       iHarvesterClientAO->SetObserver( aObserver );
-       }
+        iHarvesterClientAO->SetObserver( aObserver );
+        }
 	iObserver = aObserver;
     }
 
@@ -404,6 +410,33 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
         {
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         delete harvestFileActive;
+        }
+    }
+
+// ----------------------------------------------------------------------------------------
+// AddSessionObserver
+// ----------------------------------------------------------------------------------------
+//
+EXPORT_C void RHarvesterClient::AddSessionObserverL( MHarvesterSessionObserver& aObserver  )
+    {
+    if( iSessionWatcher )
+        {
+        delete iSessionWatcher;
+        iSessionWatcher = NULL;
+        }
+    iSessionWatcher = CHarvesterSessionWatcher::NewL( aObserver );
+    }
+
+// ----------------------------------------------------------------------------------------
+// RemoveSessionObserver
+// ----------------------------------------------------------------------------------------
+//
+EXPORT_C void RHarvesterClient::RemoveSessionObserver()
+    {
+    if( iSessionWatcher )
+        {
+        delete iSessionWatcher;
+        iSessionWatcher = NULL;
         }
     }
 

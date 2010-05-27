@@ -34,6 +34,8 @@ SOURCE          HarvesterClientTestScripterBlocks.cpp
 
 USERINCLUDE     ../inc
 USERINCLUDE     ../../../../../inc
+USERINCLUDE     ../../../../../harvester/common/inc/
+USERINCLUDE     ../../../../../harvester/blacklistclient/inc/
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -42,4 +44,7 @@ LIBRARY         harvesterclient.lib
 LIBRARY         mdeclient.lib
 LIBRARY         stiftestinterface.lib
 LIBRARY         stiftestengine.lib
+LIBRARY         harvestercommon.lib
+LIBRARY         blacklistclient.lib
+LIBRARY         efsrv.lib
 

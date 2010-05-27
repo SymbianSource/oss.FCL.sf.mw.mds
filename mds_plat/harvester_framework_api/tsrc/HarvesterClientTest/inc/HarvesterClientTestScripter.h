@@ -27,6 +27,8 @@
 #include "mdccommon.h"
 #include "mdesession.h"
 #include "mdequery.h"
+#include "harvestermediaidutil.h"
+#include "blacklistclient.h"
 
 // CONSTANTS
 
@@ -142,6 +144,11 @@ NONSHARABLE_CLASS(CHarvesterClientTestScripter) : public CScriptBase,
         virtual TInt Results( CStifItemParser& aItem );
         virtual TInt AddHarvesterEventObserverL( CStifItemParser& aItem );
         virtual TInt RemoveHarvesterEventObserverL( CStifItemParser& aItem );
+        virtual TInt SetUpBlacklistL( CStifItemParser& aItem );
+        virtual TInt TearDownBlacklistL( CStifItemParser& aItem );
+        virtual TInt AddFileToBlacklistL( CStifItemParser& aItem );
+        virtual TInt CheckBlacklistL( CStifItemParser& aItem );
+        virtual TInt RemoveFileFromBlacklistL( CStifItemParser& aItem );
         
     private:    // Data
         // Status booleans
@@ -162,6 +169,10 @@ NONSHARABLE_CLASS(CHarvesterClientTestScripter) : public CScriptBase,
         RArray<TItemId> iObjectIdArray;
         
         TFileName iUri;
+
+        RBlacklistClient iBlacklistClient;
+        CHarvesterMediaIdUtil* iMediaIdUtil;
+        RFs iFs;
     };
 
 #endif      // HARVESTERCLIENTTESTSCRIPTER_H

@@ -55,6 +55,7 @@ class CHarvesterAudioPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iThumbnailPropertyDef;
 		CMdEPropertyDef* iDatePropertyDef;
 		CMdEPropertyDef* iDrmPropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 
 		// Audio property definitions
 		CMdEPropertyDef* iAlbumPropertyDef;
@@ -145,7 +146,7 @@ class CHarvesterAudioPlugin : public CHarvesterPlugin,
 		 * Get song name, artist, album, genre and composer from normal music
          * file (eg. mp3).
 		 */
-        void GetMusicPropertiesL( CHarvesterData* aHD, TBool aIsAdd );
+        void GetMusicPropertiesL( CHarvesterData* aHD, TBool aIsAdd, TPtrC aMimeType );
 
 	private:
 		CAudioMDParser* iAudioParser;
@@ -156,6 +157,9 @@ class CHarvesterAudioPlugin : public CHarvesterPlugin,
 		TBool iHarvestAlbumArt;
 		
 		TInt iMaxTextLength;
+		
+		HBufC* iPhoneSoundsPath;
+		HBufC* iMmcSoundsPath;
 	};
 
 

@@ -15,12 +15,11 @@
 *
 */
 
-#include "mdscommoninternal.h"
-#include "mdcserializationbuffer.h"
-
-
 #ifndef __MDCSERIALIZATIONTYPE_H__
 #define __MDCSERIALIZATIONTYPE_H__
+
+#include "mdscommoninternal.h"
+#include "mdcserializationbuffer.h"
 
 NONSHARABLE_CLASS(TMdCSerializationType)
 	{

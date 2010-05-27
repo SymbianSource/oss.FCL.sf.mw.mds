@@ -276,6 +276,7 @@ void CMdEObject::DoSetUriL(const TDesC& aUri)
 		}
 
 	iUri = HBufC::NewL( aUri.Length() );
+	// Note: CopyLC doesn't push anything to cleanup stack
 	iUri->Des().CopyLC( aUri );
 	iFlags |= EMdEObjectFlagModObject;
 	}
