@@ -126,6 +126,8 @@ EXPORT_C TInt RHarvesterClient::Connect()
 
     iHEO = NULL;
     
+    iSessionWatcher = NULL;
+    
     return err;
     }
 
@@ -166,6 +168,7 @@ EXPORT_C void RHarvesterClient::Close()
     WRITELOG( "RHarvesterClient::Close()" );
     
     delete iSessionWatcher;
+    iSessionWatcher = NULL;
     
     // cancels Harvest Complete request if it exist at server
     UnregisterHarvestComplete();
@@ -202,8 +205,8 @@ EXPORT_C void RHarvesterClient::SetObserver( MHarvestObserver* aObserver )
 
     if ( iHarvesterClientAO )
         {
-       iHarvesterClientAO->SetObserver( aObserver );
-       }
+        iHarvesterClientAO->SetObserver( aObserver );
+        }
 	iObserver = aObserver;
     }
 

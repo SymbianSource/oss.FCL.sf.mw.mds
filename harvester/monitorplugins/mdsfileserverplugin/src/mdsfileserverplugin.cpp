@@ -189,6 +189,9 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 	
 	TInt function = aRequest.Function();
 	
+	iFileName.Zero();
+    iNewFileName.Zero();
+	
 #ifdef _DEBUG_EVENTS
     PrintDebugEvents( function );
 #endif
@@ -556,9 +559,6 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             iQueue.Compress();
             }
         }
-    
-    iFileName.Zero();
-    iNewFileName.Zero();
     
     WRITELOG( "CMdsFileServerPlugin::DoRequestL() - return" );
     return err;
