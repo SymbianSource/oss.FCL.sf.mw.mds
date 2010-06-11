@@ -52,6 +52,7 @@ _LIT( KMimeTypeVideoMatroska, "video/x-matroska");
 _LIT( KMimeTypeAudioMatroska, "audio/x-matroska");
 _LIT( KMimeTypeWmv, "video/x-ms-wmv");
 _LIT( KMimeTypeDivx, "video/x-hx-divx");
+_LIT( KMimeTypeAsf, "video/x-ms-asf");
 
 _LIT( KExtensionMp4,   "mp4" );
 _LIT( KExtensionMpg4,  "mpg4" );
@@ -69,6 +70,7 @@ _LIT( KExtensionMkv,    "mkv" );
 _LIT( KExtensionRa,     "ra" );
 _LIT( KExtensionWmv,     "wmv" );
 _LIT( KExtensionDivx,     "divx" );
+_LIT( KExtensionAsf,     "asf" );
 
 _LIT(KVideo, "Video");
 _LIT(KAudio, "Audio");
@@ -273,6 +275,13 @@ void CHarvesterVideoPlugin::ConstructL()
             KExtensionWmv(), KMimeTypeWmv(), 
             TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
                     KMimeTypeWmv(), KMimeTypeWmv() ) ), 
+            cmp ) );
+
+    // Asf
+    User::LeaveIfError( iMimeTypeMappings.InsertInOrder( THarvestingHandling(
+            KExtensionAsf(), KMimeTypeAsf(), 
+            TVideoMetadataHandling( TVideoMetadataHandling::EHexilMetadataHandling, KVideo(),
+                    KMimeTypeAsf(), KMimeTypeAsf() ) ), 
             cmp ) );
 
     TFileName videos = PathInfo::VideosPath();
@@ -1146,6 +1155,16 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
 void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
     {
     WRITELOG( "CHarvesterVideoPlugin::GetMp4Mime - MP4ParseOpenFileHandle - start" );
+    TFileName tempName;
+    TUint32 mediaId( 0 );
+    TInt blackListError( KErrNone );
+
+    blackListError = GetFileFullNameAndMediaId( aFile, tempName, mediaId );
+    if( blackListError == KErrNone )
+        {
+        blackListError == AddFileToBlackList( tempName, mediaId );
+        }
+
     MP4Handle handle;
 
     MP4Err mp4err = MP4ParseOpenFileHandle64( &handle, &aFile );
@@ -1181,6 +1200,11 @@ void CHarvesterVideoPlugin::GetMp4Type( RFile64& aFile, TDes& aType )
     	aType.Copy( KVideo() );
     	}
 
+    if( blackListError == KErrNone )
+        {
+        RemoveFileFromBlackList( tempName, mediaId );
+        }
+
     MP4ParseClose( handle );
 	}
 #else
@@ -1196,27 +1220,14 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
 	CleanupStack::PushL( helixMetadata );
 
-	TFileName tempName;
-	TUint32 mediaId( 0 );
-	TInt blackListError( KErrNone );
-	
-    if( iBlacklist )
+    TFileName tempName;
+    TUint32 mediaId( 0 );
+    TInt blackListError( KErrNone );
+    
+    blackListError = GetFileFullNameAndMediaId( aFile, tempName, mediaId );
+    if( blackListError == KErrNone )
         {
-        WRITELOG( "CHarvesterVideoPlugin::GetRmTypeL - Adding URI to blacklist" );
-        blackListError = aFile.FullName( tempName );
-        if( blackListError == KErrNone )
-            {
-            blackListError = iMediaIdUtil->GetMediaId( tempName, mediaId );
-            if( blackListError == KErrNone )
-                {
-                TTime modified ( 0 );
-                blackListError = iFs.Modified( tempName, modified );
-                if( blackListError == KErrNone )
-                    {
-                    iBlacklist->AddFile( tempName, mediaId, modified );
-                    }
-                }
-            }
+        AddFileToBlackList( tempName, mediaId );
         }
 	
 	TRAPD( err, helixMetadata->OpenFileL( aFile ) );
@@ -1259,7 +1270,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 			// "application/vnd.rn-realmedia" or "application/vnd.rn-realmedia-vbr"
 			if( MdsUtils::Find( *mime, KMimeTypeRm() ) != KErrNotFound )
 				{
-				WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - mimetype %S. Object type Rm", mime );
+				WRITELOG1( "CHarvesterVideoPlugin::GetRmTypeL - mimetype %S. Object type Rm", mime );
 				if( possibleVideo )
 					{
 					aType.Copy( KVideo );
@@ -1273,7 +1284,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 				}
 			else if( MdsUtils::Find( *mime, KVideo() ) != KErrNotFound )
 				{
-				WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - mimetype %S. Object type Video", mime );
+				WRITELOG1( "CHarvesterVideoPlugin::GetRmTypeL - mimetype %S. Object type Video", mime );
 				aType.Copy( KVideo );
 	
 				// use MIME with "video" substring, if file might be video
@@ -1284,7 +1295,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 				}
 			else if( MdsUtils::Find( *mime, KAudio() ) != KErrNotFound )
 				{
-				WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - mimetype %S. Object type Audio", mime );
+				WRITELOG1( "CHarvesterVideoPlugin::GetRmTypeL - mimetype %S. Object type Audio", mime );
 				aType.Copy( KAudio );
 				}
 			// Set to Video, regardless how badly file is corrupted
@@ -1303,15 +1314,62 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		aType.Copy( KVideo );
 		}
 	
-    if ( iBlacklist && blackListError == KErrNone )
+    if( blackListError == KErrNone )
         {
-        WRITELOG( "CHarvesterVideoPlugin::GetRmTypeL - Removing URI from blacklist" );
-        iBlacklist->RemoveFile( tempName, mediaId );
+        RemoveFileFromBlackList( tempName, mediaId );
         }
     
-	helixMetadata->ResetL();
     CleanupStack::PopAndDestroy( helixMetadata );
 	}
+
+TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, const TUint32& aMediaId )
+    {
+    TInt blackListError( KErrNone );
+
+    TTime modified ( 0 );
+    blackListError = iFs.Modified( aFullName, modified );
+    if( blackListError == KErrNone )
+        {
+        WRITELOG( "CHarvesterVideoPlugin::AddFileToBlackList - Adding URI to blacklist" );
+        iBlacklist->AddFile( aFullName, aMediaId, modified );
+        }
+
+    return blackListError;
+    }
+
+TInt CHarvesterVideoPlugin::RemoveFileFromBlackList( const TFileName& aFullName, const TUint32& aMediaId )
+    {
+    TInt blackListError( KErrNone );
+
+    if( iBlacklist )
+        {
+        WRITELOG( "CHarvesterVideoPlugin::RemoveFileFromBlackList - Removing URI from blacklist" );
+        blackListError = iBlacklist->RemoveFile( aFullName, aMediaId );
+        }
+
+    return blackListError;
+    }
+
+TInt CHarvesterVideoPlugin::GetFileFullNameAndMediaId( const RFile64& aFile, TFileName& aFullName, TUint32& aMediaId)
+    {
+    TInt blackListError( KErrNone );
+
+    if( iBlacklist )
+        {
+        WRITELOG( "CHarvesterVideoPlugin::GetFileFullNameAndMediaId" );
+        blackListError = aFile.FullName( aFullName );
+        if( blackListError == KErrNone )
+            {
+            blackListError = iMediaIdUtil->GetMediaId( aFullName, aMediaId );
+            }
+        }
+    else
+        {
+        blackListError = KErrNotReady;
+        }
+ 
+    return blackListError;
+    }
 
 const THarvestingHandling* CHarvesterVideoPlugin::FindHandler( const TDesC& aUri )
 	{

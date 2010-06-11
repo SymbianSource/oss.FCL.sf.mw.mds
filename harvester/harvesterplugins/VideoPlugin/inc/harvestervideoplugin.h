@@ -221,6 +221,12 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		void GetMp4Type( RFile64& aFile, TDes& aType );
 		
 		void GetRmTypeL( RFile64& aFile, TDes& aType );
+
+        TInt AddFileToBlackList( const TFileName& aFullName, const TUint32& aMediaId );
+
+        TInt RemoveFileFromBlackList( const TFileName& aFullName, const TUint32& aMediaId );
+
+        TInt GetFileFullNameAndMediaId( const RFile64& aFile, TFileName& aFullName, TUint32& mediaId);
 	
 		const THarvestingHandling* FindHandler( const TDesC& aUri );
 		

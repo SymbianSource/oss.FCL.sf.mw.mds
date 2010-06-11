@@ -103,6 +103,7 @@ void CHarvesterClientAO::RemoveObserver( MHarvestObserver* aObserver )
 void CHarvesterClientAO::DoCancel()
 	{
 	WRITELOG( "CHarvesterClientAO::DoCancel()" );
+	iHarvesterClient.UnregisterHarvestComplete();
 	}
 	
 // ---------------------------------------------------------------------------

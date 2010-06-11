@@ -35,8 +35,7 @@ _LIT( KMdsDefaultRomImportFile, "Z:\\private\\200009f3\\defaultimportfile.mde" )
 _LIT( KDCIMFolder, ":\\DCIM");
 
 // schema file version
-const TInt KSchemaFileMajorVersion = 2;
-const TInt KSchemaFileMinorVersion = 0;
+const TInt KSchemaFileMajorVersion = 3;
 
 const TDefId KDefaultNamespaceDefId = 1;
 

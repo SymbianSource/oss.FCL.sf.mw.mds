@@ -59,7 +59,7 @@ CMdSMaintenanceEngine* CMdSMaintenanceEngine::NewLC()
 // Constructor
 // ------------------------------------------------
 //
-CMdSMaintenanceEngine::CMdSMaintenanceEngine()
+CMdSMaintenanceEngine::CMdSMaintenanceEngine() : iPrivateSchemaFileInvalid( EFalse )
     {
     }
 
@@ -129,32 +129,50 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
     	iMaintenance->CreateDatabaseL( );
 		const TUint KMdSServerUid = 0x0320e65f; // temporal uid
 
-		// try to read schema file from C drive
-		TRAPD( err, ImportSchemaL( aSchema, KSchemaImportFile, KMdSServerUid) );
+		TInt schemaError( KErrNone );
+		
+		if( iPrivateSchemaFileInvalid )
+		    {
+		    // if schema was updated in FOTA update, read the updated schema from ROM
+		    TRAP( schemaError, ImportSchemaL( aSchema, KSchemaRomImportFile, KMdSServerUid) );
+		    }
+		else
+		    {
+		    // try to read schema file from C drive
+		    TRAP( schemaError, ImportSchemaL( aSchema, KSchemaImportFile, KMdSServerUid) );
+		    }
 
-		if( err != KErrNone )
+		if( schemaError != KErrNone )
 			{
-			__LOG1( ELogAlways, "Schema reading error: %d", err );
+			__LOG1( ELogAlways, "Schema reading error: %d", schemaError );
 			// if schema file is not found, try to read from rom (Z) drive
-			if ( err == KErrNotFound || err == KErrPathNotFound )
+			if ( schemaError == KErrNotFound || schemaError == KErrPathNotFound )
 				{
-				TRAP( err, ImportSchemaL( aSchema, KSchemaRomImportFile, KMdSServerUid) );
+				TRAP( schemaError, ImportSchemaL( aSchema, KSchemaRomImportFile, KMdSServerUid) );
 				}
-			if( err != KErrNone )
+			else if( !iPrivateSchemaFileInvalid && schemaError == KErrCorrupt )
+			    {
+			    iPrivateSchemaFileInvalid = ETrue;
+			    }
+			else
+			    {
+			    schemaError = KErrUnknown;
+			    }
+			if( schemaError != KErrNone )
 				{
-				__LOG1( ELogAlways, "Schema reading error: %d", err );
+				__LOG1( ELogAlways, "Schema reading error: %d", schemaError );
 				DeleteDatabase();
-				User::Leave( err );
+				User::Leave( schemaError );
 				}
 			}
 
 		if ( FailedImports() != 0 )
   			{
-	       	User::Leave( KErrCorrupt );
+	       	User::Leave( KErrBadName );
        		}
 		
 		// try to read default import file from C drive
-       	TRAP( err, ImportMetadataL( aManipulate, aSchema, KMdsDefaultImportFile ) );
+       	TRAPD( err, ImportMetadataL( aManipulate, aSchema, KMdsDefaultImportFile ) );
        	if ( err == KErrNotFound || err == KErrPathNotFound )
        		{
        		// if default import file is not found, try to read from rom (Z) drive

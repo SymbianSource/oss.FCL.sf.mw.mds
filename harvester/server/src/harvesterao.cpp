@@ -143,6 +143,8 @@ CHarvesterAO::CHarvesterAO() : CActive( KHarvesterPriorityHarvestingPlugin )
     iManualPauseEnabled = EFalse;
     iFastHarvestNeeded = EFalse;
     iHarvestingPlaceholders = EFalse;
+    
+    iUnmountDetected = EFalse;
     }
      
 // ---------------------------------------------------------------------------
@@ -205,6 +207,9 @@ CHarvesterAO::~CHarvesterAO()
     
     iContainerPHArray.ResetAndDestroy();
     iContainerPHArray.Close();
+    
+    iTempReadyPHArray.ResetAndDestroy();
+    iTempReadyPHArray.Close();
     
 	delete iHarvesterOomAO;
     delete iRestoreWatcher;
@@ -454,6 +459,8 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 	{
     WRITELOG1( "CHarvesterAO::HandleUnmount(%d)", aMediaId );    
     
+    iUnmountDetected = ETrue;
+    
     if( !iServerPaused )
         {
         // Stop harvesting for unmount
@@ -558,6 +565,37 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
         TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypePlaceholder, removed) );
         }
 
+   removed = 0;
+   
+#ifdef _DEBUG
+   WRITELOG1( "CHarvesterAO::HandleUnmount() iTempReadyPHArray.Count() = %d", iTempReadyPHArray.Count() );
+#endif
+   arrayCount = iTempReadyPHArray.Count();
+   if( arrayCount > 0 )
+        {
+        for( TInt i=arrayCount-1; i>= 0; i--)
+            {
+            hd = iTempReadyPHArray[i];
+            err = iMediaIdUtil->GetMediaId( hd->Uri(), mediaId );
+            
+            if( err == KErrNone && mediaId == aMediaId )
+                {
+                WRITELOG1( "CHarvesterAO::HandleUnmount() remove iTempReadyPHArray %d", i);
+                delete hd;
+                hd = NULL;
+                iTempReadyPHArray.Remove( i );
+                removed++;
+                arrayCount--;
+                }
+            }
+        if( iTempReadyPHArray.Count() == 0 )
+            {
+            iTempReadyPHArray.Compress();
+            }
+        WRITELOG1( "CHarvesterAO::HandleUnmount() DecreaseItemCountL iTempReadyPHArray %d", removed);
+        TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypePlaceholder, removed) );
+        }
+   
    removed = 0;
    
 	const TUint count = iQueue->ItemsInQueue();
@@ -762,6 +800,7 @@ void CHarvesterAO::ReadItemFromQueueL()
             if ( err != KErrNone )
                 {
                 iPHArray.ResetAndDestroy();
+                iTempReadyPHArray.ResetAndDestroy();
                 User::Leave( err );
                 }
             
@@ -769,6 +808,10 @@ void CHarvesterAO::ReadItemFromQueueL()
             for( TInt i = 0; i < count; i++ )
                 {
                 CheckFileExtensionAndHarvestL( iReadyPHArray[i] );
+                if( iUnmountDetected )
+                    {
+                    break;
+                    }
                 iReadyPHArray.Remove( i );
                 // correct the index so harvesting order remains ok
                 i--;
@@ -786,6 +829,11 @@ void CHarvesterAO::ReadItemFromQueueL()
 	    	else
 	    		{
 	    		CheckFileExtensionAndHarvestL( hd );
+	    		if( iUnmountDetected )
+	    		    {
+	    		    iQueue->Append( hd );
+	    		    return;
+	    		    }
 	    		}
     		}
 			
@@ -797,6 +845,7 @@ void CHarvesterAO::ReadItemFromQueueL()
 	    	if ( err != KErrNone )
 	    		{
 	    		iPHArray.ResetAndDestroy();
+	    		iTempReadyPHArray.ResetAndDestroy();
 	    		User::Leave( err );
 	    		}
     		}
@@ -809,6 +858,10 @@ void CHarvesterAO::ReadItemFromQueueL()
             }
         iHarvestingPlaceholders = EFalse;
         CheckFileExtensionAndHarvestL( hd );
+        if( iUnmountDetected )
+            {
+            iQueue->Append( hd );
+            }
     	}
     }
 
@@ -845,9 +898,26 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		    iHarvesterPluginFactory->GetObjectDefL( *hd, objDefStr );
 		    }
 		
+		// GetObjectDef can cause context switch, and if unmount happens when this execution is 
+		// interrupted, the ph arrays can be invalid. Thus, abort whole run, and start over to make sure 
+		// the arrays are valid.
+		if( iUnmountDetected )
+		    {
+		    WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - Unmount detected during execution!" );
+		    for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
+		        {
+		        CHarvesterData* hd = iTempReadyPHArray[y];
+		        iPHArray.Insert( hd, 0 );
+		        }
+		    iTempReadyPHArray.Reset();
+		    CleanupStack::PopAndDestroy( &mdeObjectArray );
+		    return;
+		    }
+		
 		if( objDefStr.Length() == 0 ||
 		    ( objDefStr == KInUse ) )
 			{
+		    WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - no objectDef or in use, failing harvesting" );
 			const TInt error( KErrUnknown );
             // notify observer, notification is needed even if file is not supported
             HarvestCompleted( hd->ClientId(), hd->Uri(), error );
@@ -1018,11 +1088,19 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	    
 	    CleanupStack::Pop( mdeObject );
 		
-		iReadyPHArray.Append( hd );
+	    iTempReadyPHArray.Append( hd );
 		iPHArray.Remove( i );
         i--;
         endindex--;
 		}
+	
+	const TInt tempArrayCount( iTempReadyPHArray.Count() );
+	for( TInt i( 0 ); i < tempArrayCount; i++ )
+	    {
+	    CHarvesterData* hd = iTempReadyPHArray[i];
+	    iReadyPHArray.Append( hd );
+	    }
+	iTempReadyPHArray.Reset();
 	
 	const TInt objectCount = mdeObjectArray.Count();  
 	
@@ -1057,6 +1135,8 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	iPHArray.ResetAndDestroy();
 	
 	CleanupStack::PopAndDestroy( &mdeObjectArray );
+	
+	WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - end" );
 	}
 
 // ---------------------------------------------------------------------------
@@ -1076,6 +1156,14 @@ void CHarvesterAO::CheckFileExtensionAndHarvestL( CHarvesterData* aHD )
     	WRITELOG1( "CHarvesterAO::CheckFileExtensionAndHarvestL() - no mdeobject. URI: %S", &uri );
 	    TBuf<KObjectDefStrSize> objDefStr;
 		iHarvesterPluginFactory->GetObjectDefL( *aHD, objDefStr );
+
+        // GetObjectDef can cause context switch, and if unmount happens when this execution is 
+        // interrupted, the ph data can be invalid. Thus, abort whole run, and start over to make sure 
+        // the data is valid.
+        if( iUnmountDetected )
+            {
+            return;
+            }
 		
 		if( objDefStr.Length() == 0 )
 			{
@@ -1506,13 +1594,11 @@ void CHarvesterAO::ContextInitializationStatus( TInt aErrorCode )
 TInt CHarvesterAO::PauseHarvester()
     {
     WRITELOG( "CHarvesterAO::PauseHarvester()" );
-
-    Cancel();
     
     iHarvesterPluginFactory->PauseHarvester( ETrue );
     iServerPaused = ETrue;
     
-    if( !iRamFull && !iDiskFull )
+    if( !iRamFull && !iDiskFull && !iUnmountDetected )
         {
         iManualPauseEnabled = ETrue;
         }
@@ -1533,9 +1619,14 @@ void CHarvesterAO::ResumeHarvesterL()
     
     iHarvesterPluginFactory->PauseHarvester( EFalse );
     iServerPaused = EFalse;
-    iManualPauseEnabled = EFalse;
     
-    SetNextRequest( ERequestHarvest );
+    if( !iManualPauseEnabled &&
+        iNextRequest == ERequestIdle )
+        {
+        SetNextRequest( ERequestHarvest );
+        }
+    
+    iManualPauseEnabled = EFalse;
     }
 
 // ---------------------------------------------------------------------------
@@ -1550,6 +1641,10 @@ void CHarvesterAO::RunL()
     	{
     	iNextRequest = ERequestIdle;
     	}
+    
+    // Reset unmount flag, as unmount is handled before RunL is called again after aborted harvesting run
+    iUnmountDetected = EFalse;
+    
     User::LeaveIfError( iStatus.Int() );
     switch( iNextRequest )
         {
@@ -1560,6 +1655,7 @@ void CHarvesterAO::RunL()
             iReadyPHArray.Compress();
             iContainerPHArray.Compress();
             iPHArray.Compress();
+            iTempReadyPHArray.Compress();
             }
         break;
 
@@ -1571,6 +1667,7 @@ void CHarvesterAO::RunL()
             // harvest new items first...
             if ( iQueue->ItemsInQueue() > 0 )
                 {
+                WRITELOG( "CHarvesterAO::RunL - Items in queue - calling ReadItemFromQueueL()" );
                 ReadItemFromQueueL();
 				SetNextRequest( ERequestHarvest );
 				break;
@@ -1579,10 +1676,12 @@ void CHarvesterAO::RunL()
             // no more items to handle from main queue
             else
                 {
+                WRITELOG( "CHarvesterAO::RunL - No items in main queue" );
                 // All registered fast harvested items or placeholders handled at this point     
                 // if container files to harvest, handle those next
                 if( iContainerPHArray.Count() > 0 )
                 	{
+                    WRITELOG( "CHarvesterAO::RunL - Items in iContainterPHArray - requesting ERequestContainerPlaceholder handling" );
                     iFastHarvestNeeded = EFalse;
                     iHarvestingPlaceholders = EFalse;
                     SetPriority( KHarvesterPriorityHarvestingPlugin );
@@ -1591,6 +1690,9 @@ void CHarvesterAO::RunL()
                 	}
                 else if( iHarvestingPlaceholders || iFastHarvestNeeded )
                     {
+                    WRITELOG( "CHarvesterAO::RunL - No items in iContainerPHArray" );
+                    WRITELOG( "CHarvesterAO::RunL - PlaceholderHarvesting or FastHarvesting were enabled -> reset" );
+                    WRITELOG( "CHarvesterAO::RunL - next request for ERequestHarvest handling" );
                     // reset to default priority       
                     iFastHarvestNeeded = EFalse;
                     iHarvestingPlaceholders = EFalse;
@@ -1598,6 +1700,8 @@ void CHarvesterAO::RunL()
                     SetNextRequest( ERequestHarvest );
                     break;
                     }
+                
+                WRITELOG( "CHarvesterAO::RunL - starting handling of iReadyPHArray items" );
                 
                 const TInt arrayCount( iReadyPHArray.Count() );
 				if( arrayCount > 0 )
@@ -1613,6 +1717,10 @@ void CHarvesterAO::RunL()
             		for( TInt i = 0; i < endIndex; i++ )
             			{
                 		CheckFileExtensionAndHarvestL( iReadyPHArray[i] );
+                		if( iUnmountDetected )
+                		    {
+                		    break;
+                		    }
                 		iReadyPHArray.Remove( i );
                         // correct the index so harvesting order remains ok
                         i--;
@@ -1653,6 +1761,7 @@ void CHarvesterAO::RunL()
 	    		{
 	    	    iContainerPHArray.ResetAndDestroy();
 	    		iPHArray.ResetAndDestroy();
+	    		iTempReadyPHArray.ResetAndDestroy();
 	    		User::Leave( err );
 	    		}
 	    	SetNextRequest( ERequestHarvest );
@@ -2421,6 +2530,7 @@ void CHarvesterAO::ContextSnapshotStatus( CHarvesterData* aHD )
         if( aHD->Origin() == MdeConstants::Object::ECamera )
         	{
             aHD->MdeObject().SetPlaceholder( EFalse );
+            TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypePlaceholder ) );
         	TRAPD(mdeError, iMdeObjectHandler->SetMetadataObjectL( *aHD ) );
         	if(mdeError != KErrNone)
             	{

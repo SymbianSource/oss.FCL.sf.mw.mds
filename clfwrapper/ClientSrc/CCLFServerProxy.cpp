@@ -32,7 +32,7 @@
 // CONSTANTS
 const TInt KCLFDefaultBufferLength( 64 );
 const TInt KCLFDefaultArrayGranularity( 4 );
-const TInt KCLFExtensionArrayGranularity( 50 );
+const TInt KCLFExtensionArrayGranularity( 51 );
 
 _LIT( KCLFDriveLetterFormatString, ":\\" );
 const TInt KCLFDriveC( 'C' );
@@ -93,6 +93,7 @@ _LIT( KExtensionRv,    "rv" );
 _LIT( KExtensionWmv,    "wmv" );
 _LIT( KExtensionAvi,    "avi" );
 _LIT( KExtensionDivx,    "divx" );
+_LIT( KExtensionAsf,    "asf" );
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -1285,6 +1286,7 @@ void CCLFServerProxy::PopulateSupportedExtensionL()
     iExtensionArray->InsertIsqL( KExtensionWmv );
     iExtensionArray->InsertIsqL( KExtensionAvi );
     iExtensionArray->InsertIsqL( KExtensionDivx );
+    iExtensionArray->InsertIsqL( KExtensionAsf );
     }
 
 //  End of File

@@ -522,6 +522,9 @@ class CHarvesterAO : public CActive,
         
         /** */
         RPointerArray<CHarvesterData> iContainerPHArray;
+        
+		/** */
+        RPointerArray<CHarvesterData> iTempReadyPHArray;
                 
         /**
          * Pointer to process origin mapper for registering mappings.
@@ -580,6 +583,8 @@ class CHarvesterAO : public CActive,
         
         HBufC* iPhoneSoundsPath;
         HBufC* iMmcSoundsPath;
+        
+        TBool iUnmountDetected;
 	};
 	
 #endif //__CHARVESTERAO_H__
