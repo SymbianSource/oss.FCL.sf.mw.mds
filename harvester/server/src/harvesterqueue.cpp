@@ -252,7 +252,7 @@ void CHarvesterQueue::MonitorEvent( CHarvesterData* aHarvesterData )
    	Append( aHarvesterData );
 
     // signal to start harvest if harvester idles
-    if ( !iHarvesterAO->IsServerPaused() )
+    if ( !iHarvesterAO->IsServerPaused() && iHarvesterAO->GetHarvesterAORunState() == CHarvesterAO::ERequestIdle )
         {
         iHarvesterAO->SetNextRequest( CHarvesterAO::ERequestHarvest );
         }

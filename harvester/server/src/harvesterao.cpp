@@ -145,6 +145,7 @@ CHarvesterAO::CHarvesterAO() : CActive( KHarvesterPriorityHarvestingPlugin )
     iHarvestingPlaceholders = EFalse;
     
     iUnmountDetected = EFalse;
+    iPriorityInterruptDetected = EFalse;
     }
      
 // ---------------------------------------------------------------------------
@@ -913,6 +914,30 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		    CleanupStack::PopAndDestroy( &mdeObjectArray );
 		    return;
 		    }
+	    // Check for priority interrupt
+	    // If priority interrupt occures, drop current operation to handle the priority item first,
+	    // and continue from current situation after that
+		else if( iPriorityInterruptDetected )
+		    {
+            WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - Priority interrupt during execution!" );
+            const TInt currentPHArrayCount( iPHArray.Count() );
+            for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
+                {
+                CHarvesterData* hd = iTempReadyPHArray[y];
+                if( currentPHArrayCount )
+                    {
+                    // Leave the first item in the array as it is the priority item
+                    iPHArray.Insert( hd, 1 );
+                    }
+                else
+                    {
+                    iPHArray.Insert( hd, 0 );
+                    }
+                }
+            iTempReadyPHArray.Reset();
+            CleanupStack::PopAndDestroy( &mdeObjectArray );
+            return;		
+		    }
 		
 		if( objDefStr.Length() == 0 ||
 		    ( objDefStr == KInUse ) )
@@ -1644,6 +1669,8 @@ void CHarvesterAO::RunL()
     
     // Reset unmount flag, as unmount is handled before RunL is called again after aborted harvesting run
     iUnmountDetected = EFalse;
+    // Reset priority flag, as interrupt is handled automatically first when RunL is called again 
+    iPriorityInterruptDetected = EFalse;
     
     User::LeaveIfError( iStatus.Int() );
     switch( iNextRequest )
@@ -2108,8 +2135,10 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         {
         iQueue->Append( hd );
         
+        iPriorityInterruptDetected = ETrue;
+        
         // signal to start harvest if harvester idles
-        if ( !IsServerPaused() )
+        if ( !IsServerPaused() && iNextRequest == ERequestIdle )
             {
             SetNextRequest( CHarvesterAO::ERequestHarvest );
             }
@@ -2286,7 +2315,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     	iQueue->Append( hd );
 
     	// signal to start harvest if harvester idles
-    	if ( !IsServerPaused() )
+    	if ( !IsServerPaused() && iNextRequest == ERequestIdle )
     		{
     		SetNextRequest( CHarvesterAO::ERequestHarvest );
     		}
@@ -3058,3 +3087,9 @@ void CHarvesterAO::AddDefaultFolderDataL( CMdEObject* aObject )
         aObject->AddBoolPropertyL( *iPropDefs->iDefaultFolderPropertyDef, inDefaultFolder );
         }
     }
+
+CHarvesterAO::TRequest CHarvesterAO::GetHarvesterAORunState()
+    {
+    return iNextRequest;
+    }
+

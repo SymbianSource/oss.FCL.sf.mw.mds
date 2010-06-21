@@ -115,8 +115,6 @@ class CHarvesterAO : public CActive,
         	ERequestContainerPlaceholder
         	};
         	
-
-
         /**
          * Constructs a new harvesting thread
          *
@@ -302,6 +300,8 @@ class CHarvesterAO : public CActive,
         void MemoryGood();
         
         void RemoveBlacklistedFile( CHarvesterData* aItem );
+        
+        CHarvesterAO::TRequest GetHarvesterAORunState();
 		
     private:
         
@@ -585,6 +585,7 @@ class CHarvesterAO : public CActive,
         HBufC* iMmcSoundsPath;
         
         TBool iUnmountDetected;
+        TBool iPriorityInterruptDetected;
 	};
 	
 #endif //__CHARVESTERAO_H__
