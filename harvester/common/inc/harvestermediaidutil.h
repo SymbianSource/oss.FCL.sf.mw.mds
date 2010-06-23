@@ -19,6 +19,7 @@
 
 #include <e32base.h>
 #include <f32file.h>
+#include <e32svr.h>
 
 const TInt KHarvesterMediaIdTLSKey = 0x200009FE;
 

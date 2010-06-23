@@ -340,8 +340,6 @@ EXPORT_C void CHarvesterEventManager::RegisterEventObserverL( const RMessage2& a
 
 	iRegisteredObservers.AppendL( observerInfo );
 
-	CleanupStack::Pop( observerInfo );
-	
 	// send event if register is coming in the middle of harvesting
 	for( TInt i = iEventStatuses.Count(); --i >= 0; )
 		{
@@ -349,13 +347,31 @@ EXPORT_C void CHarvesterEventManager::RegisterEventObserverL( const RMessage2& a
 		if( CheckObserverType( observerInfo->iObserverType, 
 				eventStatus.iObserverType) )
 			{
-			if( eventStatus.iItemsLeft > 0 )
-				{
-				TRAP_IGNORE( SendEventL( eventStatus.iObserverType, 
-						eventStatus.iCurrentState, eventStatus.iItemsLeft ) );
-				}
+			TRAP_IGNORE( SendEventL( eventStatus.iObserverType, 
+					eventStatus.iCurrentState, eventStatus.iItemsLeft ) );
 			}
 		}
+	
+	//no events in queue, signal registered client anyways 
+	if( !iEventStatuses.Count() )
+	    {
+        if(observerInfo->iObserverType & EHEObserverTypeOverall)
+            {
+            SendSingleEvent(*observerInfo, EHEObserverTypeOverall, EHEStateUninitialized, 0);
+            }
+        
+        if(observerInfo->iObserverType & EHEObserverTypeMMC)
+            {
+            SendSingleEvent(*observerInfo, EHEObserverTypeMMC, EHEStateUninitialized, 0);
+            }
+        
+        if(observerInfo->iObserverType & EHEObserverTypePlaceholder)
+            {
+            SendSingleEvent(*observerInfo, EHEObserverTypePlaceholder, EHEStateUninitialized, 0);
+            }
+	    }
+	
+	CleanupStack::Pop( observerInfo );
 	}
 
 EXPORT_C TInt CHarvesterEventManager::UnregisterEventObserver( const RMessage2& aMessage )

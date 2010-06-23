@@ -49,7 +49,7 @@ void CMdSOomPlugin::ConstructL()
 	}
 
 
-void CMdSOomPlugin::FreeRam( /*TInt aBytesToFree*/ )
+void CMdSOomPlugin::FreeRam( TInt /*aBytesToFree*/ )
 	{
 	WRITELOG("CMdSOomPlugin::FreeRam() - start");
 	

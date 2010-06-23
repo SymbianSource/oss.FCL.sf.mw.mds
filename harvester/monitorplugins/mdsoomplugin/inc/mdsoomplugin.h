@@ -32,7 +32,7 @@
 *  CMdSOomPlugin
 * 
 */
-class CMdSOomPlugin : public COomMonitorPlugin
+class CMdSOomPlugin : public COomMonitorPluginV2
 	{
 public:
 	// Constructors and destructor
@@ -48,9 +48,8 @@ public:
 	 * From COomMonitorPlugin v2
 	 * FreeRam is called when the system RAM level becomes
 	 * low. This plugin is requested to help free some RAM.
-	 * Paramater reserved for v2 plugin
 	 */
-	void FreeRam( /*TInt aBytesToFree*/ );
+	void FreeRam( TInt aBytesToFree );
 
 	/**
 	 * From COomMonitorPlugin v2
