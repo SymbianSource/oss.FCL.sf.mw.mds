@@ -29,7 +29,7 @@ VENDORID        VID_DEFAULT
 
 #if defined(WINSCW)
     deffile ../bwincw/mdccommonu.def
-#elif defined(ARMCC)
+#elif defined(EABI)
     deffile ../eabi/mdccommonu.def
 #endif
 nostrictdef

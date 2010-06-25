@@ -32,7 +32,7 @@ USERINCLUDE     ../inc
 
 #if defined(WINSCW)
     deffile ../bwincw/mdeclientu.def
-#elif defined(ARMCC)
+#elif defined(EABI)
     deffile ../eabi/mdeclientu.def
 #endif
 nostrictdef
