@@ -26,6 +26,10 @@
 #include "mdsutils.h"
 #include "harvesterrequestactive.h"
 #include "mdscommoninternal.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvesterclientTraces.h"
+#endif
 
 /** @var Message slots */
 const TInt KDefaultMessageSlots = -1;  // Global pool
@@ -48,6 +52,8 @@ static TInt CreateServerProcess();
 EXPORT_C RHarvesterClient::RHarvesterClient() : RSessionBase() 
     {
     WRITELOG( "RHarvesterClient::RHarvesterClient() - Constructor" );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_RHARVESTERCLIENT, "RHarvesterClient::RHarvesterClient" );
+    
     iHarvesterClientAO = NULL;
     iObserver = NULL;
     iHEO = NULL;
@@ -61,7 +67,9 @@ EXPORT_C RHarvesterClient::RHarvesterClient() : RSessionBase()
 EXPORT_C TInt RHarvesterClient::Connect()
     {
     WRITELOG( "RHarvesterClient::Connect()" );
-
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_CONNECT, "RHarvesterClient::Connect" );
+    
+    
     RProperty property;
     const TInt error( property.Attach( KHarvesterPSShutdown, KShutdown, EOwnerThread ) );
     TInt value = 0;
@@ -137,6 +145,8 @@ EXPORT_C TInt RHarvesterClient::Connect()
 //
 EXPORT_C TInt RHarvesterClient::Pause()
     {
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_PAUSE, "RHarvesterClient::Pause" );
+    
     WRITELOG( "RHarvesterClient::Pause() -  sending command EPauseHarvester" );
     if( iHandle )
     	{
@@ -152,6 +162,8 @@ EXPORT_C TInt RHarvesterClient::Pause()
 EXPORT_C TInt RHarvesterClient::Resume()
     {
     WRITELOG( "RHarvesterClient::Resume() -  sending command EResumeHarvester" );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_RESUME, "RHarvesterClient::Resume" );
+    
     if( iHandle )
     	{
     	return SendReceive( EResumeHarvester );
@@ -166,6 +178,7 @@ EXPORT_C TInt RHarvesterClient::Resume()
 EXPORT_C void RHarvesterClient::Close()
     {
     WRITELOG( "RHarvesterClient::Close()" );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_CLOSE, "RHarvesterClient::Close" );
     
     delete iSessionWatcher;
     iSessionWatcher = NULL;
@@ -202,6 +215,7 @@ EXPORT_C void RHarvesterClient::Close()
 EXPORT_C void RHarvesterClient::SetObserver( MHarvestObserver* aObserver )
     {
     WRITELOG( "RHarvesterClient::SetObserver()" );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_SETOBSERVER, "RHarvesterClient::SetObserver" );
 
     if ( iHarvesterClientAO )
         {
@@ -217,6 +231,7 @@ EXPORT_C void RHarvesterClient::SetObserver( MHarvestObserver* aObserver )
 EXPORT_C void RHarvesterClient::RemoveObserver( MHarvestObserver* aObserver )
     {
     WRITELOG( "RHarvesterClient::RemoveObserver()" );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_REMOVEOBSERVER, "RHarvesterClient::RemoveObserver" );
     
     if ( iHarvesterClientAO )
         {
@@ -283,6 +298,8 @@ EXPORT_C TInt RHarvesterClient::RemoveHarvesterEventObserver( MHarvesterEventObs
 EXPORT_C void RHarvesterClient::HarvestFile( const TDesC& aURI, RArray<TItemId>& aAlbumIds, TBool aAddLocation )
     {
     WRITELOG1( "RHarvesterClient::HarvestFile() - file %S", &aURI );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_HARVESTFILE, "RHarvesterClient::HarvestFile" );
+    
     
     HBufC8* paramBuf = NULL;
     TRAPD( err, paramBuf = SerializeArrayL( aAlbumIds ) );
@@ -354,6 +371,8 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
                                                                                          TUid /*aUid*/ )
     {
     WRITELOG1( "RHarvesterClient::HarvestFileWithUID() - file %S", &aURI );
+    OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_HARVESTFILEWITHUID, "RHarvesterClient::HarvestFileWithUID" );
+    
     
     HBufC8* paramBuf = NULL;
     TRAPD( err, paramBuf = SerializeArrayL( aAlbumIds ) );
@@ -447,6 +466,8 @@ EXPORT_C void RHarvesterClient::RemoveSessionObserver()
 void RHarvesterClient::RegisterHarvestComplete(TDes& aURI, TRequestStatus& aStatus)
 	{	
 	TIpcArgs ipcArgs( &aURI );
+	OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_REGISTERHARVESTCOMPLETE, "RHarvesterClient::RegisterHarvestComplete" );
+	
 	
 	if( !iHandle )
 		{
@@ -512,6 +533,7 @@ TVersion RHarvesterClient::Version() const
 static TInt StartServer()
     {
     WRITELOG( "StartServer() - begin" );
+    OstTrace0( TRACE_NORMAL, _STARTSERVER, "::StartServer" );    
     
     TFindServer findHarvesterServer( KHarvesterServerName );
     TFullName name;
@@ -555,6 +577,8 @@ static TInt StartServer()
 static TInt CreateServerProcess()
     {
     WRITELOG( "CreateServerProcess() - begin" );
+    OstTrace0( TRACE_NORMAL, _CREATESERVERPROCESS, "::CreateServerProcess" );
+    
     RProcess server;
     TInt result = server.Create( KHarvesterServerExe, KNullDesC );   
     if ( result != KErrNone )

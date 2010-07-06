@@ -17,6 +17,7 @@
 
 #include <platform_paths.hrh>
 #include <data_caging_paths.hrh>
+#include "../../inc/locplatsupport.mmh"
 
 VERSION         10.0
 TARGET          LocationTrail.dll
@@ -37,6 +38,24 @@ USERINCLUDE     ../inc
 USERINCLUDE     ../../inc
 USERINCLUDE     ../../../inc
 
+#ifdef _LOC_REVERSEGEOCODE
+MACRO LOC_REVERSEGEOCODE
+USERINCLUDE     ../../tagcreator/inc
+USERINCLUDE     ../../ReverseGeocode/inc
+USERINCLUDE	../../ReverseGeoCoderPlugin/inc
+#endif
+
+#ifdef     _LOC_GEOTAGGING_CELLID
+MACRO LOC_GEOTAGGING_CELLID
+USERINCLUDE     ../../geoconverter/inc
+#endif
+
+SYSTEMINCLUDE     /epoc32/include/stdapis
+SYSTEMINCLUDE     /epoc32/include/ecom
+SYSTEMINCLUDE     /epoc32/include/platform/lbs
+
+MW_LAYER_SYSTEMINCLUDE
+
 SOURCEPATH      ../src
 SOURCE          clocationrecord.cpp
 SOURCE          cnetworkinfo.cpp
@@ -45,19 +64,36 @@ SOURCE          ctracklog.cpp
 SOURCE          cgpxconverterao.cpp
 SOURCE          locationremappingao.cpp
 
-MW_LAYER_SYSTEMINCLUDE
-
 LIBRARY         euser.lib 
 LIBRARY         efsrv.lib
 LIBRARY         lbs.lib
 LIBRARY         etel3rdparty.lib
-LIBRARY	    mdeclient.lib
+LIBRARY         etel.lib
+LIBRARY         etelmm.lib
+LIBRARY	        mdeclient.lib
 LIBRARY         estor.lib
-LIBRARY	    PlatformEnv.lib
-LIBRARY 	    centralrepository.lib 
+LIBRARY	        PlatformEnv.lib
+LIBRARY 	centralrepository.lib 
+LIBRARY         ecom.lib
+LIBRARY         commsdat.lib
+
+
+DEBUGLIBRARY flogger.lib
+LIBRARY        libc.lib
+#ifdef _LOC_REVERSEGEOCODE
+LIBRARY        reversegeocode.lib 
+LIBRARY        tagcreator.lib 
+LIBRARY        geotagger.lib
+#endif
+
+#ifdef     _LOC_GEOTAGGING_CELLID
+LIBRARY       geoconverter.lib
+#endif
+
 
 PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime
 
-
+// End of file
+ 

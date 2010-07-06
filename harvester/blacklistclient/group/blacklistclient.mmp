@@ -28,6 +28,7 @@ USERINCLUDE       ../inc
 USERINCLUDE       ../../blacklistserver/inc
 USERINCLUDE       ../../common/inc
 USERINCLUDE       ../../../inc
+USERINCLUDE       ../traces
 
 SOURCEPATH        ../src
 SOURCE		      blacklistclient.cpp

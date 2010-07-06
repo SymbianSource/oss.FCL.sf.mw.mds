@@ -48,7 +48,12 @@ CLocationManagerSession::CLocationManagerSession()
 CLocationManagerSession::~CLocationManagerSession()
     {
     LOG( "CLocationManagerSession::~CLocationManagerSession(), begin" );
-    TRAP_IGNORE(Server().StopGPSPositioningL());
+    // don't call stop GPS positioning from here...
+    // we are expecting the application to start and stop else on server terminate, we will do the same.
+    // this is not okay when user takes a photograph and then transfer photo using BT/PC .
+    // at this point, it will stop the trail for camera where as camera session is still valid.
+    // DON"T CALL StopGPSPositioningL METHOD.
+//    TRAP_IGNORE(Server().StopGPSPositioningL());
     Server().CancelNotificationRequest( iNotificationHandle );
     Server().CancelLocationRequest( iLocationHandle );
     Server().CancelTrackLogNotificationRequest( iTrackLogNotificationHandle );
@@ -86,22 +91,15 @@ CLocationManagerServer& CLocationManagerSession::Server()
 //
 void CLocationManagerSession::ServiceL( const RMessage2& aMessage )
     {
-    LOG( "CLocationManagerSession::ServiceL" );
-    _LIT( KSemaphore, "LocManSynchSemaphore" );
-    RSemaphore semaphore;
-    const TInt result = semaphore.OpenGlobal( KSemaphore );
-    LOG1( "CLocationManagerSession::ServiceL - semaphore open result: %d", result );
+    LOG( "CLocationManagerSession::ServiceL, begin" );
+    LOG1("Message id - %d", aMessage.Function());
     iMessage = RMessage2( aMessage );
-    if ( result == KErrNone )
-    	{
-    	semaphore.Signal();
-    	semaphore.Close();
-    	}
     TRAPD( err, DispatchMessageL( aMessage ) );
     if ( err != KErrNone )
         {
         aMessage.Complete( err );
         }    
+    LOG( "CLocationManagerSession::ServiceL, end" );
     }
 
 // --------------------------------------------------------------------------
@@ -180,6 +178,18 @@ void CLocationManagerSession::DispatchMessageL( const RMessage2& aMessage )
         case ELocManCancelTrackLogNotify:
         	CancelTrackLogNotificationRequest( aMessage );
         	break;
+        case ELocManTagPending:
+        	Server().TagPendingRequestL(aMessage);
+        	break;
+        case ELocManStartGeoTaging:
+            Server().StartGeoTaggingL(aMessage);
+            break;
+        case ELocManCancelTagPendingReq:
+            Server().CancelTagPendingRequest(aMessage);
+			break;
+		case ELocManCancelGeoTaggingReq:
+            Server().CancelGeoTaggingRequest(aMessage);
+            break;
         default:
             aMessage.Complete( KErrArgument );
             break;
@@ -494,7 +504,7 @@ void CLocationManagerSession::TrackLogNameL(const RMessage2& aMessage)
 	}
 
 // --------------------------------------------------------------------------
-// CLocationManagerSession::GpsQualityChange
+// CLocationManagerSession::RegisterTrackLogObserver
 // --------------------------------------------------------------------------
 //  
 void CLocationManagerSession::RegisterTrackLogObserver( const RMessage2& aMessage )
@@ -503,6 +513,11 @@ void CLocationManagerSession::RegisterTrackLogObserver( const RMessage2& aMessag
 	TRAP_IGNORE( Server().AddTrackLogNotificationRequestL( aMessage ) );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerSession::GetCaptureSettingL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerSession::GetCaptureSettingL( const RMessage2& aMessage )
 	{
 	TInt KParamCaptureSetting = 0;

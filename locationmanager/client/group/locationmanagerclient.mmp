@@ -40,9 +40,10 @@ USERINCLUDE	    ../../../inc
 SOURCEPATH      ../src
 SOURCE          rlocationmanager.cpp
 SOURCE          rlocationtrail.cpp
-SOURCE	    rlocationobjectmanipulator.cpp 
-SOURCE      CTrackLogObserverAO.cpp 
-SOURCE      rtracklog.cpp
+SOURCE	        rlocationobjectmanipulator.cpp 
+SOURCE          CTrackLogObserverAO.cpp
+SOURCE          rtracklog.cpp
+SOURCE          rlocationgeotagger.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -51,7 +52,10 @@ LIBRARY	    efsrv.lib
 LIBRARY	    lbs.lib
 LIBRARY	    mdccommon.lib
 
+DEBUGLIBRARY   flogger.lib
 PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime
+
+// End of file
 

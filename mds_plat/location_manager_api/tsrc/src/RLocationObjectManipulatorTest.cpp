@@ -334,5 +334,212 @@ void CLocationManagerTestScripter::TestLocationData( TLocationData& aLocationDat
 	aLocationData.iQuality = 1;
 	}
 
-// End of file
 
+#ifdef LOC_REVERSEGEOCODE
+TInt CLocationManagerTestScripter::ConnectGeoTaggerL( CStifItemParser& /*aItem*/ )
+    {
+    _LIT( KMsg1, "ConnectGeoTaggerL" );
+    iLog->Log( KMsg1 );  
+    RDebug::Print( KMsg1 );
+    
+    if(!iLocGeoTaggerConnected)
+    	{
+   	  User::LeaveIfError( iLocationGeoTagger.Connect() );
+   	  }
+   	  
+    iLocGeoTaggerConnected = ETrue;
+    return KErrNone;
+    }
+    
+TInt CLocationManagerTestScripter::CloseGeoTaggerL( CStifItemParser& /*aItem*/ )
+    {
+    _LIT( KMsg1, "CloseGeoTaggerL" );
+    iLog->Log( KMsg1 );  
+    RDebug::Print( KMsg1 );
+    
+    iLocationGeoTagger.Close() ;
+    iLocGeoTaggerConnected = EFalse;
+        
+    return KErrNone;
+    }
+    
+    
+TInt CLocationManagerTestScripter::StartGeoTaggingL( CStifItemParser& /*aItem*/ )
+    {
+    _LIT( KMsg1, "Enter StartGeoTagging" );
+    iLog->Log( KMsg1 );  
+    RDebug::Print( KMsg1 );
+
+	//rav
+	
+	 if(!iLocGeoTaggerConnected)
+    	{
+   	  	User::LeaveIfError( iLocationGeoTagger.Connect() );
+   	 	}
+   	  
+    iLocGeoTaggerConnected = ETrue;
+
+	
+    	
+    TRequestStatus status(KRequestPending);
+    TConnectionOption conOption(ESilent);
+    iLocationGeoTagger.StartGeoTagging(status,conOption);
+  	User::WaitForRequest( status );
+  		
+		_LIT( KMsg3, " status.Int() =%d" );
+		iLog->Log( KMsg3,status.Int() );
+		
+		TL( status.Int() == KErrNone );
+    
+		
+    _LIT( KMsg2, "Exit StartGeoTagging" );
+    iLog->Log( KMsg2 );  
+    RDebug::Print( KMsg2 );
+    
+    return KErrNone;
+    }
+    
+// -----------------------------------------------------------------------------
+// CLocationManagerTestScripter::TestGeoTagCompleteStatusL
+// -----------------------------------------------------------------------------
+//
+TInt CLocationManagerTestScripter::TestGeoTagCompleteStatusL( CStifItemParser& /*aItem*/) 
+	{
+  _LIT( KMsg1, "TestGeoTagCompleteStatusL enter" );
+  iLog->Log( KMsg1 );  
+  RDebug::Print( KMsg1 );	
+  		
+	TRequestStatus status = KRequestPending; 
+	TGeoTaggingSatus tagPendingFlag = EGeoTaggingPending;
+	iLocationGeoTagger.GeoTagStaus( status, tagPendingFlag );
+	
+	User::WaitForRequest( status );	
+		
+	TL(status.Int() == KErrNone);
+
+  TL(tagPendingFlag == EGeoTagCmpt);
+
+  _LIT( KMsg2, "TestGeoTagCompleteStatusL exit" );
+  iLog->Log( KMsg2 );  
+  RDebug::Print( KMsg2 );	
+
+      return KErrNone;
+	}
+	   
+	   
+// -----------------------------------------------------------------------------
+// CLocationManagerTestScripter::TestGeoTagPendingStatusL
+// -----------------------------------------------------------------------------
+//
+TInt CLocationManagerTestScripter::TestGeoTagPendingStatusL( CStifItemParser& aItem ) 
+	{
+  _LIT( KMsg1, "TestGeoTagPendingStatusL enter" );
+  iLog->Log( KMsg1 );  
+  RDebug::Print( KMsg1 );			
+  	
+	TInt fntype;
+	aItem.GetNextInt(fntype);
+  	
+	TRequestStatus status = KRequestPending; 
+	TGeoTaggingSatus tagPendingFlag = EGeoTagCmpt;
+	iLocationGeoTagger.GeoTagStaus( status, tagPendingFlag );
+	
+	User::WaitForRequest( status );	
+		
+	TL(status.Int() == KErrNone);		
+	
+	if(fntype == 0 )
+		{
+			//for geotagged photos the tag status will be pending
+		TL(tagPendingFlag == EGeoTaggingPending);
+	  }
+	else
+		{
+			//for geotagged photos the tag status will be pending
+		TL(tagPendingFlag == EGeoTagCmpt);
+	  }
+
+  _LIT( KMsg2, "TestGeoTagPendingStatusL exit" );
+  iLog->Log( KMsg2 );  
+  RDebug::Print( KMsg2 );		
+
+      return KErrNone;
+	}
+	
+// -----------------------------------------------------------------------------
+// CLocationManagerTestScripter::TestGeoTagGoingOnStatusL
+// -----------------------------------------------------------------------------
+//
+TInt CLocationManagerTestScripter::TestGeoTagGoingOnStatusL( CStifItemParser& aItem ) 
+	{
+  _LIT( KMsg1, "TestGeoTagGoingOnStatusL enter" );
+  iLog->Log( KMsg1 );  
+  RDebug::Print( KMsg1 );	
+  	
+	TInt fntype;
+	aItem.GetNextInt(fntype);
+  	
+  			
+	TRequestStatus status = KRequestPending; 
+	TGeoTaggingSatus tagPendingFlag = EGeoTagCmpt;
+	iLocationGeoTagger.GeoTagStaus( status, tagPendingFlag );
+	
+	User::WaitForRequest( status );	
+		
+	TL(status.Int() == KErrNone);		
+	
+	if(fntype == 0 )
+		{
+		if(tagPendingFlag == EGeoTaggingPending)
+    		{
+				TConnectionOption conOption(ESilent);
+				status = KRequestPending;
+				iLocationGeoTagger.StartGeoTagging(status,conOption);	
+				iLocationGeoTagger.GeoTagStaus( status, tagPendingFlag );
+				
+				TL(tagPendingFlag == EGeoTaggingGoingOn);
+				
+				User::WaitForRequest( status );	
+					
+				TL(status.Int() == KErrNone);						
+    		}
+			}		    		
+	else
+		{
+		TL(tagPendingFlag == EGeoTagCmpt);	
+		}
+		
+  _LIT( KMsg2, "TestGeoTagGoingOnStatusL exit" );
+  iLog->Log( KMsg2 );  
+  RDebug::Print( KMsg2 );		
+
+      return KErrNone;
+	}	        
+    
+
+TInt CLocationManagerTestScripter::CancelGeoTaggingL( CStifItemParser& /*aItem*/ ) 
+	{
+    _LIT( KMsg1, "Enter CancelGeoTaggingL" );
+    iLog->Log( KMsg1 );  
+    RDebug::Print( KMsg1 );
+    	
+    TRequestStatus status(KRequestPending);
+    TConnectionOption conOption(ESilent);
+    iLocationGeoTagger.StartGeoTagging(status,conOption);
+    iLocationGeoTagger.CancelGeoTaggingRequest();
+    
+  	User::WaitForRequest( status );		
+  		
+  	TL(status.Int() == KErrNone);	
+  		
+  		
+  _LIT( KMsg2, "CancelGeoTaggingL exit" );
+  iLog->Log( KMsg2 );  
+  RDebug::Print( KMsg2 );		
+
+	return KErrNone;
+  
+	}
+#endif //LOC_REVERSEGEOCODE
+	
+	// End of file

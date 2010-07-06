@@ -18,6 +18,7 @@
 
 #include <platform_paths.hrh>
 #include <data_caging_paths.hrh>
+#include "../../../../locationmanager/inc/locplatsupport.mmh"
 
 TARGET          LocationManagerTestScripter.dll
 TARGETTYPE      dll
@@ -27,6 +28,11 @@ CAPABILITY      ALL -TCB
 VENDORID        VID_DEFAULT
 
 DEFFILE         LocationManagerTestScripter.DEF
+
+#ifdef _LOC_REVERSEGEOCODE
+MACRO LOC_REVERSEGEOCODE
+#endif
+
 
 SOURCEPATH      ../src
 SOURCE          LocationManagerTestScripter.cpp

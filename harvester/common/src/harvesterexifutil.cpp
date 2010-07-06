@@ -23,6 +23,11 @@
 #include "mdeproperty.h"
 #include "tz.h"
 #include <ExifModify.h>
+#include "OstTraceDefinitions.h"
+
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvesterexifutilTraces.h"
+#endif
 
 
 
@@ -137,6 +142,7 @@ EXPORT_C void CHarvesterExifUtil::SetSession( CMdESession* aSession )
 EXPORT_C TBool CHarvesterExifUtil::IsValidExifData(TPtr8 aPtr)
 	{
 	WRITELOG( "CHarvesterExifUtil::IsValidExifData start" );
+	OstTrace0( TRACE_NORMAL, CHARVESTEREXIFUTIL_ISVALIDEXIFDATA, "CHarvesterExifUtil::IsValidExifData start" );	
 	
 	CExifRead* reader = NULL;
 	
@@ -144,13 +150,15 @@ EXPORT_C TBool CHarvesterExifUtil::IsValidExifData(TPtr8 aPtr)
 	if (err != KErrNone || !reader )
 		{
 		WRITELOG1( "CHarvesterExifUtil::IsValidExifData - error code: %d", err );
-	
+		OstTrace1( TRACE_NORMAL, DUP1_CHARVESTEREXIFUTIL_ISVALIDEXIFDATA, "CHarvesterExifUtil::IsValidExifData -error code:%d", err );
+
 		return EFalse;
 		}
 	
 	delete reader;
 	
 	WRITELOG( "CHarvesterExifUtil::IsValidExifData end" );	
+	OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_ISVALIDEXIFDATA, "CHarvesterExifUtil::IsValidExifData end" );
 	
 	return ETrue;
 	}
@@ -183,6 +191,8 @@ HBufC16* CHarvesterExifUtil::ReadExifTagL( const CExifRead& aReader, TExifIfdTyp
 EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& aFileData )
     {
     WRITELOG( "CHarvesterExifUtil::ReadExifDataL()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTEREXIFUTIL_READEXIFDATAL, "CHarvesterExifUtil::ReadExifDataL" );
+    
 
     CExifRead* reader = CExifRead::NewL(
     		aFileData.iImageData->Des(), CExifRead::ENoJpeg | CExifRead::ENoTagChecking);
@@ -227,6 +237,8 @@ EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& a
     if ( reader->TagExists(KIdDateTime, EIfd0) )
         {
         WRITELOG( "CHarvesterExifUtil::ReadExifDataL() - getting last aFileData.iModified date (exif)" );
+        OstTrace0( TRACE_NORMAL, DUP1_CHARVESTEREXIFUTIL_READEXIFDATAL, "CHarvesterExifUtil::ReadExifDataL - getting last aFileData.iModified date (exif)" );
+        
         aHd.iDateModified8 = reader->GetDateTimeL();
         }
     
@@ -234,6 +246,8 @@ EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& a
     if ( reader->TagExists(KIdDateTimeOriginal, EIfdExif) )
         {
         WRITELOG( "CHarvesterExifUtil::ReadExifDataL() - getting original date (exif)" );
+        OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_READEXIFDATAL, "CHarvesterExifUtil::ReadExifDataL - getting original date (exif)" );
+        
         aHd.iDateOriginal8 = reader->GetDateTimeOriginalL();
         }
         
@@ -241,6 +255,8 @@ EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& a
     if ( reader->TagExists(KIdDateTimeDigitized, EIfdExif) )
         {
         WRITELOG( "CHarvesterExifUtil::ReadExifDataL() - getting digitized date (exif)" );
+        OstTrace0( TRACE_NORMAL, DUP3_CHARVESTEREXIFUTIL_READEXIFDATAL, "CHarvesterExifUtil::ReadExifDataL - getting digitized date (exif)" );
+        
         aHd.iDateDigitized8 = reader->GetDateTimeDigitizedL();
         }            
     
@@ -336,6 +352,8 @@ EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& a
         aHd.iStoreSamplesPerPixel = ETrue;
         
         WRITELOG1( "CHarvesterExifUtil::ReadExifDataL() - samples per pixel: %d", aHd.iSamplesPerPixel );
+        OstTrace1( TRACE_NORMAL, DUP4_CHARVESTEREXIFUTIL_READEXIFDATAL, "CHarvesterExifUtil::ReadExifDataL - samples per pixel: %d", aHd.iSamplesPerPixel );
+        
         }
     
     //Getting ISO speed rating.
@@ -415,6 +433,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
 		const TDesC8& aDateTime )
     {
     WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL" );    
     
     TDateTime datetime( 0, EJanuary, 0, 0, 0, 0, 0 );
     TBuf<4> text;
@@ -427,6 +446,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get year" );
+        OstTrace0( TRACE_NORMAL, DUP1_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get year" );
+        
         User::Leave( error );
         }
     datetime.SetYear( number );
@@ -438,6 +459,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get month" );
+        OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get month" );
+        
         User::Leave( error );
         }        
     number--;
@@ -451,6 +474,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get date" );
+        OstTrace0( TRACE_NORMAL, DUP3_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get date" );
+        
         User::Leave( error );
         }
     datetime.SetDay( number - 1 );
@@ -462,6 +487,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get hours" );
+        OstTrace0( TRACE_NORMAL, DUP4_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get hours" );
+        
         User::Leave( error );
         }    
     datetime.SetHour( number );
@@ -473,6 +500,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get minutes" );
+        OstTrace0( TRACE_NORMAL, DUP5_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get minutes" );
+        
         User::Leave( error );
         }
     datetime.SetMinute( number );
@@ -484,6 +513,8 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     if ( error != KErrNone )
         {
         WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get seconds" );
+        OstTrace0( TRACE_NORMAL, DUP6_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get seconds" );
+        
         User::Leave( error );
         }
     datetime.SetSecond( number );
@@ -1751,7 +1782,7 @@ void CHarvesterExifUtil::ReadGPSLatitudeL( CHarvestData& aHd,
         TReal64 latitude = 0.0;
         const CExifTag* refTag = aReader->GetTagL(
                 EIfdGps, KIdGpsLatitudeRef );
-        TBuf8<2> latitudeRef = refTag->Data();
+        TBuf8<3> latitudeRef = refTag->Data();
         const CExifTag* latitudeTag = aReader->GetTagL(
                 EIfdGps, KIdGpsLatitude );
         TBuf8<KCoordinateBufferSize> latitudeBuf = latitudeTag->Data();
@@ -1784,7 +1815,7 @@ void CHarvesterExifUtil::ReadGPSLongitudeL( CHarvestData& aHd,
         TReal64 longitude = 0.0;
         const CExifTag* refTag = aReader->GetTagL(
                 EIfdGps, KIdGpsLongitudeRef );
-        TBuf8<2> longitudeRef = refTag->Data();
+        TBuf8<3> longitudeRef = refTag->Data();
         const CExifTag* longitudeTag = aReader->GetTagL(
                 EIfdGps, KIdGpsLongitude );
         TBuf8<KCoordinateBufferSize> longitudeBuf = longitudeTag->Data();

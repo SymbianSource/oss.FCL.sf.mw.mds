@@ -20,6 +20,8 @@
 #include <lbsposition.h>
 #include <etel3rdparty.h>
 
+const TInt KMaxCountryName = 128;
+typedef TBuf<KMaxCountryName> TCountryName;
 /*
  * TLocationData encapsulates all location data.
  */
@@ -28,7 +30,7 @@ struct TLocationData
     TPosition iPosition;
     CTelephony::TNetworkInfoV1 iNetworkInfo;
     TCourse iCourse;
-    TBuf<100> iCountry;
+    TCountryName iCountry;
     TUint iSatellites;
     TReal32 iQuality;
     };

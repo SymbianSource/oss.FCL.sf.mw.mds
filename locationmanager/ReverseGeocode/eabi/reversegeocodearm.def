@@ -1,0 +1,5 @@
+EXPORTS
+	_ZN15CReverseGeocode4NewLER23MReverseGeocodeObserver @ 1 NONAME
+	_ZTI23CConnectionTimerHandler @ 2 NONAME
+	_ZTV23CConnectionTimerHandler @ 3 NONAME
+

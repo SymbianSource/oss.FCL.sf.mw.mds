@@ -18,6 +18,11 @@
 
 #include "harvestereventmanager.h"
 #include "harvesterlog.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvestereventmanagerTraces.h"
+#endif
+
 
 const TInt KHarvesterEventManagerTLSKey = 0x200104D9;
 
@@ -47,6 +52,7 @@ CHarvesterEventManager::~CHarvesterEventManager()
 EXPORT_C CHarvesterEventManager* CHarvesterEventManager::GetInstanceL()
 	{
 	WRITELOG( "CHarvesterEventManager::GetInstanceL" );
+	OstTrace0( TRACE_NORMAL, CHARVESTEREVENTMANAGER_GETINSTANCEL, "CHarvesterEventManager::GetInstanceL" );	
 
 	CHarvesterEventManagerStaticData* data = 
 		static_cast<CHarvesterEventManagerStaticData*>( 
@@ -75,6 +81,8 @@ EXPORT_C CHarvesterEventManager* CHarvesterEventManager::GetInstanceL()
 EXPORT_C void CHarvesterEventManager::ReleaseInstance()
     {
     WRITELOG( "CHarvesterEventManager::ReleaseInstance" );
+    OstTrace0( TRACE_NORMAL, CHARVESTEREVENTMANAGER_RELEASEINSTANCE, "CHarvesterEventManager::ReleaseInstance" );
+    
     CHarvesterEventManagerStaticData* data =
         static_cast<CHarvesterEventManagerStaticData*>( 
         		UserSvr::DllTls( KHarvesterEventManagerTLSKey ) );
@@ -100,32 +108,52 @@ EXPORT_C void CHarvesterEventManager::IncreaseItemCount(
 	switch(aHEObserverType)
 	    {
 	    case EHEObserverTypePlaceholder:
+	        {
 	        WRITELOG( "CHarvesterEventManager::IncreaseItemCount() EHEObserverTypePlaceholder");
+	        OstTrace0( TRACE_NORMAL, CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount EHEObserverTypePlaceholder" );	        
 	        break;
+	        }	        
 	    case EHEObserverTypeMMC:
+	        {
 	        WRITELOG( "CHarvesterEventManager::IncreaseItemCount() EHEObserverTypeMMC");
+	        OstTrace0( TRACE_NORMAL, DUP1_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount EHEObserverTypeMMC" );	        
 	        break;
+	        }
 	    case EHEObserverTypeOverall:
+	        {
 	        WRITELOG( "CHarvesterEventManager::IncreaseItemCount() EHEObserverTypeOverall");
+	        OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount EHEObserverTypeOverall" );	        
 	        break;
+	        }
 	    default:
+	        {
 	        WRITELOG( "CHarvesterEventManager::IncreaseItemCount() Unknown type!");
+	        OstTrace0( TRACE_NORMAL, DUP3_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount Unknown type!" );
+	        }
 	    };
 #endif
 	
 	if( eventStatus )
 		{
 		WRITELOG1( "CHarvesterEventManager::IncreaseItemCount() itemsleft = %d old ", eventStatus->iItemsLeft);
+		OstTrace1( TRACE_NORMAL, DUP4_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount) itemsleft = %d old", eventStatus->iItemsLeft );
+		
 		eventStatus->iItemsLeft += aCount;
 		WRITELOG1( "CHarvesterEventManager::IncreaseItemCount() itemsleft = %d ", eventStatus->iItemsLeft);
+		OstTrace1( TRACE_NORMAL, DUP5_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount itemsleft = %d", eventStatus->iItemsLeft );
+		
 		}
 	else
 		{
 		TEventStatus eventStatus;
 		eventStatus.iCurrentState = EHEStateStarted;
 		WRITELOG1( "CHarvesterEventManager::IncreaseItemCount() itemsleft = %d old", aCount);
+		OstTrace1( TRACE_NORMAL, DUP6_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount itemsleft = %d old", aCount );
+		
 		eventStatus.iItemsLeft = aCount;
 		WRITELOG1( "CHarvesterEventManager::IncreaseItemCount() itemsleft = %d ", aCount);
+		OstTrace1( TRACE_NORMAL, DUP7_CHARVESTEREVENTMANAGER_INCREASEITEMCOUNT, "CHarvesterEventManager::IncreaseItemCount itemsleft = %d", aCount );
+		
 		eventStatus.iObserverType = aHEObserverType;
 		iEventStatuses.Append( eventStatus );
 		}
@@ -141,22 +169,36 @@ EXPORT_C TBool CHarvesterEventManager::DecreaseItemCountL(
     switch(aHEObserverType)
         {
         case EHEObserverTypePlaceholder:
+            {
             WRITELOG( "CHarvesterEventManager::DecreaseItemCountL() EHEObserverTypePlaceholder");
+            OstTrace0( TRACE_NORMAL, CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL EHEObserverTypePlaceholder" );            
             break;
+            }
         case EHEObserverTypeMMC:
+            {
             WRITELOG( "CHarvesterEventManager::DecreaseItemCountL() EHEObserverTypeMMC");
+            OstTrace0( TRACE_NORMAL, DUP1_CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL EHEObserverTypeMMC" );            
             break;
+            }
         case EHEObserverTypeOverall:
+            {
             WRITELOG( "CHarvesterEventManager::DecreaseItemCountL() EHEObserverTypeOverall");
+            OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL EHEObserverTypeOverall" );            
             break;
+            }
         default:
+            {
             WRITELOG( "CHarvesterEventManager::DecreaseItemCountL() Unknown type!");
+            OstTrace0( TRACE_NORMAL, DUP3_CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL Unknown type!" );
+            }
         };
 #endif
 	
 	if( eventStatus )
 		{
 		WRITELOG1( "CHarvesterEventManager::DecreaseItemCountL() iItemsLeft = %d old", eventStatus->iItemsLeft);
+		OstTrace1( TRACE_NORMAL, DUP4_CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL iItemsLeft = %d old", eventStatus->iItemsLeft );
+		
 		TUint newCount = eventStatus->iItemsLeft - aCount;
 
 		// check for wrap
@@ -179,6 +221,7 @@ EXPORT_C TBool CHarvesterEventManager::DecreaseItemCountL(
 		}
 
 	WRITELOG1( "CHarvesterEventManager::DecreaseItemCountL() iItemsLeft = %d", eventStatus->iItemsLeft );
+	OstTrace1( TRACE_NORMAL, DUP5_CHARVESTEREVENTMANAGER_DECREASEITEMCOUNTL, "CHarvesterEventManager::DecreaseItemCountL iItemsLeft = %d", eventStatus->iItemsLeft );
 	
 	// send finished event to all matching observers
 	if ( eventStatus->iItemsLeft <= 0 )

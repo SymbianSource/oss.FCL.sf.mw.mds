@@ -16,4 +16,5 @@ EXPORTS
 	_ZN16CHarvesterPlugin12SetBlacklistER19CHarvesterBlacklist @ 15 NONAME
 	_ZN16CHarvesterPlugin11GetMimeTypeERK7TDesC16R6TDes16 @ 16 NONAME
 	_ZN16CHarvesterPlugin25SetHarvesterPluginFactoryER23CHarvesterPluginFactory @ 17 NONAME
+	_ZN16CHarvesterPlugin17PluginInIdleStateEv @ 18 NONAME
 

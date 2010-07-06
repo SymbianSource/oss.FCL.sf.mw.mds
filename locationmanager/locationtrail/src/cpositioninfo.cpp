@@ -43,7 +43,8 @@ EXPORT_C CPositionInfo* CPositionInfo::NewL( MPositionInfoObserver* aTrail )
 //  
 CPositionInfo::CPositionInfo( MPositionInfoObserver* aTrail ) 
     : CActive( CActive::EPriorityStandard ),
-    iFirstInterval( ETrue )
+    iState( EPositionOptStateNone ),
+    iConnectedPositionServer(EFalse)
     {
     LOG( "CPositionInfo::CPositionInfo()");
     CActiveScheduler::Add( this );
@@ -75,9 +76,7 @@ void CPositionInfo::ConstructL()
 //    
 EXPORT_C CPositionInfo::~CPositionInfo()
     {
-    Cancel();
-    iPositioner.Close();
-    iPosServer.Close();
+    Stop();
     }
 
 // --------------------------------------------------------------------------
@@ -96,34 +95,41 @@ TInt CPositionInfo::RunError( TInt /*aError*/ )
 void CPositionInfo::StartL( RLocationTrail::TTrailCaptureSetting aCaptureSetting, TInt aUpdateInterval )
     {
     LOG( "CPositionInfo::StartL(), begin" );
-
+    if(IsActive()) 
+        {
+        Cancel();
+        }
     iTrailCaptureSetting = aCaptureSetting;
     iUpdateInterval = aUpdateInterval;
-    iFirstInterval = ETrue;
-    iPositionInfo = TPositionSatelliteInfo();
+    iState = EPositionOptStateNone;
     
-    // Set update interval.
-     iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds(KFirstInterval) );
-     // Set time out level. 
-     iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds( KFirstTimeOut) );
-     // Positions which have time stamp below KMaxAge can be reused
-     iUpdateOptions.SetMaxUpdateAge( TTimeIntervalMicroSeconds(KMaxAge) );
-     // Disables location framework to send partial position data
-     iUpdateOptions.SetAcceptPartialUpdates( EFalse );
+    iPositionInfo = TPositionSatelliteInfo();
     
     if ( aCaptureSetting == RLocationTrail::ECaptureAll ) 
     	{
-	    User::LeaveIfError( iPosServer.Connect() );
-	    User::LeaveIfError( iPositioner.Open( iPosServer ) );
-	    User::LeaveIfError( iPositioner.SetRequestor( CRequestor::ERequestorService,
-	                        CRequestor::EFormatApplication, KRequestor ) );
-	    User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );
-	    iPositioner.NotifyPositionUpdate( iPositionInfo, iStatus );
+    	if(!iConnectedPositionServer)
+            {   
+             // Positions which have time stamp below KMaxAge can be reused
+             iUpdateOptions.SetMaxUpdateAge( TTimeIntervalMicroSeconds(KMaxAge) );
+             // Disables location framework to send partial position data
+             iUpdateOptions.SetAcceptPartialUpdates( EFalse );
+    	    User::LeaveIfError( iPosServer.Connect() );
+            CleanupClosePushL(iPosServer);
+    	    User::LeaveIfError( iPositioner.Open( iPosServer ) );
+            CleanupClosePushL(iPositioner);
+    	    User::LeaveIfError( iPositioner.SetRequestor( CRequestor::ERequestorService,
+    	                        CRequestor::EFormatApplication, KRequestor ) );
+            iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds (iUpdateInterval) );  
+            iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds(KUpdateTimeOut ) );
+            User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );
+            CleanupStack::Pop(2); // iPositioner, iPosServer
+            iConnectedPositionServer = ETrue;
+           }
+        iState = EPositionOptStateGetLastKnownPosition;
+        iPositioner.GetLastKnownPosition( iPositionInfo, iStatus );
+        SetActive();
     	}
-    
-    SetActive();
-    
-    if ( aCaptureSetting == RLocationTrail::ECaptureNetworkInfo ) 
+    else if ( aCaptureSetting == RLocationTrail::ECaptureNetworkInfo ) 
     	{
     	TRequestStatus* status = &iStatus;
         User::RequestComplete( status, KErrNone );
@@ -138,19 +144,25 @@ void CPositionInfo::StartL( RLocationTrail::TTrailCaptureSetting aCaptureSetting
 //
 void CPositionInfo::NextPosition()
     {
-    iPositionInfo = TPositionSatelliteInfo(); // Clear position info.
-    if ( iTrailCaptureSetting == RLocationTrail::ECaptureAll )
-    	{
-    	iPositioner.NotifyPositionUpdate( iPositionInfo, iStatus );
-    	}
-    
-    SetActive();
-    
-    if ( iTrailCaptureSetting == RLocationTrail::ECaptureNetworkInfo ) 
-    	{
-    	TRequestStatus* status = &iStatus;
-        User::RequestComplete( status, KErrNone );
-    	}
+    LOG( "CPositionInfo::NextPosition(), begin" );
+    if(!IsActive() && iConnectedPositionServer)
+        {
+        LOG("Not active");
+        iPositionInfo = TPositionSatelliteInfo(); // Clear position info.
+        if ( iTrailCaptureSetting == RLocationTrail::ECaptureAll )
+        	{
+            iState = EPositionOptStateNotifyUpdate;
+        	iPositioner.NotifyPositionUpdate( iPositionInfo, iStatus );
+            SetActive();
+        	}
+        else if ( iTrailCaptureSetting == RLocationTrail::ECaptureNetworkInfo ) 
+        	{
+            SetActive();
+        	TRequestStatus* status = &iStatus;
+            User::RequestComplete( status, KErrNone );
+        	}
+        }
+    LOG( "CPositionInfo::NextPosition(), end" );
     }
     
 // --------------------------------------------------------------------------
@@ -159,10 +171,17 @@ void CPositionInfo::NextPosition()
 //
 void CPositionInfo::Stop()
     {
+    LOG( "CPositionInfo::Stop(), begin" );
     Cancel();    
-
-    iPositioner.Close();
-    iPosServer.Close();
+    if(iConnectedPositionServer)
+        {
+        iPositioner.Close();
+        iPosServer.Close();
+        iConnectedPositionServer = EFalse;
+        }
+    // reset the state
+    iState = EPositionOptStateNone;
+    LOG( "CPositionInfo::Stop(), end" );
     }    
         
 // --------------------------------------------------------------------------
@@ -171,22 +190,39 @@ void CPositionInfo::Stop()
 //
 void CPositionInfo::RunL()
     { 
-    iTrail->Position( iPositionInfo, iStatus.Int() );
- 
-    if ( iFirstInterval && IsActive() )
+    LOG( "CPositionInfo::RunL(), begin" );
+    if(iState == EPositionOptStateGetLastKnownPosition)
+        {
+        // get last location.. check the time and if it's within the limit, pass to trail.
+        const TTimeIntervalSeconds KMaxAllowedLastKnownPosition(60*5); // 5 mins
+        TTimeIntervalSeconds interval;
+        TTime now;
+        TPosition lastPosition;
+        iPositionInfo.GetPosition(lastPosition);
+        now.UniversalTime();
+        now.SecondsFrom(lastPosition.Time(), interval);
+        if(iStatus.Int() == KErrNone && interval < KMaxAllowedLastKnownPosition)
+            {
+            LOG("Last know position is recent one");
+            iTrail->Position( iPositionInfo, iStatus.Int() );
+            }
+        else
+            {
+            LOG("Old last know position. Drop it..");
+            }
+        }
+    else
+        {
+        // notify response.. always pass to trail
+        iTrail->Position( iPositionInfo, iStatus.Int() );
+        }
+     
+    if ( iTrailCaptureSetting == RLocationTrail::ECaptureAll &&
+        iState != EPositionOptStateNone) 
     	{
-    	Cancel();
-    	LOG("CPositionInfo::RunL() - First Time");
-    	iUpdateOptions.SetUpdateInterval( TTimeIntervalMicroSeconds (iUpdateInterval) );  
-    	iUpdateOptions.SetUpdateTimeOut( TTimeIntervalMicroSeconds(KUpdateTimeOut ) );
-        if ( iTrailCaptureSetting == RLocationTrail::ECaptureAll ) 
-        	{
-        	User::LeaveIfError( iPositioner.SetUpdateOptions( iUpdateOptions ) );        	
-        	iPositioner.NotifyPositionUpdate( iPositionInfo, iStatus );
-        	}
-    	SetActive();
-    	iFirstInterval = EFalse;
+    	NextPosition();
     	}
+    LOG( "CPositionInfo::RunL(), end" );
     }    
 
 // --------------------------------------------------------------------------
@@ -195,11 +231,37 @@ void CPositionInfo::RunL()
 // 
 void CPositionInfo::DoCancel()
     {
-    LOG( "CPositionInfo::DoCancel()" );
-    if ( IsActive() )    
+    LOG( "CPositionInfo::DoCancel(), begin" );
+    switch(iState)
         {
-        iPositioner.CancelRequest( EPositionerNotifyPositionUpdate );
+        case EPositionOptStateGetLastKnownPosition:
+            {
+            iPositioner.CancelRequest( EPositionerGetLastKnownPosition );
+            break;
+            }
+        case EPositionOptStateNotifyUpdate:
+            {
+            iPositioner.CancelRequest( EPositionerNotifyPositionUpdate );
+            break;
+            }
+        default:
+            break;
         }
+	iState = EPositionOptStateNone;
+    LOG( "CPositionInfo::DoCancel(), end" );
+    }
+
+
+// --------------------------------------------------------------------------
+// CPositionInfo::HandleRemapComplete
+// --------------------------------------------------------------------------
+// 
+void CPositionInfo::HandleRemapComplete()
+    {
+    LOG( "CPositionInfo::HandleRemapComplete()" );
+    // Don't call notify update from RunL
+    iState = EPositionOptStateNone;
     }
 
 // End of file
+

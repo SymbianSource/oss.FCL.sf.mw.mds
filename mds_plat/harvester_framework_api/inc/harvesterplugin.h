@@ -208,6 +208,11 @@ public:
      */
     IMPORT_C void SetHarvesterPluginFactory( CHarvesterPluginFactory& aFactory );
          
+    /** 
+     * Method for checking if the plugin is in idle state
+     */
+    IMPORT_C TBool PluginInIdleState();
+    
 private:
     
 	/** 

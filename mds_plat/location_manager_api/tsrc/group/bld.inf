@@ -15,6 +15,8 @@
 *
 */
 
+#include "../../../../locationmanager/inc/locplatsupport.mmh"
+
 PRJ_PLATFORMS
     DEFAULT
 
@@ -26,5 +28,10 @@ PRJ_TESTMMPFILES
 LocationManagerTestScripter.mmp
 
 PRJ_TESTEXPORTS
+#ifdef _LOC_REVERSEGEOCODE
+../conf/LocationManagerTestScripter_reverse_geocode.cfg /epoc32/winscw/c/TestFramework/LocationManagerTestScripter.cfg
+#else
 ../conf/LocationManagerTestScripter.cfg /epoc32/winscw/c/TestFramework/LocationManagerTestScripter.cfg
+#endif
+
 ../init/LocationManagerTestScripter.ini /epoc32/winscw/c/TestFramework/LocationManagerTestScripter.ini

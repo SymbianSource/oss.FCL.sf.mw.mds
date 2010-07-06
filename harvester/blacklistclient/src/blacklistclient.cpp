@@ -20,6 +20,11 @@
 #include "mdcserializationbuffer.h"
 #include "blacklistitem.h"
 #include "harvesterlog.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "blacklistclientTraces.h"
+#endif
+
 
 
 // ---------------------------------------------------------------------------
@@ -38,6 +43,7 @@ EXPORT_C RBlacklistClient::RBlacklistClient() : RSessionBase (),
 EXPORT_C RBlacklistClient::~RBlacklistClient()
     {
     WRITELOG( "RBlacklistClient::~RBlacklistClient - begin" );
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_RBLACKLISTCLIENT, "RBlacklistClient::~RBlacklistClient -begin" );
     
     RSessionBase::Close(); 
     iBlacklistMemoryTable.ResetAndDestroy();
@@ -46,6 +52,8 @@ EXPORT_C RBlacklistClient::~RBlacklistClient()
 	iFs.Close();
 
     WRITELOG( "RBlacklistClient::~RBlacklistClient - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_RBLACKLISTCLIENT, "RBlacklistClient::~RBlacklistClient - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -55,7 +63,8 @@ EXPORT_C RBlacklistClient::~RBlacklistClient()
 EXPORT_C TInt RBlacklistClient::Connect()
     {
     WRITELOG( "RBlacklistClient::Connect - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_CONNECT, "RBlacklistClient::Connect - begin" );
+    
     iSessionOk = EFalse;
     
     TInt error = iFs.Connect();
@@ -83,7 +92,8 @@ EXPORT_C TInt RBlacklistClient::Connect()
         }
     
     WRITELOG( "RBlacklistClient::Connect - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_CONNECT, "RBlacklistClient::Connect - end" );
+    
     return error;
     }
 
@@ -94,7 +104,8 @@ EXPORT_C TInt RBlacklistClient::Connect()
 TVersion RBlacklistClient::Version() const
     {
     WRITELOG( "RBlacklistClient::Version - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_VERSION, "RBlacklistClient::Version - begin" );
+    
     return TVersion( KBlacklistServerMajorVersion, KBlacklistServerMinorVersion,
     	KBlacklistServerBuildVersion );
 
@@ -107,6 +118,7 @@ TVersion RBlacklistClient::Version() const
 TInt RBlacklistClient::StartServer()
     {
     WRITELOG( "RBlacklistClient::StartServer - begin" );
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_STARTSERVER, "RBlacklistClient::StartServer - begin" );
     
     RProcess server;
     TInt error = server.Create( KBlacklistServerExe, KNullDesC );
@@ -132,7 +144,8 @@ TInt RBlacklistClient::StartServer()
     server.Close();
 
     WRITELOG( "RBlacklistClient::StartServer - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_STARTSERVER, "RBlacklistClient::StartServer - end" );
+    
     return error;
     }
 
@@ -143,7 +156,8 @@ TInt RBlacklistClient::StartServer()
 void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) const
     {
     WRITELOG( "RBlacklistClient::RemoveFromDBL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_REMOVEFROMDBL, "RBlacklistClient::RemoveFromDBL - begin" );
+    
     TPckgBuf<TUint32> mediaIdPckg( aMediaId );
     
     TIpcArgs ipcArgs;
@@ -154,6 +168,8 @@ void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) cons
     User::LeaveIfError( err );
 
     WRITELOG( "RBlacklistClient::RemoveFromDBL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_REMOVEFROMDBL, "RBlacklistClient::RemoveFromDBL end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -163,7 +179,8 @@ void RBlacklistClient::RemoveFromDBL( const TDesC& aUri, TUint32 aMediaId ) cons
 void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
     {
     WRITELOG( "RBlacklistClient::DoLoadBlacklistL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_DOLOADBLACKLISTL, "RBlacklistClient::DoLoadBlacklistL - begin" );
+    
     TPckgBuf<TInt> handleBuf;
     TIpcArgs ipcArgs;
     ipcArgs.Set( 1, &handleBuf );
@@ -172,6 +189,8 @@ void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
     aHandle = handleBuf();
 
     WRITELOG( "RBlacklistClient::DoLoadBlacklistL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_DOLOADBLACKLISTL, "RBlacklistClient::DoLoadBlacklistL - end" );
+    
     } 
 
 // ---------------------------------------------------------------------------
@@ -181,7 +200,8 @@ void RBlacklistClient::DoLoadBlacklistL( TInt& aHandle ) const
 EXPORT_C void RBlacklistClient::LoadBlacklistL()
     {
     WRITELOG( "RBlacklistClient::LoadBlacklistL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_LOADBLACKLISTL, "RBlacklistClient::LoadBlacklistL - begin" );
+    
     if ( !iSessionOk )
         {
         return;
@@ -238,6 +258,8 @@ EXPORT_C void RBlacklistClient::LoadBlacklistL()
 	CleanupStack::PopAndDestroy( name );
 
     WRITELOG( "RBlacklistClient::LoadBlacklistL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_LOADBLACKLISTL, "RBlacklistClient::LoadBlacklistL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +270,8 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
         const TDesC& aUri, const TUint32 aMediaId )
     {
     WRITELOG( "RBlacklistClient::AddToMemoryTableL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_ADDTOMEMORYTABLEL, "RBlacklistClient::AddToMemoryTableL - begin" );
+    
     CBlacklistItem* item = CBlacklistItem::NewL( aModified, aUri, aMediaId );
     
     const TInt err = iBlacklistMemoryTable.Append( item ); // ownership is transferred
@@ -259,6 +282,8 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
 
 
     WRITELOG( "RBlacklistClient::AddToMemoryTableL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_ADDTOMEMORYTABLEL, "RBlacklistClient::AddToMemoryTableL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -268,7 +293,8 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
 void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 aMediaId )
     {
     WRITELOG( "RBlacklistClient::RemoveFromMemoryTableL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_REMOVEFROMMEMORYTABLEL, "RBlacklistClient::RemoveFromMemoryTableL - begin" );
+    
     const TInt index = GetListIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
@@ -278,6 +304,8 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
         }
 
     WRITELOG( "RBlacklistClient::RemoveFromMemoryTableL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_REMOVEFROMMEMORYTABLEL, "RBlacklistClient::RemoveFromMemoryTableL - end" );
+    
     }
  
 
@@ -288,6 +316,8 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
 EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMediaId, TTime /*aLastModifiedTime*/ )
     {
     WRITELOG( "RBlacklistClient::IsBlacklistedL - begin" );
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_ISBLACKLISTEDL, "RBlacklistClient::IsBlacklistedL - begin" );
+    
 
     if ( !iSessionOk )
         {
@@ -316,6 +346,8 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
             if ( modified == fileLastModified.Int64() )
                 {
                 WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is the same" );
+                OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_ISBLACKLISTEDL, "RBlacklistClient::IsBlacklistedL - file is blacklisted, modification time is the same" );
+                
                 return ETrue;
                 }
             else
@@ -331,12 +363,16 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
         else
             {
             WRITELOG( "RBlacklistClient::IsBlacklistedL - file is blacklisted, no modification time found" );
+            OstTrace0( TRACE_NORMAL, DUP2_RBLACKLISTCLIENT_ISBLACKLISTEDL, "RBlacklistClient::IsBlacklistedL - file is blacklisted, no modification time found" );
+            
             return ETrue;
             }
         
         }
    
     WRITELOG( "RBlacklistClient::IsBlacklistedL - end" );
+    OstTrace0( TRACE_NORMAL, DUP3_RBLACKLISTCLIENT_ISBLACKLISTEDL, "RBlacklistClient::IsBlacklistedL - end" );
+    
     return EFalse;
     }
 
@@ -347,7 +383,8 @@ EXPORT_C TBool RBlacklistClient::IsBlacklistedL( const TDesC& aUri, TUint32 aMed
 TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
     {
     WRITELOG( "RBlacklistClient::GetListIndex - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_GETLISTINDEX, "RBlacklistClient::GetListIndex - begin" );
+    
     for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
         {
         if ( iBlacklistMemoryTable[i]->Compare( aUri, aMediaId ) )
@@ -357,7 +394,8 @@ TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
         }
 
     WRITELOG( "RBlacklistClient::GetListIndex - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_GETLISTINDEX, "RBlacklistClient::GetListIndex - end" );
+    
     return KErrNotFound;
     }
 
@@ -369,7 +407,8 @@ TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
 EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime aLastModifiedTime ) const
     {
     WRITELOG( "RBlacklistClient::AddL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_ADDL, "RBlacklistClient::AddL - begin" );
+    
     TPckgC<TUint32> mediaIdPckg( aMediaId );
     TPckgC<TTime> lastModifiedTimePckg( aLastModifiedTime );
 
@@ -382,6 +421,8 @@ EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime
     User::LeaveIfError( err );
 
     WRITELOG( "RBlacklistClient::AddL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_ADDL, "RBlacklistClient::AddL - end" );
+    
     }
 
 
@@ -392,7 +433,8 @@ EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime
 EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) const
     {
     WRITELOG( "RBlacklistClient::RemoveL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_REMOVEL, "RBlacklistClient::RemoveL - begin" );
+    
     TPckgBuf<TUint32> mediaIdPckg( aMediaId );
     
     TIpcArgs ipcArgs;
@@ -403,6 +445,8 @@ EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) c
     User::LeaveIfError( err );
 
     WRITELOG( "RBlacklistClient::RemoveL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_REMOVEL, "RBlacklistClient::RemoveL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -412,7 +456,8 @@ EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) c
 EXPORT_C void RBlacklistClient::CloseDBL()
     {
     WRITELOG( "RBlacklistClient::CloseDBL - begin" );
-
+    OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_CLOSEDBL, "RBlacklistClient::CloseDBL - begin" );
+    
     if ( !iSessionOk )
         {
         User::Leave( KErrDisconnected );
@@ -423,6 +468,8 @@ EXPORT_C void RBlacklistClient::CloseDBL()
         }
 
     WRITELOG( "RBlacklistClient::CloseDBL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_CLOSEDBL, "RBlacklistClient::CloseDBL- end" );
+    
     }
 
 

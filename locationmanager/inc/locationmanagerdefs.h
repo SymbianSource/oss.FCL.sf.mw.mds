@@ -51,7 +51,11 @@ enum TLocCommands // Server commands.
     ELocManTrackLogName,
     ELocManRegObserver,
     ELocManGetCaptureSetting,
-    ELocManCancelTrackLogNotify
+    ELocManCancelTrackLogNotify,
+    ELocManTagPending,
+    ELocManStartGeoTaging,
+    ELocManCancelTagPendingReq,
+    ELocManCancelGeoTaggingReq
     };
 
 /** Message argument indices */
