@@ -25,15 +25,15 @@ TARGETTYPE PLUGIN
 UID 0x10009D8D 0x2002DD11
 CAPABILITY CAP_ECOM_PLUGIN
 
-SOURCEPATH      ..\src
+SOURCEPATH      ../src
 SOURCE		proxy.cpp
 SOURCE		reversegeocoderplugin.cpp
 
 
-USERINCLUDE     ..\inc
-USERINCLUDE     ..\..\inc
-USERINCLUDE     ..\..\..\inc
-USERINCLUDE     ..\..\ReverseGeocode\inc
+USERINCLUDE     ../inc
+USERINCLUDE     ../../inc
+USERINCLUDE     ../../../inc
+USERINCLUDE     ../../ReverseGeocode/inc
 
 
 MW_LAYER_SYSTEMINCLUDE
@@ -41,7 +41,7 @@ SYSTEMINCLUDE /epoc32/include/stdapis
 
 
 SOURCEPATH      ../data
-START RESOURCE  2002DD11.RSS
+START RESOURCE  2002DD11.rss
 TARGET          reversegeocoderplugin.rsc
 END
 

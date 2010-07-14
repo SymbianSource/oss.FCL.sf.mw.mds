@@ -20,7 +20,7 @@
 
 #if defined(WINSCW)
 deffile ../bwincw/locationmanagerclientwinscw.def
-#elif defined(ARMCC)
+#elif defined(EABI)
 deffile ../eabi/locationmanagerclientarm.def
 #endif
 nostrictdef

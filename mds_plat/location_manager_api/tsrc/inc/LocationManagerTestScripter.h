@@ -32,7 +32,7 @@
 #include "mdesession.h"
 
 #ifdef LOC_REVERSEGEOCODE
-#include "RLocationGeoTagger.h"
+#include "rlocationgeotagger.h"
 #endif //LOC_REVERSEGEOCODE
 
 // CONSTANTS

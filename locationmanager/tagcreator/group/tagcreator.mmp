@@ -35,7 +35,7 @@ nostrictdef
 USERINCLUDE     ../inc
 USERINCLUDE     ../../inc
 USERINCLUDE     ../../../inc
-USERINCLUDE     ../../reversegeocode/inc
+USERINCLUDE     ../../ReverseGeocode/inc
 
 
 

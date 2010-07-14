@@ -45,8 +45,8 @@ MACRO LOC_GEOTAGGING_CELLID
 USERINCLUDE     ../../geoconverter/inc
 #endif
 
-USERINCLUDE     ../../reversegeocode/inc
-USERINCLUDE	../../reversegeocoderplugin/inc
+USERINCLUDE     ../../ReverseGeocode/inc
+USERINCLUDE	../../ReverseGeoCoderPlugin/inc
 
 
 SOURCEPATH      ../src
