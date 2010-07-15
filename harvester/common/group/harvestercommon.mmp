@@ -40,6 +40,7 @@ SYSTEMINCLUDE     /epoc32/include/connect
 USERINCLUDE       ../../../inc
 USERINCLUDE       ../inc
 USERINCLUDE       ../../monitorplugins/inc
+USERINCLUDE       ../traces
 
 SOURCEPATH        ../src
 SOURCE            harvesterblacklist.cpp

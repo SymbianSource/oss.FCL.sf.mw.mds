@@ -37,6 +37,7 @@ nostrictdef
 USERINCLUDE       ../../../inc
 USERINCLUDE       ../../common/inc
 USERINCLUDE       ../inc
+USERINCLUDE       ../traces
 
 SOURCEPATH        ../src
 SOURCE            harvesterclient.cpp

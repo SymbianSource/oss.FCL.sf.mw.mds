@@ -20,6 +20,10 @@
 #include "harvestercommon.h"
 #include "harvesterlog.h"
 #include "mdsutils.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvesterclientaoTraces.h"
+#endif
 
 
 // ---------------------------------------------------------------------------
@@ -29,6 +33,8 @@
 CHarvesterClientAO* CHarvesterClientAO::NewL( RHarvesterClient& aHarvesterClient )
 	{
     WRITELOG( "CHarvesterClientAO::NewL()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_NEWL, "CHarvesterClientAO::NewL" );
+    
 	CHarvesterClientAO* self = new (ELeave) CHarvesterClientAO( aHarvesterClient );
 	CleanupStack::PushL( self );
 	self->ConstructL();
@@ -42,6 +48,8 @@ CHarvesterClientAO* CHarvesterClientAO::NewL( RHarvesterClient& aHarvesterClient
 //
 CHarvesterClientAO::~CHarvesterClientAO() // destruct
 	{   
+    OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::~CHarvesterClientAO" );
+    
     WRITELOG( "CHarvesterClientAO::~CHarvesterClientAO()" );
     Cancel();
  	}
@@ -56,6 +64,8 @@ CHarvesterClientAO::CHarvesterClientAO( RHarvesterClient& aHarvesterClient )
     iObserver( NULL ),
     iHarvesterClient( aHarvesterClient )
   	{
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::CHarvesterClientAO" );
+    
     WRITELOG( "CHarvesterClientAO::CHarvesterClientAO()" );
 	}
 
@@ -65,7 +75,9 @@ CHarvesterClientAO::CHarvesterClientAO( RHarvesterClient& aHarvesterClient )
 //
 void CHarvesterClientAO::ConstructL() // second-phase constructor
 	{
-    WRITELOG( "CHarvesterClientAO::ConstructL()" );    
+    WRITELOG( "CHarvesterClientAO::ConstructL()" );   
+    OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_CONSTRUCTL, "CHarvesterClientAO::ConstructL" );
+    
     CActiveScheduler::Add( this );
 	}
 
@@ -76,6 +88,8 @@ void CHarvesterClientAO::ConstructL() // second-phase constructor
 void CHarvesterClientAO::SetObserver( MHarvestObserver* aObserver )
 	{
 	WRITELOG( "CHarvesterClientAO::SetObserver()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_SETOBSERVER, "CHarvesterClientAO::SetObserver" );
+	
 	iObserver = aObserver;
 	}
 
@@ -86,6 +100,8 @@ void CHarvesterClientAO::SetObserver( MHarvestObserver* aObserver )
 void CHarvesterClientAO::RemoveObserver( MHarvestObserver* aObserver )
 	{
 	WRITELOG( "CHarvesterClientAO::RemoveObserver()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_REMOVEOBSERVER, "CHarvesterClientAO::RemoveObserver" );
+	
 	if ( aObserver == iObserver )
 		{
 		if ( iObserver )
@@ -103,7 +119,8 @@ void CHarvesterClientAO::RemoveObserver( MHarvestObserver* aObserver )
 void CHarvesterClientAO::DoCancel()
 	{
 	WRITELOG( "CHarvesterClientAO::DoCancel()" );
-	iHarvesterClient.UnregisterHarvestComplete();
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_DOCANCEL, "CHarvesterClientAO::DoCancel" );
+	
 	}
 	
 // ---------------------------------------------------------------------------
@@ -126,6 +143,8 @@ void CHarvesterClientAO::Active()
 void CHarvesterClientAO::RunL()
 	{
 	WRITELOG( "CHarvesterClientAO::RunL()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_RUNL, "CHarvesterClientAO::RunL" );
+	
 
 	const TInt status = iStatus.Int();
 	

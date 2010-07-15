@@ -24,6 +24,11 @@
 #include "mdcserializationbuffer.h"
 
 #include <pathinfo.h>
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "blacklistserverTraces.h"
+#endif
+
 
 // Security policy
 const TUint KServerPolicyRangeCount = 6;
@@ -67,7 +72,8 @@ CPolicyServer::TCustomResult CBlacklistServer::CustomSecurityCheckL(
         const RMessage2& aMsg, TInt& /*aAction*/, TSecurityInfo& /*aMissing*/ )
 	{
     WRITELOG( "CBlacklistServer::CustomSecurityCheckL - begin" );
-    
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CUSTOMSECURITYCHECKL, "CBlacklistServer::CustomSecurityCheckL -begin" );
+        
     CPolicyServer::TCustomResult securityCheckResult = EFail;
     
     switch ( aMsg.Function() )
@@ -92,7 +98,8 @@ CPolicyServer::TCustomResult CBlacklistServer::CustomSecurityCheckL(
    	    }
     
     WRITELOG( "CBlacklistServer::CustomSecurityCheckL - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CUSTOMSECURITYCHECKL, "CBlacklistServer::CustomSecurityCheckL- end" );
+    
     return securityCheckResult;
 	}
 
@@ -105,7 +112,8 @@ CPolicyServer::TCustomResult CBlacklistServer::CustomFailureActionL(
         const RMessage2& /*aMsg*/, TInt /*aAction*/, const TSecurityInfo& /*aMissing*/ )
 	{
     WRITELOG( "CBlacklistServer::CustomFailureActionL" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CUSTOMFAILUREACTIONL, "CBlacklistServer::CustomFailureActionL" );
+    
     // Not used
     return EFail;
 	}
@@ -117,11 +125,14 @@ CPolicyServer::TCustomResult CBlacklistServer::CustomFailureActionL(
 CBlacklistServer* CBlacklistServer::NewL()
     {
     WRITELOG( "CBlacklistServer::NewL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_NEWL, "CBlacklistServer::NewL -begin" );
+    
     CBlacklistServer* self = NewLC();
     CleanupStack::Pop( self );
 
     WRITELOG( "CBlacklistServer::NewL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_NEWL, "CBlacklistServer::NewL - end" );
+    
     return self;
     }
 
@@ -132,12 +143,15 @@ CBlacklistServer* CBlacklistServer::NewL()
 CBlacklistServer* CBlacklistServer::NewLC()
     {
     WRITELOG( "CBlacklistServer::NewLC - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_NEWLC, "CBlacklistServer::NewLC -begin" );
+    
     CBlacklistServer* self = new( ELeave ) CBlacklistServer();
     CleanupStack::PushL( self );
     self->ConstructL();
 
     WRITELOG( "CBlacklistServer::NewLC - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_NEWLC, "CBlacklistServer::NewLC - end" );
+    
     return self;
     }
 
@@ -153,12 +167,15 @@ CBlacklistServer::CBlacklistServer() :
 void CBlacklistServer::ConstructL()
     {
     WRITELOG( "CBlacklistServer::ConstructL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CONSTRUCTL, "CBlacklistServer::ConstructL - begin" );
+    
     StartL( KBlacklistServerName );
 
     iSqLiteConnection = CMdSSqLiteConnection::NewL();
     
     WRITELOG( "CBlacklistServer::ConstructL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CONSTRUCTL, "CBlacklistServer::ConstructL -end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -168,6 +185,7 @@ void CBlacklistServer::ConstructL()
 CBlacklistServer::~CBlacklistServer()
     {
     WRITELOG( "CBlacklistServer::~CBlacklistServer - begin" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CBLACKLISTSERVER, "CBlacklistServer::~CBlacklistServer -begin" );
 
     if ( iDatabaseOpen )
         {
@@ -201,6 +219,7 @@ CBlacklistServer::~CBlacklistServer()
     delete iSqLiteConnection;
 
     WRITELOG( "CBlacklistServer::~CBlacklistServer - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CBLACKLISTSERVER, "CBlacklistServer::~CBlacklistServer -end " );
     }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +229,8 @@ CBlacklistServer::~CBlacklistServer()
 void CBlacklistServer::CloseDB()
     {
     WRITELOG( "CBlacklistServer::CloseDB - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CLOSEDB, "CBlacklistServer::CloseDB -begin" );
+    
     if ( iDatabaseOpen )
         {
         iSqLiteConnection->CloseDb();
@@ -218,6 +238,8 @@ void CBlacklistServer::CloseDB()
         }
 
     WRITELOG( "CBlacklistServer::CloseDB - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CLOSEDB, "CBlacklistServer::CloseDB - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -227,6 +249,8 @@ void CBlacklistServer::CloseDB()
 void CBlacklistServer::ExeMainL()
     {
     WRITELOG( "CBlacklistServer::ExeMainL - begin" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_EXEMAINL, "CBlacklistServer::ExeMainL -begin" );
+    
     User::LeaveIfError( User::RenameThread(KBlacklistServerName) );
     // Construct active scheduler
     CActiveScheduler* activeScheduler = new ( ELeave ) CActiveScheduler;
@@ -247,6 +271,8 @@ void CBlacklistServer::ExeMainL()
 
     CleanupStack::PopAndDestroy( 2, activeScheduler );  
     WRITELOG( "CBlacklistServer::ExeMainL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_EXEMAINL, "CBlacklistServer::ExeMainL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -256,6 +282,8 @@ void CBlacklistServer::ExeMainL()
 TInt E32Main()
     {
     WRITELOG( "CBlacklistServer::E32Main - begin" );   
+    OstTrace0( TRACE_NORMAL, _E32MAIN, "CBlacklistServer::E32Main - begin" );
+    
     __UHEAP_MARK;
     CTrapCleanup* cleanup=CTrapCleanup::New();
     TInt result = KErrNoMemory;
@@ -266,6 +294,8 @@ TInt E32Main()
         }
     __UHEAP_MARKEND;
     WRITELOG( "CBlacklistServer::E32Main - end" );
+    OstTrace0( TRACE_NORMAL, DUP1__E32MAIN, "CBlacklistServer::E32Main -end" );
+    
     return result;
     }
 
@@ -277,6 +307,7 @@ TInt E32Main()
 void CBlacklistServer::OpenDatabaseL()
     {
     WRITELOG( "CBlacklistServer::OpenDatabaseL - begin" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_OPENDATABASEL, "CBlacklistServer::OpenDatabaseL - begin" );
     
     if ( iDatabaseOpen )
         {
@@ -307,6 +338,8 @@ void CBlacklistServer::OpenDatabaseL()
     SerializeToSharedMemoryL();
 
     WRITELOG( "CBlacklistServer::OpenDatabaseL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_OPENDATABASEL, "CBlacklistServer::OpenDatabaseL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -316,7 +349,8 @@ void CBlacklistServer::OpenDatabaseL()
 void CBlacklistServer::SerializeToSharedMemoryL()
 	{
     WRITELOG( "CBlacklistServer::SerializeToSharedMemoryL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_SERIALIZETOSHAREDMEMORYL, "CBlacklistServer::SerializeToSharedMemoryL - begin" );
+    
 	TUint32 bufferSize = 0;
 	TUint32 blacklistMemoryTableCount = iBlacklistMemoryTable.Count();
 
@@ -365,6 +399,8 @@ void CBlacklistServer::SerializeToSharedMemoryL()
 	iBlacklistMemoryTable.ResetAndDestroy();
 
     WRITELOG( "CBlacklistServer::SerializeToSharedMemoryL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_SERIALIZETOSHAREDMEMORYL, "CBlacklistServer::SerializeToSharedMemoryL- end" );
+    
 	}
 
 // ---------------------------------------------------------------------------
@@ -374,6 +410,8 @@ void CBlacklistServer::SerializeToSharedMemoryL()
 TInt CBlacklistServer::MemoryHandle()
     {
     WRITELOG( "CBlacklistServer::MemoryHandle" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_MEMORYHANDLE, "CBlacklistServer::MemoryHandle" );
+    
     return iHandle;
     }
 
@@ -384,7 +422,8 @@ TInt CBlacklistServer::MemoryHandle()
 void CBlacklistServer::LoadDatabaseToMemoryL()
     {
     WRITELOG( "CBlacklistServer::LoadDatabaseToMemoryL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_LOADDATABASETOMEMORYL, "CBlacklistServer::LoadDatabaseToMemoryL - begin" );
+    
     iBlacklistMemoryTable.ResetAndDestroy();
     RMdsStatement statement;
     CleanupClosePushL( statement );
@@ -415,6 +454,8 @@ void CBlacklistServer::LoadDatabaseToMemoryL()
     CleanupStack::PopAndDestroy( &statement ); 
 
     WRITELOG( "CBlacklistServer::LoadDatabaseToMemoryL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_LOADDATABASETOMEMORYL, "CBlacklistServer::LoadDatabaseToMemoryL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -424,7 +465,8 @@ void CBlacklistServer::LoadDatabaseToMemoryL()
 void CBlacklistServer::CreateBlacklistTableL()
     {
     WRITELOG( "CBlacklistServer::CreateBlacklistTableL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_CREATEBLACKLISTTABLEL, "CBlacklistServer::CreateBlacklistTableL - begin" );
+    
     RRowData emptyRowData;
     CleanupClosePushL( emptyRowData );
     iSqLiteConnection->ExecuteL( KDropBlacklistTable, emptyRowData );
@@ -432,6 +474,8 @@ void CBlacklistServer::CreateBlacklistTableL()
 	CleanupStack::PopAndDestroy( &emptyRowData );
 
     WRITELOG( "CBlacklistServer::CreateBlacklistTableL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CREATEBLACKLISTTABLEL, "CBlacklistServer::CreateBlacklistTableL - end" );
+    
     }
 
 
@@ -444,7 +488,8 @@ void CBlacklistServer::AddToMemoryTableL( const TInt64& aModified,
     {
 
     WRITELOG( "CBlacklistServer::AddToMemoryTableL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_ADDTOMEMORYTABLEL, "CBlacklistServer::AddToMemoryTableL - begin" );
+    
     CBlacklistItem* item = CBlacklistItem::NewL( aModified, aUri, aMediaId );
     const TInt err = iBlacklistMemoryTable.Append( item ); // ownership is transferred
     if ( err != KErrNone )
@@ -453,6 +498,8 @@ void CBlacklistServer::AddToMemoryTableL( const TInt64& aModified,
         }
 
     WRITELOG( "CBlacklistServer::AddToMemoryTableL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_ADDTOMEMORYTABLEL, "CBlacklistServer::AddToMemoryTableL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -464,7 +511,8 @@ void CBlacklistServer::RemoveFromMemoryTable( const TDesC& aUri,
     {
 
     WRITELOG( "CBlacklistServer::RemoveFromMemoryTable - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_REMOVEFROMMEMORYTABLE, "CBlacklistServer::RemoveFromMemoryTable - begin" );
+    
     const TInt index = GetMemoryTableIndex( aUri, aMediaId );
     if ( index >= 0 )
         {
@@ -474,6 +522,8 @@ void CBlacklistServer::RemoveFromMemoryTable( const TDesC& aUri,
         }
 
     WRITELOG( "CBlacklistServer::RemoveFromMemoryTable - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_REMOVEFROMMEMORYTABLE, "CBlacklistServer::RemoveFromMemoryTable - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -483,7 +533,8 @@ void CBlacklistServer::RemoveFromMemoryTable( const TDesC& aUri,
 TInt CBlacklistServer::GetMemoryTableIndex( const TDesC& aUri, TUint32 aMediaId )
     {
     WRITELOG( "CBlacklistServer::GetMemoryTableIndex - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_GETMEMORYTABLEINDEX, "CBlacklistServer::GetMemoryTableIndex - begin" );
+    
     for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
         {
         if ( iBlacklistMemoryTable[i]->Compare( aUri, aMediaId ) )
@@ -493,6 +544,8 @@ TInt CBlacklistServer::GetMemoryTableIndex( const TDesC& aUri, TUint32 aMediaId 
         }
 
     WRITELOG( "CBlacklistServer::GetMemoryTableIndex - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_GETMEMORYTABLEINDEX, "CBlacklistServer::GetMemoryTableIndex - end" );
+    
     return KErrNotFound;
     }
 
@@ -503,7 +556,8 @@ TInt CBlacklistServer::GetMemoryTableIndex( const TDesC& aUri, TUint32 aMediaId 
 TBool CBlacklistServer::TableExistsL()
     {
     WRITELOG( "CBlacklistServer::TableExistsL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_TABLEEXISTSL, "CBlacklistServer::TableExistsL - begin" );
+    
     RMdsStatement validationQuery;
     CleanupClosePushL( validationQuery );
     RRowData emptyRowData;
@@ -515,7 +569,8 @@ TBool CBlacklistServer::TableExistsL()
 	CleanupStack::PopAndDestroy( &validationQuery ); // validationQuery
 
     WRITELOG( "CBlacklistServer::TableExistsL - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_TABLEEXISTSL, "CBlacklistServer::TableExistsL - end" );
+    
     return ( err == KErrNone );
     }
 
@@ -526,7 +581,8 @@ TBool CBlacklistServer::TableExistsL()
 CSession2* CBlacklistServer::NewSessionL( const TVersion& aVersion, const RMessage2& /*aMessage*/ ) const
     {
     WRITELOG( "CBlacklistServer::NewSessionL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_NEWSESSIONL, "CBlacklistServer::NewSessionL - begin" );
+    
     // Check we are the right version
     if ( !User::QueryVersionSupported( TVersion( KBlacklistServerMajorVersion,
                                                  KBlacklistServerMinorVersion,
@@ -537,7 +593,8 @@ CSession2* CBlacklistServer::NewSessionL( const TVersion& aVersion, const RMessa
     	}
     
     WRITELOG( "CBlacklistServer::NewSessionL - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_NEWSESSIONL, "CBlacklistServer::NewSessionL - end" );
+    
     return new( ELeave ) CBlacklistSession;
     }
 
@@ -548,7 +605,8 @@ CSession2* CBlacklistServer::NewSessionL( const TVersion& aVersion, const RMessa
 TInt CBlacklistServer::RunError( TInt aError )
     {
     WRITELOG1( "CBlacklistServer::RunError - begin, error %d", aError );
-
+    OstTrace1( TRACE_NORMAL, CBLACKLISTSERVER_RUNERROR, "CBlacklistServer::RunError - begin, error %d", aError );
+    
     // Bad descriptor implies bad client
     if ( aError == KErrBadDescriptor )
         {
@@ -563,7 +621,8 @@ TInt CBlacklistServer::RunError( TInt aError )
     ReStart();
 
     WRITELOG( "CBlacklistServer::RunError - end" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_RUNERROR, "CBlacklistServer::RunError - end" );
+    
     return KErrNone;
     }
 
@@ -574,6 +633,8 @@ TInt CBlacklistServer::RunError( TInt aError )
 void CBlacklistServer::AddSession()
     {
     WRITELOG( "CBlacklistServer::AddSession" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_ADDSESSION, "CBlacklistServer::AddSession" );
+    
     ++iSessionCount;
     }
 
@@ -584,7 +645,8 @@ void CBlacklistServer::AddSession()
 void CBlacklistServer::RemoveSession()
     {
     WRITELOG( "CBlacklistServer::RemoveSession - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_REMOVESESSION, "CBlacklistServer::RemoveSession - begin" );
+    
     --iSessionCount;
     
 #ifdef _DEBUG
@@ -593,6 +655,9 @@ void CBlacklistServer::RemoveSession()
     TRAP_IGNORE ( WriteAllDataToDBL() );
 #endif
     WRITELOG1( "CBlacklistServer::RemoveSession - err %d", err  );
+#ifdef _DEBUG    
+    OstTrace1( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_REMOVESESSION, "CBlacklistServer::RemoveSession - err %d", err );
+#endif
     
     if ( iSessionCount == 0 )
         {
@@ -600,6 +665,8 @@ void CBlacklistServer::RemoveSession()
         }
 
     WRITELOG( "CBlacklistServer::RemoveSession - end" );
+    OstTrace0( TRACE_NORMAL, DUP2_CBLACKLISTSERVER_REMOVESESSION, "CBlacklistServer::RemoveSession - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -609,10 +676,13 @@ void CBlacklistServer::RemoveSession()
 void CBlacklistServer::AddL( const TUint32& mediaId, const TDesC& aUri, const TTime& aLastModifiedTime ) 
     {
     WRITELOG( "CBlacklistServer::AddL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_ADDL, "CBlacklistServer::AddL - begin" );
+    
     AddToMemoryTableL( aLastModifiedTime.Int64(), aUri, mediaId );
 
     WRITELOG( "CBlacklistServer::AddL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_ADDL, "CBlacklistServer::AddL - end" );
+    
     } 
 
 // ---------------------------------------------------------------------------
@@ -622,10 +692,13 @@ void CBlacklistServer::AddL( const TUint32& mediaId, const TDesC& aUri, const TT
 void CBlacklistServer::RemoveL( const TUint32& mediaId, const TDesC& aUri ) 
     {
     WRITELOG( "CBlacklistServer::RemoveL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_REMOVEL, "CBlacklistServer::RemoveL - begin" );
+    
     RemoveFromMemoryTable( aUri, mediaId );
 
     WRITELOG( "CBlacklistServer::RemoveL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_REMOVEL, "CBlacklistServer::RemoveL - end" );
+    
     } 
  
 // ---------------------------------------------------------------------------
@@ -635,6 +708,7 @@ void CBlacklistServer::RemoveL( const TUint32& mediaId, const TDesC& aUri )
 void CBlacklistServer::RemoveFromDBL( const TDesC& aUri, const TUint32 aMediaId )
     {
     WRITELOG( "CBlacklistServer::RemoveFromDBL - begin" );
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_REMOVEFROMDBL, "CBlacklistServer::RemoveFromDBL - begin" );
     
     RRowData* variables = new ( ELeave ) RRowData();        
     CleanupStack::PushL( variables );
@@ -666,6 +740,8 @@ void CBlacklistServer::RemoveFromDBL( const TDesC& aUri, const TUint32 aMediaId 
         }
     
     WRITELOG( "CBlacklistServer::RemoveFromDBL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_REMOVEFROMDBL, "CBlacklistServer::RemoveFromDBL - end" );
+    
     }
 
 
@@ -677,7 +753,8 @@ void CBlacklistServer::AddToDBL( const TDesC& aUri, const TUint32 aMediaId,
     const TInt64& aLastModifiedTime ) 
     {
     WRITELOG( "CBlacklistServer::AddToDBL - begin" );
-  
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_ADDTODBL, "CBlacklistServer::AddToDBL - begin" );
+   
     RRowData* rowData = new ( ELeave ) RRowData();        
     CleanupStack::PushL( rowData );
     CleanupClosePushL( *rowData );
@@ -711,6 +788,8 @@ void CBlacklistServer::AddToDBL( const TDesC& aUri, const TUint32 aMediaId,
         }
 
     WRITELOG( "CBlacklistServer::AddToDBL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_ADDTODBL, "CBlacklistServer::AddToDBL - end" );
+    
     } 
 
 // ---------------------------------------------------------------------------
@@ -720,13 +799,16 @@ void CBlacklistServer::AddToDBL( const TDesC& aUri, const TUint32 aMediaId,
 void CBlacklistServer::WriteAllDataToDBL()
     {
     WRITELOG( "CBlacklistServer::WriteAllDataToDBL - begin" );
-
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_WRITEALLDATATODBL, "CBlacklistServer::WriteAllDataToDBL - begin" );
+    
     for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
         {
         AddToDBL(  *iBlacklistMemoryTable[i]->Uri(),  iBlacklistMemoryTable[i]->MediaId(), iBlacklistMemoryTable[i]->Modified() );
         }
 
     WRITELOG( "CBlacklistServer::WriteAllDataToDBL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_WRITEALLDATATODBL, "CBlacklistServer::WriteAllDataToDBL - end" );
+    
     }
 
 // ---------------------------------------------------------------------------
@@ -736,7 +818,8 @@ void CBlacklistServer::WriteAllDataToDBL()
 void CBlacklistServer::CommitBufferedItemsL()
     {
     WRITELOG( "CBlacklistServer::CommitBufferedItemsL - begin" );
-   
+    OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_COMMITBUFFEREDITEMSL, "CBlacklistServer::CommitBufferedItemsL - begin" );
+    
     // First, removed items
     const TInt removedCount( iBufferedRemoveItems.Count() );
     for ( TInt i( 0 ); i < removedCount; ++i )
@@ -754,6 +837,8 @@ void CBlacklistServer::CommitBufferedItemsL()
         }
 
     WRITELOG( "CBlacklistServer::CommitBufferedItemsL - end" );
+    OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_COMMITBUFFEREDITEMSL, "CBlacklistServer::CommitBufferedItemsL - end" );
+    
     }
 
 // End of File
