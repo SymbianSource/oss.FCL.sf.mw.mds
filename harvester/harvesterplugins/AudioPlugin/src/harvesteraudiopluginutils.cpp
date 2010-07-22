@@ -34,7 +34,6 @@ _LIT( KMimeTypeRng,    "application/vnd.nokia.ringing-tone" );
 _LIT( KMimeTypeMxmf,   "audio/vnd.nokia.mobile-xmf" );
 _LIT( KMimeTypeWav,    "audio/wav" );
 _LIT( KMimeTypeAu,     "audio/au" );
-_LIT( KMimeTypeWma,    "audio/x-ms-wma");
 _LIT( KMimeTypeAudioMatroska, "audio/x-matroska");
 
 _LIT( KExtensionMp3,    "mp3" );
@@ -48,7 +47,6 @@ _LIT( KExtensionRng,    "rng" );
 _LIT( KExtensionMxmf,   "mxmf" );
 _LIT( KExtensionWav,    "wav" );
 _LIT( KExtensionAu,     "au" );
-_LIT( KExtensionWma,    "wma" );
 _LIT( KExtensionNrt,    "nrt" );
 _LIT( KExtensionMka,    "mka" );
 

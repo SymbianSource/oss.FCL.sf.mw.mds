@@ -175,6 +175,8 @@ NONSHARABLE_CLASS(CMdSSqLiteConnection): public CBase
         
         void EnableTransaction( TBool aEnable, RMdsStatement& aQuery );
 
+        void DoAnalyzeL();
+        
     protected: // Personal methods     
 
         /**

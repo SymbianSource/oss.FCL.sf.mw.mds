@@ -100,6 +100,7 @@ void CMdsSchema::AddDefaultObjectL()
 	iBaseObject->AddPropertyL( MdeConstants::Object::KLastModifiedDateProperty, EPropertyTime, KMinTInt64, KMaxTInt64, EFalse, ETrue, EFalse );
 	iBaseObject->AddPropertyL( MdeConstants::Object::KItemTypeProperty, EPropertyText, TInt32(0), TInt32(255), EFalse, EFalse, EFalse );
 	iBaseObject->AddPropertyL( MdeConstants::Object::KTitleProperty, EPropertyText, TInt32(0), TInt32(255), EFalse, EFalse, EFalse );
+	iBaseObject->AddPropertyL( MdeConstants::Object::KInDefaultFolder, EPropertyBool, TInt32(0), TInt32(1), EFalse, EFalse, EFalse );
 	
 	TInt propcount = iBaseObject->GetPropertiesCount();
 	iBaseObject->iCol2Prop.Reset();
@@ -203,7 +204,7 @@ void CMdsSchema::AddObjectToSqlClauseL( CMdsObjectDef* aObject, CMdsClauseBuffer
 
 void CMdsSchema::CreateObjectTablesL()
 	{
-	_LIT( KBaseObjectDefinition,  "CREATE TABLE IF NOT EXISTS %S%u(ObjectId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectDefId INTEGER NOT NULL,Flags INTEGER,MediaId LARGEINT,UsageCount LARGEINT DEFAULT 0,GuidHigh LARGEINT,GuidLow LARGEINT,URI TEXT NOT NULL COLLATE NOCASE,Origin INTEGER,Size LARGEINT,TimeOffset INTEGER,CreationDate LARGEINT,LastModifiedDate LARGEINT,ItemType TEXT,Title TEXT,UNIQUE(GuidHigh,GuidLow),UNIQUE(URI,MediaId));" );	
+	_LIT( KBaseObjectDefinition,  "CREATE TABLE IF NOT EXISTS %S%u(ObjectId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectDefId INTEGER NOT NULL,Flags INTEGER,MediaId LARGEINT,UsageCount LARGEINT DEFAULT 0,GuidHigh LARGEINT,GuidLow LARGEINT,URI TEXT NOT NULL COLLATE NOCASE,Origin INTEGER,Size LARGEINT,TimeOffset INTEGER,CreationDate LARGEINT,LastModifiedDate LARGEINT,ItemType TEXT,Title TEXT,InDefaultFolder INTEGER,UNIQUE(GuidHigh,GuidLow),UNIQUE(URI,MediaId));" );	
 	_LIT( KCreateRelationsTable,  "CREATE TABLE IF NOT EXISTS Relations%u(RelationId INTEGER PRIMARY KEY AUTOINCREMENT,Flags INTEGER,RelationDefId INTEGER NOT NULL,LeftObjectId INTEGER NOT NULL,RightObjectId INTEGER NOT NULL,Parameter INTEGER,GuidHigh LARGEINT,GuidLow LARGEINT,LastModifiedDate LARGEINT);" );
 	_LIT( KCreateEventsTable,     "CREATE TABLE IF NOT EXISTS Event%u(EventId INTEGER PRIMARY KEY AUTOINCREMENT,ObjectId INTEGER NOT NULL, EventDefId INTEGER NOT NULL, Timestamp INTEGER NOT NULL, Source TEXT, Participant TEXT);" );
 	_LIT( KCreateTxtSrchTable,    "CREATE TABLE IF NOT EXISTS TextSearch%u(WordId INTEGER NOT NULL,ObjectId INTEGER NOT NULL,Position INTEGER);" );

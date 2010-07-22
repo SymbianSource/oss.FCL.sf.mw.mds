@@ -20,6 +20,8 @@
 #define C_CNETWORKINFO_H
 
 #include <etel3rdparty.h>
+#include <etel.h>
+#include <etelmm.h>
 
 /**
 *  An observer interface, which is used for getting current network cell id.
@@ -34,6 +36,12 @@ public:
      * location trail.
      */
     virtual void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, const TInt aError ) = 0;
+
+    /**
+     * Get mobile phone object for network info object
+     * @return mobile phone object
+     */
+    virtual RMobilePhone& GetMobilePhone4NwInfo() = 0;
     };
 
 /**
@@ -55,6 +63,33 @@ public:
      */    
     IMPORT_C virtual ~CNetworkInfo();
 
+    /**
+     * Listen to n/w info change
+     * @since S60 9.2
+     */    
+    IMPORT_C void StartNwInfoChangeNotifier();
+
+   /**
+     * Stop n/w info change listener
+     * @since S60 9.2
+     */    
+   IMPORT_C void StopNwInfoChangeNotifier();
+   
+   /**
+     * Map etel to ctelephony
+     * @since S60 9.2
+     */    
+   IMPORT_C static void MapNetworkInfo(CTelephony::TNetworkInfoV1* aISVNetworkInfo, 
+       RMobilePhone::TMobilePhoneNetworkInfoV2* aMMNetworkInfo, 
+       RMobilePhone::TMobilePhoneLocationAreaV1* aMMArea);
+    
+    /*
+    * Get registrer network country code
+    *
+    * @return current register n/w info
+    */
+    RMobilePhone::TMobilePhoneNetworkInfoV2& GetCurrentRegisterNw();
+    
 protected:
     /**
      * Run error implementation in case of RunL leaving.
@@ -85,6 +120,13 @@ private:
     void RunL(); 
 
 private:
+   typedef enum
+    {
+    ENetworkInfoNoOptState = 0x00,
+    ENetworkInfoOptGetState,
+    ENetworkInfoOptNotifyState
+    }TNetworkInfoOptState;
+   
     /**
      * An observer interface to set current cell id to the location trail.
      * Not own.
@@ -92,18 +134,23 @@ private:
     MNetworkInfoObserver* iTrail;
     
     /**
-     * Flag to indicate that we retrieve network info for the first time.
+     * phone object to retrieve modem parameters
      */ 
-    TBool iFirstTime;
-    
+    RMobilePhone& iMobilePhone;
+
     /**
-     * Interface to phone's telephony system to get Cell Id.
-     * Own.
-     */
-    CTelephony* iTelephony;
-    
+     * Maintain the operation state.
+     */ 
+    TNetworkInfoOptState iState;
+
+    /*
+    * Retained this object just to give backward compatibility
+    */
     CTelephony::TNetworkInfoV1 iNetworkInfoV1;
-    CTelephony::TNetworkInfoV1Pckg iNetworkInfoV1Pckg;
+
+	RMobilePhone::TMobilePhoneNetworkInfoV2 iMMNetworkInfo;
+	RMobilePhone::TMobilePhoneNetworkInfoV2Pckg iMMNetworkInfoPckg;
+	RMobilePhone::TMobilePhoneLocationAreaV1 iMMArea;
     };
 
 #endif // C_CNETWORKINFO_H

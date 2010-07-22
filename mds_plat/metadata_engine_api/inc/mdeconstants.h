@@ -35,6 +35,7 @@ namespace MdeConstants
         _LIT( KItemTypeProperty, "ItemType" );
         _LIT( KTitleProperty, "Title" );
         _LIT( KTimeOffsetProperty, "TimeOffset" );
+        _LIT( KInDefaultFolder, "InDefaultFolder" );
 
         enum TOrigin
             {
@@ -129,6 +130,12 @@ namespace MdeConstants
         {
         _LIT( KTagObject, "Tag" );
         _LIT( KTagItemType, "application/vnd.nokia.mde.tag" );
+        enum TTagType
+            {
+            EUserDefineTags = 0,
+            ESystemDefineCityTags = 1,
+            ESystemDefineCountryTags = 2
+            };
         }
 
     namespace MediaObject

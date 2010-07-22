@@ -63,6 +63,7 @@ class CHarvesterAoPropertyDefs : public CBase
 		CMdEPropertyDef* iOriginPropertyDef;
 		CMdEPropertyDef* iItemTypePropertyDef;
 		CMdEPropertyDef* iTitlePropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 		
 		// Media property definitions
 		CMdEPropertyDef* iPreinstalledPropertyDef;
@@ -114,8 +115,6 @@ class CHarvesterAO : public CActive,
         	ERequestContainerPlaceholder
         	};
         	
-
-
         /**
          * Constructs a new harvesting thread
          *
@@ -301,10 +300,14 @@ class CHarvesterAO : public CActive,
         void MemoryGood();
         
         void RemoveBlacklistedFile( CHarvesterData* aItem );
+        
+        CHarvesterAO::TRequest GetHarvesterAORunState();
 		
     private:
         
         TBool CheckForCameraItem( CHarvesterData* aHd, TDes& aObjectDef );
+        
+        void AddDefaultFolderDataL( CMdEObject* aObject );
         
 	private:
 		
@@ -519,6 +522,9 @@ class CHarvesterAO : public CActive,
         
         /** */
         RPointerArray<CHarvesterData> iContainerPHArray;
+        
+		/** */
+        RPointerArray<CHarvesterData> iTempReadyPHArray;
                 
         /**
          * Pointer to process origin mapper for registering mappings.
@@ -568,6 +574,18 @@ class CHarvesterAO : public CActive,
         TBool iFastHarvestNeeded;
         
         TBool iHarvestingPlaceholders;
+        
+        HBufC* iPhoneImagesPath;
+        HBufC* iMmcImagesPath;
+        
+        HBufC* iPhoneVideosPath;
+        HBufC* iMmcVideosPath;
+        
+        HBufC* iPhoneSoundsPath;
+        HBufC* iMmcSoundsPath;
+        
+        TBool iUnmountDetected;
+        TBool iPriorityInterruptDetected;
 	};
 	
 #endif //__CHARVESTERAO_H__

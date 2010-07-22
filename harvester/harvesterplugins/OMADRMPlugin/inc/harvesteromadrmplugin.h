@@ -83,6 +83,7 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iDescriptionPropertyDef;
 		CMdEPropertyDef* iAuthorPropertyDef;
 		CMdEPropertyDef* iGenrePropertyDef;
+		CMdEPropertyDef* iDefaultFolderPropertyDef;
 	
 	private:
 		CHarvesterOmaDrmPluginPropertyDefs();
@@ -157,6 +158,15 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
 		CHarvesterOmaDrmPluginPropertyDefs* iPropDefs;
 		
 		TInt iMaxTextLength;
+		
+        HBufC* iPhoneImagesPath;
+        HBufC* iMmcImagesPath;
+        
+        HBufC* iPhoneVideosPath;
+        HBufC* iMmcVideosPath;
+        
+        HBufC* iPhoneSoundsPath;
+        HBufC* iMmcSoundsPath;
 	};
 
 #endif // __CHarvesterOMADRMPlugin_H__

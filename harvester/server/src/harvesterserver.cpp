@@ -25,6 +25,11 @@
 #include "harvesterao.h"
 #include "harvesterblacklist.h"
 #include "mdsactivescheduler.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvesterserverTraces.h"
+#endif
+
 
 // ----------------------------------------------------------------------------------------
 // Server's policy here
@@ -194,6 +199,8 @@ CHarvesterServer::CHarvesterServer( TInt aPriority, const TPolicy& aPolicy,
 void CHarvesterServer::ConstructL()
 	{
 	WRITELOG( "CHarvesterServer::ConstructL() - begin" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_CONSTRUCTL, "CHarvesterServer::ConstructL - begin" );
+	
 	StartL( KHarvesterServerName );
 	iHarvesterAO = CHarvesterAO::NewL();
 	
@@ -207,6 +214,7 @@ void CHarvesterServer::ConstructL()
     // create shutdown observer
     iShutdownObserver = CHarvesterShutdownObserver::NewL( *this );                                                
 	
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_CONSTRUCTL, "CHarvesterServer::ConstructL - end" );    
 	WRITELOG( "CHarvesterServer::ConstructL() - end" );
 	}
 
@@ -217,6 +225,7 @@ void CHarvesterServer::ConstructL()
 void CHarvesterServer::Pause( const RMessage2& aMessage )
 	{
 	WRITELOG( "CHarvesterServer::Pause() - begin" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_PAUSE, "CHarvesterServer::Pause" );	
 
 	if ( !iHarvesterAO->IsServerPaused() )
 		{
@@ -237,6 +246,7 @@ void CHarvesterServer::Pause( const RMessage2& aMessage )
 void CHarvesterServer::Resume( const RMessage2& aMessage )
 	{
 	WRITELOG( "CHarvesterServer::Resume()" ); 
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_RESUME, "CHarvesterServer::Resume" );	
 	
 	if ( iHarvesterAO->IsServerPaused() )
 		{
@@ -256,7 +266,8 @@ void CHarvesterServer::Resume( const RMessage2& aMessage )
 void CHarvesterServer::Pause()
 	{
 	WRITELOG( "CHarvesterServer::Pause()" );
-
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_PAUSE, "CHarvesterServer::Pause" );
+    
 	if ( !iHarvesterAO->IsServerPaused() )
 		{
 		iHarvesterAO->SetNextRequest( CHarvesterAO::ERequestPause );
@@ -270,7 +281,8 @@ void CHarvesterServer::Pause()
 void CHarvesterServer::Resume()
 	{
 	WRITELOG( "CHarvesterServer::Resume()" ); 
-
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_RESUME, "CHarvesterServer::Resume" );
+    
 	if ( iHarvesterAO->IsServerPaused() )
 		{
 		iHarvesterAO->SetNextRequest( CHarvesterAO::ERequestResume );
@@ -281,6 +293,8 @@ void CHarvesterServer::Resume()
 void CHarvesterServer::PauseReady( TInt aError )
 	{
 	WRITELOG1( "CHarvesterServer::PauseReady( %d )", aError );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_PAUSEREADY, "CHarvesterServer::PauseReady" );
+	
 	if( iMessage )
 		{
 		iMessage->Complete( aError );
@@ -291,6 +305,8 @@ void CHarvesterServer::PauseReady( TInt aError )
 void CHarvesterServer::ResumeReady( TInt aError )
 	{
 	WRITELOG1( "CHarvesterServer::ResumeReady( %d )", aError );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_RESUMEREADY, "CHarvesterServer::ResumeReady" );
+	
 	if( iMessage )
 		{
 		iMessage->Complete( aError );
@@ -305,6 +321,8 @@ void CHarvesterServer::ResumeReady( TInt aError )
 void CHarvesterServer::ShutdownNotification()
     {
     WRITELOG( "CHarvesterServer::ShutdownNotification" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_SHUTDOWNNOTIFICATION, "CHarvesterServer::ShutdownNotification" );
+    
     CActiveScheduler::Stop();
     }
 
@@ -315,6 +333,8 @@ void CHarvesterServer::ShutdownNotification()
 void CHarvesterServer::RestartNotification()
     {
     WRITELOG( "CHarvesterServer::RestartNotification" );    
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_RESTARTNOTIFICATION, "CHarvesterServer::RestartNotification" );
+    
     }
 
 
@@ -325,6 +345,7 @@ void CHarvesterServer::RestartNotification()
 void CHarvesterServer::HarvestFile( const RMessage2& aMessage )
 	{
 	WRITELOG( "CHarvesterServer::HarvestFile()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_HARVESTFILE, "CHarvesterServer::HarvestFile" );
 	
 	iHarvesterAO->HarvestFile( aMessage );
 	}
@@ -336,6 +357,7 @@ void CHarvesterServer::HarvestFile( const RMessage2& aMessage )
 void CHarvesterServer::HarvestFileWithUID( const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::HarvestFile()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_HARVESTFILEWITHUID, "CHarvesterServer::HarvestFileWithUID" );
     
     iHarvesterAO->HarvestFileWithUID( aMessage );
     }
@@ -347,6 +369,7 @@ void CHarvesterServer::HarvestFileWithUID( const RMessage2& aMessage )
 void CHarvesterServer::RegisterProcessOrigin( const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::RegisterProcessOrigin()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_REGISTERPROCESSORIGIN, "CHarvesterServer::RegisterProcessOrigin" );
     
     iHarvesterAO->RegisterProcessOrigin( aMessage );
     }
@@ -358,6 +381,7 @@ void CHarvesterServer::RegisterProcessOrigin( const RMessage2& aMessage )
 void CHarvesterServer::UnregisterProcessOrigin( const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::UnregisterProcessOrigin()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_UNREGISTERPROCESSORIGIN, "CHarvesterServer::UnregisterProcessOrigin" );
     
     iHarvesterAO->UnregisterProcessOrigin( aMessage );
     }
@@ -369,6 +393,7 @@ void CHarvesterServer::UnregisterProcessOrigin( const RMessage2& aMessage )
 TInt CHarvesterServer::RegisterHarvestComplete( const CHarvesterServerSession& aSession, const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::RegisterHarvestComplete()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_REGISTERHARVESTCOMPLETE, "CHarvesterServer::RegisterHarvestComplete" );
     
     return iHarvesterAO->RegisterHarvestComplete( aSession, aMessage );
     }
@@ -380,6 +405,7 @@ TInt CHarvesterServer::RegisterHarvestComplete( const CHarvesterServerSession& a
 TInt CHarvesterServer::UnregisterHarvestComplete( const CHarvesterServerSession& aSession )
     {
     WRITELOG( "CHarvesterServer::UnregisterHarvestComplete()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_UNREGISTERHARVESTCOMPLETE, "CHarvesterServer::UnregisterHarvestComplete" );
     
     return iHarvesterAO->UnregisterHarvestComplete( aSession );
     }
@@ -391,6 +417,7 @@ TInt CHarvesterServer::UnregisterHarvestComplete( const CHarvesterServerSession&
 void CHarvesterServer::RegisterHarvesterEvent( const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::RegisterHarvesterEvent()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_REGISTERHARVESTEREVENT, "CHarvesterServer::RegisterHarvesterEvent" );
     
     iHarvesterAO->RegisterHarvesterEvent( aMessage );
     }
@@ -402,6 +429,7 @@ void CHarvesterServer::RegisterHarvesterEvent( const RMessage2& aMessage )
 void CHarvesterServer::UnregisterHarvesterEvent( const RMessage2& aMessage )
     {
     WRITELOG( "CHarvesterServer::UnregisterHarvesterEvent()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_UNREGISTERHARVESTEREVENT, "CHarvesterServer::UnregisterHarvesterEvent" );
     
     iHarvesterAO->UnregisterHarvesterEvent( aMessage );
     }
@@ -413,9 +441,13 @@ void CHarvesterServer::UnregisterHarvesterEvent( const RMessage2& aMessage )
 CHarvesterServer::~CHarvesterServer()
     {
     WRITELOG( "CHarvesterServer::~CHarvesterServer()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_CHARVESTERSERVER, "CHarvesterServer::~CHarvesterServer" );
+    
     delete iHarvesterAO;
     delete iPauseObserverAO;
     delete iShutdownObserver;
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_CHARVESTERSERVER, "CHarvesterServer::~CHarvesterServer end" );
+    
     WRITELOG( "CHarvesterServer::~CHarvesterServer() end" );
     }
 
@@ -427,6 +459,7 @@ void CHarvesterServer::PanicClient( const RMessage2& aMessage, TInt aPanic,
 											const TDesC& aPanicDescription )
 	{
     WRITELOG( "CHarvesterServer::PanicClient()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_PANICCLIENT, "CHarvesterServer::PanicClient" );
     
     aMessage.Panic( aPanicDescription, aPanic );
  	}
@@ -438,6 +471,7 @@ void CHarvesterServer::PanicClient( const RMessage2& aMessage, TInt aPanic,
 void CHarvesterServer::PanicServer( TInt aPanic, const TDesC& aPanicDescription )
 	{   
     WRITELOG( "CHarvesterServer::PanicServer() - begin" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_PANICSERVER, "CHarvesterServer::PanicServer" );
     
     User::Panic( aPanicDescription, aPanic );
  	}
@@ -450,7 +484,8 @@ CSession2* CHarvesterServer::NewSessionL(
     const TVersion& aVersion, const RMessage2& ) const
 	{
 	WRITELOG( "CHarvesterServer::NewSessionL() - begin" );
-
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_NEWSESSIONL, "CHarvesterServer::NewSessionL" );
+    
     //If there isn't connection to mde, we can't do much. Inform client about situation.
     //This doesn't leave on first client because Process::Rendezcvouz is called when mde:s
     //HandleSessionOpened is called.
@@ -462,6 +497,8 @@ CSession2* CHarvesterServer::NewSessionL(
 	if ( iShutdownObserver->UpdateInProgress() )
 	    {
 	    WRITELOG( "CHarvesterServer::NewSessionL - iad update in progress: KErrLocked");
+	    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_NEWSESSIONL, "CHarvesterServer::NewSessionL- iad update in progress: KErrLocked" );
+	    
 	    User::Leave(KErrLocked);
 	    }
 
@@ -485,7 +522,8 @@ CSession2* CHarvesterServer::NewSessionL(
 TInt CHarvesterServer::RunError( TInt aError )
 	{
 	WRITELOG1( "CHarvesterServer::RunError - %d()", aError );
-	    
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_RUNERROR, "CHarvesterServer::RunError" );
+	
     if ( aError == KErrBadDescriptor )
  		{
         // A bad descriptor error implies a badly programmed client,
@@ -512,6 +550,7 @@ TInt CHarvesterServer::RunError( TInt aError )
 void CHarvesterServer::ThreadFunctionL()
 	{
 	WRITELOG( "CHarvesterServer::ThreadFunctionL() - begin" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_THREADFUNCTIONL, "CHarvesterServer::ThreadFunctionL - begin" );
     
     User::LeaveIfError( User::RenameThread( KHarvesterServerName ) );
     // Construct active scheduler
@@ -532,6 +571,8 @@ void CHarvesterServer::ThreadFunctionL()
 
 	CleanupStack::PopAndDestroy( 2, activeScheduler );
     
+	OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_THREADFUNCTIONL, "CHarvesterServer::ThreadFunctionL - end" );
+	
     WRITELOG( "CHarvesterServer::ThreadFunctionL() - end" );
 	}
 
@@ -542,6 +583,7 @@ void CHarvesterServer::ThreadFunctionL()
 TInt CHarvesterServer::ThreadFunction( TAny* /*aNone*/ )
 	{    
  	WRITELOG( "CHarvesterServer::ThreadFunction() - TAny - begin" );
+ 	OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_THREADFUNCTION, "CHarvesterServer::ThreadFunction - TAny - begin" );
  	
     CTrapCleanup* cleanupStack = CTrapCleanup::New();
 	if ( !cleanupStack )
@@ -556,6 +598,8 @@ TInt CHarvesterServer::ThreadFunction( TAny* /*aNone*/ )
         delete cleanupStack;
         cleanupStack = NULL;	
     	}
+    
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_THREADFUNCTION, "CHarvesterServer::ThreadFunction - TAny - end" );    
     WRITELOG( "CHarvesterServer::ThreadFunction() - TAny - end" );
     
     return err;
@@ -568,7 +612,8 @@ TInt CHarvesterServer::ThreadFunction( TAny* /*aNone*/ )
 TInt E32Main()
 	{    
     WRITELOG( "CHarvesterServer::E32Main() - begin" );
-
+    OstTrace0( TRACE_NORMAL, _E32MAIN, "CHarvesterServer::E32Main() - begin" );
+    
     __UHEAP_MARK;
 
     const TInt result = CHarvesterServer::ThreadFunction( NULL );

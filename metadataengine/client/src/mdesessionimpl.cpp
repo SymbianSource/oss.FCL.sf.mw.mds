@@ -1338,6 +1338,7 @@ CMdCSerializationBuffer* CMdESessionImpl::RemoveCommonL(
 			{
 			const TDesC& uri = *((*aObjects)[i]);
 			HBufC* lcUri = HBufC::NewLC( uri.Length() );
+			// Note: CopyLC doesn't push anything to cleanup stack
 			lcUri->Des().CopyLC( uri );
 			buffer->InsertL( *lcUri );
 			CleanupStack::PopAndDestroy( lcUri );

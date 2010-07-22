@@ -100,11 +100,14 @@ class CGpxConverterAO : public CActive
         /**
          * Adds temp-file and possible pre-calculated boundaries
          * into processing queue
+         * @param aFileName  The temp file name
+         * @param aBoundaries The pre-calculated boundaries
          */
         void AddToQueueL( const TDesC& aFileName, TBoundaries* aBoundaries = NULL );
         
         /**
          * Adds observer for GPX file creation notifications
+         * @param aObserver  The observer that recieves the file creation notifications
          */
         void AddObserver( MGpxConversionObserver* aObserver );
 
@@ -122,11 +125,13 @@ class CGpxConverterAO : public CActive
         
         /**
          * Set next state for RunL
+         * @param aState The next processing state
          */
         void SetState( TProcessingState aState );
         
         /**
          * Resolve where to save tracklog file
+         * aFileName The name of the file
          */
         void GetTrackLogPathL( TDes& aFileName );
         

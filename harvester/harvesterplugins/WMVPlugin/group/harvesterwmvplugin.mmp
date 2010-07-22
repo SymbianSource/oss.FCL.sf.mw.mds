@@ -52,6 +52,7 @@ LIBRARY       harvestercommon.lib
 LIBRARY       harvesterplugininterface.lib
 LIBRARY       mdeclient.lib
 LIBRARY	      harvesterdata.lib
+LIBRARY       platformenv.lib 
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

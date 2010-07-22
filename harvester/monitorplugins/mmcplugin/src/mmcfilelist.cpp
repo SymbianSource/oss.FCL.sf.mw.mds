@@ -27,6 +27,7 @@
 #include "fsutil.h"
 #include "harvestercenreputil.h"
 #include "harvestereventmanager.h"
+#include "harvestercommon.h"
 #include <placeholderdata.h>
 #include <harvesterdata.h>
 #include "harvesterpluginfactory.h"
@@ -135,7 +136,16 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 				    }
 				else
 				    {
-				    name.Append( entry.iName );     
+                    // If thumbnail folder is detected, skip it
+				    if( entry.iName.Compare( KExludedThumbPath ) != 0 &&
+				        entry.iName.Compare( KExludedMediaArtPath ) != 0 )
+				        {
+				        name.Append( entry.iName );
+				        }
+				    else
+				        {
+				        continue;
+				        }
 				    }
 			
 				if ( entry.IsDir() )
@@ -157,33 +167,11 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 						{
 						continue;
 						}
-					
-                    // check if folder is hidden or system folder
-                    TUint att = 0;
-                    TInt attErr = aFs.Att( name, att );
-                    if ( attErr == KErrNone )
-                        {
-                        if ( att & KEntryAttHidden || att & KEntryAttSystem )
-                            {
-                            continue;
-                            }
-                        }
 
 					path->AppendL( name );
 					}
 				else
-					{
-			        // check if file is hidden or system file
-				    TUint att = 0;
-			        TInt attErr = aFs.Att( name, att );
-			        if ( attErr == KErrNone )
-			            {
-			            if ( att & KEntryAttHidden || att & KEntryAttSystem )
-			                {
-			                continue;
-			                }
-			            }
-				
+					{			
 					CPlaceholderData* phData = CPlaceholderData::NewL();
 					CleanupStack::PushL( phData );
 					phData->SetUri( name );

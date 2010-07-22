@@ -41,6 +41,7 @@ USERINCLUDE       ../../../inc
 USERINCLUDE       ../../common/inc
 USERINCLUDE       ../inc
 USERINCLUDE       ../../monitorplugins/inc
+USERINCLUDE       ../traces
 
 SOURCEPATH        ../src
 SOURCE		harvesterserver.cpp

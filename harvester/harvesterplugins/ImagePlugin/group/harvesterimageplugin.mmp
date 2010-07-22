@@ -48,12 +48,13 @@ LIBRARY       euser.lib
 LIBRARY       efsrv.lib
 LIBRARY       imageconversion.lib
 LIBRARY       fbscli.lib 
-LIBRARY	  lbs.lib
-LIBRARY	  etel3rdparty.lib
+LIBRARY	      lbs.lib
+LIBRARY	      etel3rdparty.lib
 LIBRARY       harvesterplugininterface.lib
 LIBRARY       mdeclient.lib
-LIBRARY	  harvesterdata.lib
-LIBRARY	  harvestercommon.lib
+LIBRARY	      harvesterdata.lib
+LIBRARY	      harvestercommon.lib
+LIBRARY       platformenv.lib 
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

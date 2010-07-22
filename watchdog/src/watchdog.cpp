@@ -51,7 +51,7 @@ CWatchdog* CWatchdog::NewL()
 // ---------------------------------------------------------------------------
 //
 CWatchdog::CWatchdog() : 
-    CActive( CActive::EPriorityLow ), iState(EIdle)
+    CActive( CActive::EPriorityStandard ), iState(EIdle)
     {
     // Add to active scheduler.
     CActiveScheduler::Add( this );

@@ -439,13 +439,22 @@ EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarte
     {
     const TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
     TBool itemsLeft( EFalse );
+    TBool allPluginsOnIdle( ETrue );
     for ( TInt i = pluginInfoCount; --i >= 0; )
         {
         CHarvesterPluginInfo* info = iHarvesterPluginInfoArray[i];
         if( info && info->iQueue.Count() )
             {
             itemsLeft = ETrue;
-            break;
+            if( aStarted )
+                {
+                // Idle state is only checked if finished event is sent
+                break;
+                }
+            }
+        if( info && info->iPlugin && !(info->iPlugin->PluginInIdleState()) )
+            {
+            allPluginsOnIdle = EFalse;
             }
         }
     
@@ -458,7 +467,7 @@ EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarte
         iHarvesterEventManager->IncreaseItemCount( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
         return;
         }
-    else if( iHarvesting && !itemsLeft && !aStarted )
+    else if( iHarvesting && (!itemsLeft || allPluginsOnIdle) && !aStarted )
         {
         iHarvesting = EFalse;                       
         iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );

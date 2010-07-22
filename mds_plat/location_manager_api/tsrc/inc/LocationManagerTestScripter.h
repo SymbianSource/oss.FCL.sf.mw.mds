@@ -31,6 +31,10 @@
 #include "mdccommon.h"
 #include "mdesession.h"
 
+#ifdef LOC_REVERSEGEOCODE
+#include "RLocationGeoTagger.h"
+#endif //LOC_REVERSEGEOCODE
+
 // CONSTANTS
 // Logging path
 _LIT( KLocationManagerTestScripterLogPath, "\\logs\\testframework\\LocationManagerTestScripter\\" ); 
@@ -136,7 +140,19 @@ NONSHARABLE_CLASS(CLocationManagerTestScripter) : public CScriptBase,
         TInt GetStatus2L( CStifItemParser& aItem );
         //ADD NEW METHOD DEC HERE
         //[TestMethods] - Do not remove
-        
+
+#ifdef LOC_REVERSEGEOCODE
+         TInt ConnectGeoTaggerL( CStifItemParser& /*aItem*/ );
+         TInt CloseGeoTaggerL( CStifItemParser& /*aItem*/ );
+         TInt StartGeoTaggingL( CStifItemParser& aItem );
+                 
+         TInt TestGeoTagCompleteStatusL( CStifItemParser& aItem );
+         TInt TestGeoTagPendingStatusL( CStifItemParser& aItem );
+         TInt TestGeoTagGoingOnStatusL( CStifItemParser& aItem );
+         
+         TInt CancelGeoTaggingL( CStifItemParser& aItem ) ;
+#endif //LOC_REVERSEGEOCODE
+         
     public: // From MTrackLogObserver
     	void TrackLogStarted(TInt aError);
     	void TrackLogStopped(TInt aError);
@@ -155,7 +171,11 @@ NONSHARABLE_CLASS(CLocationManagerTestScripter) : public CScriptBase,
      	CMdESession* iMdeSession;
      	
      	CActiveSchedulerWait* iASW;
-
+     	
+#ifdef LOC_REVERSEGEOCODE
+     	RLocationGeoTagger iLocationGeoTagger;
+     	TBool iLocGeoTaggerConnected;
+#endif //LOC_REVERSEGEOCODE
     };
 
 #endif      // LOCATIONMANAGERTESTSCRIPTER_H

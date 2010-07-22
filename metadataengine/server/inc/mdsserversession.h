@@ -394,6 +394,9 @@ class CMdSServerSession : public CSession2
         
         CMdCSerializationBuffer* CombineBuffersL(
         		CMdCSerializationBuffer& aLeftBuffer, CMdCSerializationBuffer& aRightBuffer );
+        
+        CMdCSerializationBuffer* CombineUriNotificationsBuffersL(
+                CMdCSerializationBuffer& aLeftBuffer, CMdCSerializationBuffer& aRightBuffer );
 
         CMdCSerializationBuffer* CombineItemBuffersL(
         		CMdCSerializationBuffer& aLeftBuffer, CMdCSerializationBuffer& aRightBuffer );

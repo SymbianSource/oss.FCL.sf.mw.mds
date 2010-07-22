@@ -18,4 +18,6 @@ EXPORTS
 	_ZN16RHarvesterClient18HarvestFileWithUIDERK7TDesC16R6RArrayImEi4TUid @ 17 NONAME
 	_ZTI22CHarvesterRequestQueue @ 18 NONAME ; #<TI>#
 	_ZTV22CHarvesterRequestQueue @ 19 NONAME ; #<VT>#
+	_ZN16RHarvesterClient19AddSessionObserverLER25MHarvesterSessionObserver @ 20 NONAME
+	_ZN16RHarvesterClient21RemoveSessionObserverEv @ 21 NONAME
 

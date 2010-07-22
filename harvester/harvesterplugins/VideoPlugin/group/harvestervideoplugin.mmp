@@ -54,6 +54,7 @@ LIBRARY	      harvesterdata.lib
 LIBRARY	      harvestercommon.lib
 LIBRARY       caf.lib
 LIBRARY       cafutils.lib
+LIBRARY       platformenv.lib 
 
 STATICLIBRARY       hxmetadatautil.lib
 

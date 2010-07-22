@@ -18,11 +18,14 @@
 
 #include <platform_paths.hrh>
 #include <data_caging_paths.hrh>
+#include "../../inc/locplatsupport.mmh"
 
 VERSION         10.0
 TARGETTYPE      exe
 TARGET          locationmanagerserver.exe
 UID             0 0x200071BE
+
+EPOCSTACKSIZE 0x5000
 
 #ifdef WINS
 EPOCHEAPSIZE    1000 2500000
@@ -30,7 +33,7 @@ EPOCHEAPSIZE    1000 2500000
 EPOCHEAPSIZE    1000 5000000
 #endif
 
-CAPABILITY 	    CAP_SERVER
+CAPABILITY 	    CAP_SERVER Location
 VENDORID 	    VID_DEFAULT
 
 USERINCLUDE     ../inc
@@ -38,11 +41,29 @@ USERINCLUDE     ../../inc
 USERINCLUDE     ../../../inc
 USERINCLUDE     ../../locationtrail/inc
 
+#ifdef _LOC_REVERSEGEOCODE
+MACRO LOC_REVERSEGEOCODE
+USERINCLUDE     ../../tagcreator/inc
+USERINCLUDE     ../../reversegeocode/inc 
+#endif
+
+
+USERINCLUDE     ../../geoconverter/inc
+
+SYSTEMINCLUDE     /epoc32/include/platform/lbs
+SYSTEMINCLUDE     /epoc32/include/stdapis
+SYSTEMINCLUDE     /epoc32/include/ecom
+MW_LAYER_SYSTEMINCLUDE
+
 SOURCEPATH      ../src
 SOURCE	    clocationmanagerserver.cpp
 SOURCE	    clocationmanagersession.cpp
+#ifdef _LOC_REVERSEGEOCODE
+SOURCE	    clocationgeotagtimerao.cpp 
+#endif
+SOURCE	    clocationservertimerhandler.cpp
+SOURCE      nwregistrationstatushandler.cpp
 
-MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY 	    euser.lib 
 LIBRARY         efsrv.lib 
@@ -52,9 +73,21 @@ LIBRARY 	    etel3rdparty.lib
 LIBRARY 	    centralrepository.lib 
 LIBRARY 	    mdeclient.lib 
 LIBRARY	    	mdccommon.lib
+LIBRARY         libc.lib
+LIBRARY         ecom.lib
+LIBRARY         etel.lib
+LIBRARY         etelmm.lib
+LIBRARY         commsdat.lib
+
+#ifdef _LOC_REVERSEGEOCODE
+LIBRARY         geotagger.lib
+#endif
 
 PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime
 
 EPOCPROCESSPRIORITY background
+
+// End of file
+

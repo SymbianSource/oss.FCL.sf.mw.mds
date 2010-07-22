@@ -866,6 +866,7 @@ void CMdSServerSession::GetDataL( const RMessage2& aMsg )
                 delete findEngine;
                 
                 iFindEngines.Remove( findEngineIndex );
+                iFindEngines.Compress();
                 }
             }
             break;
@@ -984,6 +985,7 @@ void CMdSServerSession::ListenL( const RMessage2& aMsg )
             // The cache holds a new notification for this notifier, trigger it
             CNotificationCacheItem* item = iNotificationCache[mid];
             iNotificationCache.Remove(mid);
+            iNotificationCache.Compress();
 
             CleanupStack::PushL( item );
 
@@ -1023,6 +1025,7 @@ void CMdSServerSession::UnregisterL( const RMessage2& aMsg )
 			delete iNotificationCache[i]->iData;
 			iNotificationCache[i]->iData = NULL;
 			iNotificationCache.Remove(i);
+			iNotificationCache.Compress();
 			}
 		}
     }
@@ -1088,6 +1091,95 @@ CMdCSerializationBuffer* CMdSServerSession::CombineBuffersL(CMdCSerializationBuf
 	CleanupStack::Pop( buffer );
 	return buffer;
 	}
+
+// ---------------------------------------------------------------------------
+// CacheNotificationL caches a notifier event
+// ---------------------------------------------------------------------------
+//
+
+CMdCSerializationBuffer* CMdSServerSession::CombineUriNotificationsBuffersL(CMdCSerializationBuffer& aLeftBuffer,
+        CMdCSerializationBuffer& aRightBuffer )
+    {
+    // IDs are always stored in object IDs, 
+    // even if those are actually relation or event IDs 
+    
+    aLeftBuffer.PositionL( KNoOffset );
+    aRightBuffer.PositionL( KNoOffset );
+
+    const TMdCItemIds& leftItemIds = TMdCItemIds::GetFromBufferL( aLeftBuffer );
+    const TMdCItemIds& rightItemIds = TMdCItemIds::GetFromBufferL( aRightBuffer );
+
+    // check that namespaces match
+    if ( leftItemIds.iNamespaceDefId != rightItemIds.iNamespaceDefId )
+        {
+        return NULL;
+        }
+
+    // create new buffer, which will contain combined results
+    const TInt leftBufferSize = aLeftBuffer.Size();
+    const TInt rightBufferSize = aRightBuffer.Size();
+    CMdCSerializationBuffer* buffer = CMdCSerializationBuffer::NewLC( 
+            leftBufferSize + rightBufferSize );
+
+    TMdCItemIds combinedItemIds;
+    
+    // use left buffer's data as base line
+    Mem::Copy( &combinedItemIds, &leftItemIds, sizeof( TMdCItemIds ) );
+    
+    // and add right buffer's count
+    combinedItemIds.iObjectIds.iPtr.iCount += rightItemIds.iObjectIds.iPtr.iCount;
+
+    combinedItemIds.SerializeL( *buffer );
+
+    // move left and right buffer to begin of items
+    aLeftBuffer.PositionL( leftItemIds.iObjectIds.iPtr.iOffset );
+    aRightBuffer.PositionL( rightItemIds.iObjectIds.iPtr.iOffset );
+
+    // copy IDs from left and right buffers to combined buffer
+    for (TInt i = 0; i < leftItemIds.iObjectIds.iPtr.iCount; ++i)
+        {
+        TItemId id;
+        aLeftBuffer.ReceiveL( id );
+        buffer->InsertL( id );      
+        }
+
+    for (TInt i = 0; i < rightItemIds.iObjectIds.iPtr.iCount; ++i)
+        {
+        TItemId id;
+        aRightBuffer.ReceiveL( id );
+        buffer->InsertL( id );      
+        }
+    
+    //Add combined URI count
+    TUint32 leftUriCount ( 0 );
+    aLeftBuffer.ReceiveL( leftUriCount );
+    TUint32 rightUriCount ( 0 );
+    aRightBuffer.ReceiveL( rightUriCount );
+    buffer->InsertL( TUint32( leftUriCount + rightUriCount) );    
+   
+    //Add uris
+    HBufC* uri = NULL;
+    for( TInt i( 0 ); i < leftUriCount; i++ )
+        {        
+        //Get uri
+        uri = aLeftBuffer.ReceiveDes16L();
+        CleanupStack::PushL( uri );
+        buffer->InsertL( *uri );
+        CleanupStack::Pop( uri );
+        }
+    
+    for( TInt i( 0 ); i < rightUriCount; i++ )
+        {        
+        //Get uri
+        uri = aRightBuffer.ReceiveDes16L();
+        CleanupStack::PushL( uri );
+        buffer->InsertL( *uri );
+        CleanupStack::Pop( uri );
+        }
+    
+    CleanupStack::Pop( buffer );
+    return buffer;
+    }
 
 CMdCSerializationBuffer* CMdSServerSession::CombineItemBuffersL( CMdCSerializationBuffer& aLeftBuffer,
 		CMdCSerializationBuffer& aRightBuffer )
@@ -1176,7 +1268,13 @@ void CMdSServerSession::CacheNotificationL(TInt aId, TUint32 aCompleteCode, CMdC
 				{
 				CMdCSerializationBuffer* data = NULL;
 				// combine buffers
-				if ( notificationItem.iCode != ERelationItemNotifyRemove )
+				if( notificationItem.iCode == EObjectNotifyAddWithUri ||
+				    notificationItem.iCode == EObjectNotifyModifyWithUri || 
+				    notificationItem.iCode == EObjectNotifyRemoveWithUri )
+				    {
+				    data = CombineUriNotificationsBuffersL( *notificationItem.iData, *aData );
+				    }
+				else if ( notificationItem.iCode != ERelationItemNotifyRemove )
 					{
 					data = CombineBuffersL( *notificationItem.iData, *aData );
 					}

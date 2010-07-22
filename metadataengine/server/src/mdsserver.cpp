@@ -365,10 +365,10 @@ void CMdSServer::ConstructL()
     CMdSSqLiteConnection* conn = CMdSSqLiteConnection::NewLC();
     iDefaultDBConnection = conn;
     MMdSDbConnectionPool::SetDefaultDB( conn );
-
-    CMdSMaintenanceEngine::InitConnectionL();
     CleanupStack::Pop( conn );
 
+    CMdSMaintenanceEngine::InitConnectionL();    
+    
     iNotifier = CMdSNotifier::NewL();
 
     InitializeL();
@@ -400,7 +400,46 @@ void CMdSServer::InitializeL()
     iManipulate = CMdSManipulationEngine::NewL( *iSchema, *iNotifier, 
         *iLockList );
 
-    iMaintenance->InstallL( *iManipulate, *iSchema );
+    // TRAP InstallL - first time for if there has been schema update, and 
+    // the DB version is too old. Delete the DB and try to recreate it
+    TRAPD( error, iMaintenance->InstallL( *iManipulate, *iSchema ) );
+    if( error == KErrCorrupt )
+        {
+        delete iSchema;
+        iSchema = NULL; // for CS
+        iSchema = CMdsSchema::NewL();
+        
+        delete iManipulate;
+        iManipulate = NULL; // for CS
+        iManipulate = CMdSManipulationEngine::NewL( *iSchema, *iNotifier, 
+            *iLockList );
+    
+        CMdSMaintenanceEngine::InitConnectionL();    
+        // TRAP InstallL - second time for if the schema file in private not updated
+        // during update, and the first attempt to recreate the DB fails. 
+        // Then schema file in rom is used for final attempt to recreate the DB
+        TRAP( error, iMaintenance->InstallL( *iManipulate, *iSchema ) );
+        if( error == KErrCorrupt )
+            {
+            delete iSchema;
+            iSchema = NULL; // for CS
+            iSchema = CMdsSchema::NewL();
+            
+            delete iManipulate;
+            iManipulate = NULL; // for CS
+            iManipulate = CMdSManipulationEngine::NewL( *iSchema, *iNotifier, 
+                *iLockList );
+        
+            CMdSMaintenanceEngine::InitConnectionL();    
+            // If the DB cannot be created from ANY available schema file, nothing can be 
+            // can be done at this point, unfortunately
+            iMaintenance->InstallL( *iManipulate, *iSchema );
+            }
+        }
+    else if( error != KErrNone )
+        {
+        User::Leave( error );
+        }
     }
 
 void CMdSServer::DeInitializeL()

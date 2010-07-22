@@ -65,7 +65,7 @@ EXPORT_C CHarvesterPlugin::CHarvesterPlugin() :
     iDtor_ID_Key( KNullUid ),
     iOriginPropertyDef( NULL ),
     iTitlePropertyDef( NULL ),
-    iHarvesting( NULL )
+    iHarvesting( EFalse )
 	{
 	}
 
@@ -132,6 +132,11 @@ EXPORT_C void CHarvesterPlugin::RunL()
         {
         case EHarvesterIdle:
             {
+            if( iHarvesting )
+                {
+                TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( EFalse ) );
+                iHarvesting = EFalse;     
+                }
             }
             break;
             
@@ -329,6 +334,19 @@ EXPORT_C void CHarvesterPlugin::GetMimeType( const TDesC& /*aUri*/, TDes& aMimeT
 EXPORT_C void CHarvesterPlugin::SetHarvesterPluginFactory( CHarvesterPluginFactory& aFactory )
     {
     iFactory = &aFactory;
+    }
+
+// ---------------------------------------------------------------------------
+// PluginInIdleState
+// ---------------------------------------------------------------------------
+//
+EXPORT_C TBool CHarvesterPlugin::PluginInIdleState()
+    {
+    if( iState == EHarvesterIdle )
+        {
+        return ETrue;
+        }
+    return EFalse;
     }
 
 // ---------------------------------------------------------------------------

@@ -17,10 +17,12 @@
 
 #include <e32base.h>
 #include <caf/caf.h>
+#include <pathinfo.h>
 
 #include "mdsutils.h"
 #include "harvesteromadrmplugin.h"
 #include "harvesterlog.h"
+#include "harvestercommon.h"
 #include "mdeobjectwrapper.h"
 #include "mdscommoninternal.h"
 #include <harvesterdata.h>
@@ -38,6 +40,7 @@ _LIT(KAudio, "Audio");
 _LIT(KRmMimetype, "realmedia");
 
 _LIT( KSvgMime, "image/svg+xml" );
+_LIT( KRingingToneMime, "application/vnd.nokia.ringing-tone" );
 
 _LIT(KInUse, "InUse");
 
@@ -56,6 +59,7 @@ void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
 	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
 	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 
 	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
 	iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
@@ -104,6 +108,15 @@ CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()
 	{
 	WRITELOG("CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()");
 	
+    delete iPhoneImagesPath;
+    delete iMmcImagesPath;
+    
+    delete iPhoneVideosPath;
+    delete iMmcVideosPath;
+    
+    delete iPhoneSoundsPath;
+    delete iMmcSoundsPath;
+	
 	delete iPropDefs;
 	}
 
@@ -113,6 +126,39 @@ CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()
 void CHarvesterOMADRMPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterOMADRMPlugin::ConstructL()" );
+	
+	TFileName phoneRoot = PathInfo::PhoneMemoryRootPath();
+	TFileName mmcRoot = PathInfo::MemoryCardRootPath();
+	
+	TFileName images = PathInfo::ImagesPath();
+	
+    TFileName phoneImagePath( phoneRoot );
+    phoneImagePath.Append( images );
+    iPhoneImagesPath = phoneImagePath.AllocL();
+
+    TFileName mmcImagePath( mmcRoot );
+    mmcImagePath.Append( images );
+    iMmcImagesPath = mmcImagePath.Right( mmcImagePath.Length() - 1 ).AllocL();
+    
+    TFileName videos = PathInfo::VideosPath();
+    
+    TFileName phoneVideoPath( phoneRoot );
+    phoneVideoPath.Append( videos );
+    iPhoneVideosPath = phoneVideoPath.AllocL();
+
+    TFileName mmcVideoPath( mmcRoot );
+    mmcVideoPath.Append( videos );
+    iMmcVideosPath = mmcVideoPath.Right( mmcVideoPath.Length() - 1 ).AllocL();
+    
+    TFileName sounds = PathInfo::SoundsPath();
+    
+    TFileName phoneSoundPath( phoneRoot );
+    phoneSoundPath.Append( sounds );
+    iPhoneSoundsPath = phoneSoundPath.AllocL();
+
+    TFileName mmcSoundPath( mmcRoot );
+    mmcSoundPath.Append( sounds );
+    iMmcSoundsPath = mmcSoundPath.Right( mmcSoundPath.Length() - 1 ).AllocL();
 	}
 
 void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHD )
@@ -250,7 +296,7 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
     }
 
 // ---------------------------------------------------------------------------
-// HandleNewObjectL
+// HandleObjectPropertiesL
 // ---------------------------------------------------------------------------
 //
 void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
@@ -283,8 +329,57 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     	// File size
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iSizePropertyDef, &aVHD.iFileSize, aIsAdd );
+
+    	TPtrC objectDefName( mdeObject.Def().Name() );
+        if( objectDefName == MdeConstants::Image::KImageObject )
+            {
+            const TDesC& uri = mdeObject.Uri();
+            if( uri.FindF( iMmcImagesPath->Des()) != KErrNotFound ||
+                uri.FindF( iPhoneImagesPath->Des()) != KErrNotFound ||
+                uri.FindF( KDCIMFolder ) != KErrNotFound )
+                {
+                TBool inDefaultFolder( ETrue );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+                }
+            else
+                {
+                TBool inDefaultFolder( EFalse );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+                }    
+            }
+        else if( objectDefName == MdeConstants::Video::KVideoObject )
+            {
+            const TDesC& uri = mdeObject.Uri();
+            if( uri.FindF( iMmcVideosPath->Des()) != KErrNotFound ||
+                uri.FindF( iPhoneVideosPath->Des()) != KErrNotFound ||
+                uri.FindF( KDCIMFolder ) != KErrNotFound )
+                {
+                TBool inDefaultFolder( ETrue );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+                }
+            else
+                {
+                TBool inDefaultFolder( EFalse );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+                }    
+            }
+        else if( objectDefName == MdeConstants::Audio::KAudioObject )
+            {
+            const TDesC& uri = mdeObject.Uri();
+            if( uri.FindF( iMmcSoundsPath->Des()) != KErrNotFound ||
+                uri.FindF( iPhoneSoundsPath->Des()) != KErrNotFound )
+                {
+                TBool inDefaultFolder( ETrue );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );
+                }
+            else
+                {
+                TBool inDefaultFolder( EFalse );
+                CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iDefaultFolderPropertyDef, &inDefaultFolder, aIsAdd );    
+                }     
+            }
     	}
-    
+        
     // Item Type
     if(aVHD.iMimetype.Length() > 0)
         {
@@ -344,6 +439,50 @@ void CHarvesterOMADRMPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType
 		err = content->GetStringAttribute( ContentAccess::EMimeType, mime );
 		delete content;
 		}
+
+#ifdef _DEBUG
+    if( err == KErrInUse || err == KErrLocked )
+        {
+        TPtrC fileName( aUri.Mid(2) );
+        WRITELOG1( "CHarvesterOMADRMPlugin :: Checking open file handles to %S", &fileName );
+
+        CFileList* fileList = 0;
+        TOpenFileScan fileScan( iFs );
+
+        TRAP_IGNORE( fileScan.NextL( fileList ) );   
+          
+        while ( fileList )   
+            {
+            const TInt count( fileList->Count() ); 
+            for (TInt i = 0; i < count; i++ )   
+                {   
+                if ( (*fileList)[i].iName == aUri.Mid(2) )
+                    {
+                    TFullName processName;
+                    TFindThread find(_L("*"));
+                    while( find.Next( processName ) == KErrNone )
+                        {
+                        RThread thread;
+                        TInt error = thread.Open( processName );
+             
+                        if ( error == KErrNone )
+                            {
+                            if ( thread.Id().Id() ==  fileScan.ThreadId() )
+                                {
+                                processName = thread.Name();
+                                thread.Close();
+                                WRITELOG1( "CHarvesterOMADRMPlugin :: %S has a file handle open", &processName );
+                                break;
+                                }
+                            thread.Close();
+                            }
+                        }
+                    }
+                }
+            TRAP_IGNORE( fileScan.NextL( fileList ) );   
+            } 
+        }
+#endif
 	
 	if( err == KErrInUse || err == KErrLocked )
 	    {
@@ -391,6 +530,13 @@ void CHarvesterOMADRMPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType
 			aObjectType.Copy( KVideo );
 			return;
 			}
+		
+	    if( mime == KRingingToneMime )
+	        {
+	        WRITELOG1( "CHarvesterOMADRMPlugin::GetObjectType - mimetype %S. Object type changed to Audio", &mime );
+	        aObjectType.Copy( KAudio );
+	        return;
+	        }
     	}
     
 	WRITELOG1( "CHarvesterOMADRMPlugin::GetObjectType - ERROR: mimetype %S. No object type found", &mime );

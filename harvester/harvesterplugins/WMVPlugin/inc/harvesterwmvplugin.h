@@ -47,6 +47,7 @@ class CHarvesterWmvPluginPropertyDefs : public CBase
         CMdEPropertyDef* iDescriptionPropertyDef;
         CMdEPropertyDef* iAuthorPropertyDef;
         CMdEPropertyDef* iGenrePropertyDef;
+        CMdEPropertyDef* iDefaultFolderPropertyDef;
 		
 	private:
 		CHarvesterWmvPluginPropertyDefs();
@@ -184,6 +185,9 @@ private: // data
 	CHarvesterWmvPluginPropertyDefs* iPropDefs;
 	
 	TInt iMaxTextLength;
+	
+    HBufC* iPhoneVideosPath;
+    HBufC* iMmcVideosPath;
     };
 
 #endif // C_HARVESTERWMVPLUGIN_H

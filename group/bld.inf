@@ -17,6 +17,7 @@
 
 
 #include <platform_paths.hrh>
+#include "../locationmanager/inc/locplatsupport.mmh"
 
 #include "../metadataengine/group/bld.inf"
 #include "../locationmanager/group/bld.inf"
@@ -34,7 +35,22 @@ PRJ_PLATFORMS
     DEFAULT
 
 PRJ_EXPORTS
-../rom/mds.iby	CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+
+#if defined(_LOC_GEOTAGGING_CELLID)
+#ifdef _LOC_REVERSEGEOCODE
+../rom/mds_cellid_reverse_geocode_enabled.iby   CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+#else
+../rom/mds_cellidenabled.iby   CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+#endif
+#elif defined(_LOC_REVERSEGEOCODE)
+#ifdef _LOC_GEOTAGGING_CELLID
+../rom/mds_cellid_reverse_geocode_enabled.iby   CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+#else
+../rom/mds_reverse_geocode_enabled_only.iby   CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+#endif
+#else
+../rom/mds.iby    CORE_MW_LAYER_IBY_EXPORT_PATH(mds.iby)
+#endif
 
 #ifdef RD_MDS_2_5
 ../rom/ContentListingFramework.iby	CORE_MW_LAYER_IBY_EXPORT_PATH( ContentListingFramework.iby )

@@ -18,6 +18,10 @@
 #include "harvesterserversession.h"
 #include "harvestercommon.h"
 #include "harvesterlog.h"
+#include "OstTraceDefinitions.h"
+#ifdef OST_TRACE_COMPILER_IN_USE
+#include "harvesterserversessionTraces.h"
+#endif
 
 // ========================= MEMBER FUNCTIONS ==================================
 
@@ -28,6 +32,7 @@
 CHarvesterServerSession* CHarvesterServerSession::NewL( CHarvesterServer& aServer )
 	{
     WRITELOG( "CHarvesterServerSession::NewL()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_NEWL, "CHarvesterServerSession::NewL" );    
     
     CHarvesterServerSession* self = CHarvesterServerSession::NewLC( aServer );
     CleanupStack::Pop( self );
@@ -41,6 +46,7 @@ CHarvesterServerSession* CHarvesterServerSession::NewL( CHarvesterServer& aServe
 CHarvesterServerSession* CHarvesterServerSession::NewLC( CHarvesterServer& aServer )
 	{
     WRITELOG( "CHarvesterServerSession::NewLC()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_NEWLC, "CHarvesterServerSession::NewLC" );
     
     CHarvesterServerSession* self = new ( ELeave ) CHarvesterServerSession( aServer );
     CleanupStack::PushL( self );
@@ -55,6 +61,8 @@ CHarvesterServerSession* CHarvesterServerSession::NewLC( CHarvesterServer& aServ
 void CHarvesterServerSession::ConstructL()
 	{
     WRITELOG( "CHarvesterServerSession::ConstructL()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_CONSTRUCTL, "CHarvesterServerSession::ConstructL" );
+    
 	}
 
 // ---------------------------------------------------------------------------
@@ -65,6 +73,8 @@ CHarvesterServerSession::CHarvesterServerSession( CHarvesterServer& aServer )
 	: iServer( aServer )
 	{
     WRITELOG( "CHarvesterServerSession::CHarvesterServerSession()" );
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_CHARVESTERSERVERSESSION, "CHarvesterServerSession::CHarvesterServerSession" );
+    
 	}
 
 // ---------------------------------------------------------------------------
@@ -74,6 +84,8 @@ CHarvesterServerSession::CHarvesterServerSession( CHarvesterServer& aServer )
 CHarvesterServerSession::~CHarvesterServerSession()
 	{
     WRITELOG( "CHarvesterServerSession::~CHarvesterServerSession()" );
+    OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVERSESSION_CHARVESTERSERVERSESSION, "CHarvesterServerSession::~CHarvesterServerSession" );
+    
 	}
 
 // ---------------------------------------------------------------------------
@@ -83,6 +95,7 @@ CHarvesterServerSession::~CHarvesterServerSession()
 void CHarvesterServerSession::ServiceL( const RMessage2& aMessage )
 	{
     WRITELOG( "CHarvesterServerSession::ServiceL()" );	
+    OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_SERVICEL, "CHarvesterServerSession::ServiceL" );
     
     /* Command can't be negative */
     if ( aMessage.Function() < 0 )
@@ -204,6 +217,7 @@ void CHarvesterServerSession::Disconnect(const RMessage2 &aMessage)
 	{
 	//just make sure the server is cleaned after client crash
 	WRITELOG( "CHarvesterServerSession::Disconnect()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERSERVERSESSION_DISCONNECT, "CHarvesterServerSession::Disconnect" );
 	
 	iServer.UnregisterHarvestComplete( *this );
 	

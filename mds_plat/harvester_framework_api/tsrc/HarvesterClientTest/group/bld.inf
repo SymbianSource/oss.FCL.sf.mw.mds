@@ -51,3 +51,4 @@ PRJ_TESTEXPORTS
 ../../data/mmc/HarvesterTest/Temp2.jpg /epoc32/WINSCW/C/Data/Temp2.jpg
 ../../data/mmc/HarvesterTest/Temp3.jpg /epoc32/WINSCW/C/Data/Temp3.jpg
 ../../data/mmc/HarvesterTest/00001.mp3 /epoc32/WINSCW/C/Data/00001.mp3
+../../data/mmc/HarvesterTest/corrupt.jpg /epoc32/WINSCW/C/Data/corrupt.jpg

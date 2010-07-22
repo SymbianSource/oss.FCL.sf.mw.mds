@@ -21,6 +21,8 @@
 #include "mdsutils.h"
 
 _LIT( KMdsFileServerPlugin, "MdsFileServerPlugin" );
+_LIT( KExludedThumbPath, "\\_PAlbTN\\");
+_LIT( KExludedMediaArtPath, "\\.mediaartlocal\\");
 
 /* Server name */
 _LIT( KHarvesterServerName, "HarvesterServer" );
@@ -45,8 +47,13 @@ CMdsFileServerPlugin::~CMdsFileServerPlugin()
     {
     WRITELOG( "CMdsFileServerPlugin::~CMdsFileServerPlugin()" );
     
-    TRAP_IGNORE( DisableL() );
-    iFsSession.Close();
+#ifdef _DEBUG
+    TRAPD( error, DisableL() );
+    _LIT( KPanicCategory,"CMdsFileServerPlugin" );
+    __ASSERT_DEBUG( error == KErrNone, User::Panic( KPanicCategory,  error ) );
+#else
+    TRAP_IGNORE( DisableL() );    
+#endif
     
     iCreatedFiles.ResetAndDestroy();
     iCreatedFiles.Close();
@@ -81,7 +88,6 @@ CMdsFileServerPlugin* CMdsFileServerPlugin::NewL()
 void CMdsFileServerPlugin::InitialiseL()
     {
     WRITELOG( "CMdsFileServerPlugin::InitializeL()" );
-    User::LeaveIfError( iFsSession.Connect() );
     }
     
 //-----------------------------------------------------------------------------
@@ -174,7 +180,7 @@ void CMdsFileServerPlugin::RemoveConnection()
 //
 TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 	{
-	// ignore event if there is no any client listening
+	// ignore event if there are not any clients listening
 	if( iConnectionCount <= 0 )
 		{
 		WRITELOG( "CMdsFileServerPlugin::DoRequestL() - no clients -> ignore event" );
@@ -201,7 +207,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
         return KErrNone;
         }
     
-    const TBool formatFunction = function == EFsFormatOpen || function == EFsFormatSubClose;
+    const TBool formatFunction( function == EFsFormatOpen || function == EFsFormatSubClose );
         
     WRITELOG1( "----- CMdsFileServerPlugin::DoRequestL() - plugin function: %d -----", function );
 
@@ -218,9 +224,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 		}
 
     // get process id
-	TUid processId = { 0 };
-
-	processId = aRequest.Message().SecureId();
+	TUid processId = aRequest.Message().SecureId();
 
 	TBool isDirectory = EFalse;
 	
@@ -235,6 +239,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
         	return KErrNone;
         	}
         WRITELOG2( "CMdsFileServerPlugin::DoRequestL() - newFileName: '%S' %d", &iNewFileName, newNameErr );
+        TBool setToBeDeleted( EFalse );
         if ( newNameErr == KErrNone )
             {
             if ( !CheckPath(iNewFileName) )
@@ -248,47 +253,43 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
                     }
                 // file moved to ignored path, delete from db
                 function = EFsDelete;
+                setToBeDeleted = ETrue;
                 }
             
-            if ( !CheckAttribs( iNewFileName, isDirectory ) )
+            if( !setToBeDeleted )
                 {
-                WRITELOG( "CMdsFileServerPlugin::DoRequestL() - new path attribute check failed" );
-                if( !CheckAttribs(iFileName, isDirectory) )
+                RFsPlugin fsPlugin( aRequest ); 
+                const TInt rfsPluginErr = fsPlugin.Connect();
+            
+                if ( ( rfsPluginErr == KErrNone ) && !CheckAttribs( iNewFileName, isDirectory, fsPlugin, EFalse ) )
                     {
-                    WRITELOG( "CMdsFileServerPlugin::DoRequestL() - old path attribute check failed" );
-                    WRITELOG( "CMdsFileServerPlugin::DoRequestL() - ignore file" );
-                    return KErrNone;
+                    WRITELOG( "CMdsFileServerPlugin::DoRequestL() - new path attribute check failed" );
+                    if( !CheckAttribs(iFileName, isDirectory, fsPlugin, EFalse) )
+                        {
+                        WRITELOG( "CMdsFileServerPlugin::DoRequestL() - old path attribute check failed" );
+                        WRITELOG( "CMdsFileServerPlugin::DoRequestL() - ignore file" );
+                        fsPlugin.Close();
+                        return KErrNone;
+                        }
+                    // file set to hidden, delete from db
+                    function = EFsDelete;
                     }
-                // file set to hidden, delete from db
-                function = EFsDelete;
+                fsPlugin.Close();
                 }
             }
         else
         	{
-            if ( !CheckPath(iFileName) )
+            if( !CheckIfValidFile(iFileName, isDirectory, aRequest, EFalse)  )
                 {
-                WRITELOG( "CMdsFileServerPlugin::DoRequestL() - path not supported" );
-                return KErrNone;
-                }
-
-            if ( !CheckAttribs(iFileName, isDirectory) )
-                {
-                WRITELOG( "CMdsFileServerPlugin::DoRequestL() - attribute check failed" );
                 return KErrNone;
                 }
         	}
         }
     else if ( !formatFunction )
         {
-        if ( !CheckPath(iFileName) )
+        const TBool deleteFunction( function == EFsDelete );
+        if( !CheckIfValidFile(iFileName, isDirectory, aRequest, deleteFunction)  )
             {
-            WRITELOG( "CMdsFileServerPlugin::DoRequestL() - path not supported" );
-            return KErrNone;
-            }
-
-        if ( !CheckAttribs( iFileName, isDirectory ) )
-            {
-            WRITELOG( "CMdsFileServerPlugin::DoRequestL() - attribute check failed" );
             return KErrNone;
             }
         }
@@ -306,14 +307,23 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
         case EFsFileCreate:
             {
 #ifdef _DEBUG            
-            if (function == EFsFileCreate)            
+            if (function == EFsFileCreate)
+                {
             	WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileCreate" );
-            if (function == EFsFileReplace)
-            	WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileReplace" );
+                }
 #endif            
             
-            iCreatedFiles.Append( iFileName.AllocL() );
-            User::LeaveIfError( UnregisterIntercept(EFsFileSetModified, EPostIntercept) );
+            HBufC* createdFileName = iFileName.Alloc();
+            if( createdFileName )
+                {
+                // Ownership transferred if succeeded
+                const TInt appendError( iCreatedFiles.Append( createdFileName ) );
+                if( appendError != KErrNone )
+                    {
+                    delete createdFileName;
+                    createdFileName = NULL;
+                    }
+                }
             return KErrNone;
             }
 
@@ -331,13 +341,18 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             			delete iCreatedFiles[i];
             			iCreatedFiles.Remove( i );
             			
-						//Have to check whether file has been hidden
-						if ( CheckAttribs( iFileName, isDirectory ) )
-							{
-							found = ETrue;
-							}
-    						
-            			User::LeaveIfError( RegisterIntercept(EFsFileSetModified, EPostIntercept) );
+						//Have to check whether file has been hidden          			
+            	        RFsPlugin fsPlugin( aRequest ); 
+            	        const TInt rfsPluginError( fsPlugin.Connect() );
+            	        if( (rfsPluginError == KErrNone) && CheckAttribs( iFileName, isDirectory, fsPlugin, EFalse ) )
+            	            {
+            	            found = ETrue;
+            	            }
+            	        else if( rfsPluginError != KErrNone )
+            	            {
+            	            found = ETrue;
+            	            }
+            	        fsPlugin.Close();
             			}
             		}
            	
@@ -377,10 +392,34 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             break;
 
         case EFsFileSetModified:
-        
+            {
             WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileSetModified" );
-            iModifiedFiles.Append( iFileName.AllocL() );
+            
+            for ( TInt i = iCreatedFiles.Count(); --i >= 0; )
+                {
+                // If file has been created but not closed, do not handle modified events
+                // for that file before the application that has created the file is done with writing 
+                // it to the disk.
+                if ( MdsUtils::Compare( iFileName, *(iCreatedFiles[i]) ) == 0 )
+                    {
+                    return KErrNone;
+                    }
+                } 
+
+            HBufC* modifiedFileName = iFileName.Alloc();
+            if( modifiedFileName )
+                {
+                // Ownership transferred if succeeded
+                const TInt appendError( iModifiedFiles.Append( modifiedFileName ) );
+                if( appendError != KErrNone )
+                    {
+                    delete modifiedFileName;
+                    modifiedFileName = NULL;
+                    }
+                }
+            
             fileEventType = EMdsFileModified;
+            }
             break;
 
         case EFsSetEntry:
@@ -428,17 +467,13 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 		    {
 			WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFormatOpen" );
 			// get the drive letter
-		    RFsPlugin fsplugin( aRequest ); 
-	        const TInt rfsPluginError( fsplugin.Connect() );
-	        if( rfsPluginError == KErrNone )
+		    RFsPlugin fsPlugin( aRequest ); 
+		    err = fsPlugin.Connect();
+	        if( err == KErrNone )
 	            {
-	            err = fsplugin.Volume( volInfo, drvNumber );
+	            err = fsPlugin.Volume( volInfo, drvNumber );
 	            }
-	        else
-	            {
-	            err = iFsSession.Volume( volInfo, drvNumber );
-	            }
-	        fsplugin.Close();
+	        fsPlugin.Close();
 	        
 			if( KErrNone == err )
 				{
@@ -780,7 +815,12 @@ TInt CMdsFileServerPlugin::AddNotificationPath( const CFsPluginConnRequest& aReq
         HBufC* fn = status.iFileName.Alloc();
         if ( fn )
             {
-            iPaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare)); 
+            const TInt insertError( iPaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare)));
+            if( insertError != KErrNone )
+                {
+                delete fn;
+                fn = NULL;
+                }
             }
         else
             {
@@ -870,7 +910,12 @@ TInt CMdsFileServerPlugin::AddIgnorePath( const CFsPluginConnRequest& aRequest )
         HBufC* fn = status.iFileName.Alloc();
         if ( fn )
             {
-            iIgnorePaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare)); 
+            const TInt insertError( iIgnorePaths.InsertInOrder(fn, TLinearOrder<TDesC>(CMdsFileServerPlugin::Compare))); 
+            if( insertError != KErrNone )
+                {
+                delete fn;
+                fn = NULL;
+                }
             }
         else
             {
@@ -947,6 +992,14 @@ TBool CMdsFileServerPlugin::CheckPath( const TDesC& aFilename ) const
             {
             return EFalse;
             }
+        else if( MdsUtils::Find( aFilename, KExludedThumbPath ) != KErrNotFound )
+            {
+            return EFalse;
+            }
+        else if( MdsUtils::Find( aFilename, KExludedMediaArtPath ) != KErrNotFound )
+            {
+            return EFalse;
+            }
         }
 
     // check if notification path
@@ -981,7 +1034,7 @@ TBool CMdsFileServerPlugin::CheckPath( const TDesC& aFilename ) const
 //-----------------------------------------------------------------------------
 //
 TBool CMdsFileServerPlugin::CheckAttribs( const TDesC& aFilename, 
-		TBool& aIsDirectory ) const
+		TBool& aIsDirectory, RFsPlugin& aFsPlugin, TBool aDelete ) const
 	{
 	// find last backslash from filename and 
     // take drive and path from filename including last backslash
@@ -993,29 +1046,31 @@ TBool CMdsFileServerPlugin::CheckAttribs( const TDesC& aFilename,
     	}
     TPtrC path( aFilename.Left( pos + 1 ) );
 
-    TUint att = 0;
+    TEntry entry;
 
-    // check if path is hidden or system path
-    TInt err = iFsSession.Att( path, att );
+    // check if path is hidden 
+    TInt err = aFsPlugin.Entry( path, entry );
     if ( err == KErrNone )
-        {
-        if ( att & KEntryAttHidden || att & KEntryAttSystem )
+        {      
+        if ( entry.iAtt & KEntryAttHidden )
             {
             return EFalse;
             }
         }
 
-    // or is the file hidden or system file
-    att = 0;
-    err = iFsSession.Att( aFilename, att );
-    if ( err == KErrNone )
+    if( !aDelete )
         {
-        if ( att & KEntryAttHidden || att & KEntryAttSystem )
+        // check if the file hidden or system file
+        err = aFsPlugin.Entry( aFilename, entry );
+        if ( err == KErrNone )
             {
-            return EFalse;
-            }
+            if ( entry.iAtt & KEntryAttHidden || entry.iAtt & KEntryAttSystem )
+                {
+                return EFalse;
+                }
         
-        aIsDirectory = att & KEntryAttDir ? ETrue : EFalse;
+            aIsDirectory = entry.iAtt & KEntryAttDir ? ETrue : EFalse;
+            }    
         }
 
     return ETrue;
@@ -1071,6 +1126,35 @@ TBool CMdsFileServerPlugin::CheckHarvesterStatus()
     
     WRITELOG( "CMdsFileServerPlugin::CheckHarvesterStatus() - end" );
     return EFalse;
+    }
+
+//-----------------------------------------------------------------------------
+// CheckIfValidFile
+//-----------------------------------------------------------------------------
+//
+TBool CMdsFileServerPlugin::CheckIfValidFile( const TDesC& aFilename, 
+        TBool& aIsDirectory, TFsPluginRequest& aRequest, TBool aDelete )
+    {
+    if ( !CheckPath(aFilename) )
+        {
+        WRITELOG( "CMdsFileServerPlugin::CheckIfValidFile() - path not supported" );
+        return EFalse;
+        }
+
+    RFsPlugin fsPlugin( aRequest ); 
+    const TInt rfsPluginErr = fsPlugin.Connect();
+    
+    if( rfsPluginErr == KErrNone )
+        {
+        if ( !CheckAttribs(aFilename, aIsDirectory, fsPlugin, aDelete) )
+            {
+            WRITELOG( "CMdsFileServerPlugin::CheckIfValidFile() - attribute check failed" );
+            return EFalse;
+            }
+        }
+    fsPlugin.Close(); 
+    
+    return ETrue;
     }
 
 //-----------------------------------------------------------------------------

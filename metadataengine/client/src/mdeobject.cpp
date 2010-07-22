@@ -122,7 +122,7 @@ CMdEObject* CMdEObject::NewLC( CMdEObjectDef& aDef, const TDesC& aUri, TUint32 a
 	}
 
 CMdEObject::CMdEObject(CMdESession* aSession, TItemId aId, CMdEObjectDef& aDef)
-		: CMdEInstanceItem( aSession, aId ), iDef( &aDef )
+		: CMdEInstanceItem( aSession, aId ), iDef( &aDef ), iUri( NULL )
 	{
 	}
 
@@ -145,6 +145,7 @@ CMdEObject::~CMdEObject()
 		}
 
 	delete iUri;
+	iUri = NULL;
 
 	iPropertyArray.ResetAndDestroy();
 	iPropertyArray.Close();
@@ -276,6 +277,7 @@ void CMdEObject::DoSetUriL(const TDesC& aUri)
 		}
 
 	iUri = HBufC::NewL( aUri.Length() );
+	// Note: CopyLC doesn't push anything to cleanup stack
 	iUri->Des().CopyLC( aUri );
 	iFlags |= EMdEObjectFlagModObject;
 	}

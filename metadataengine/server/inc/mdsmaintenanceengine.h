@@ -139,6 +139,8 @@ class CMdSMaintenanceEngine : public CBase
         CMdSSqlDbMaintenance* iMaintenance;
 
         TInt iFailedImports;
+        
+        TBool iPrivateSchemaFileInvalid;
     };
     
 #endif // __MDSMAINTENANCEENGINE_H__

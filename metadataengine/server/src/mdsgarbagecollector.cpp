@@ -99,14 +99,12 @@ void CMdSGarbageCollector::RunL()
 
 		if ( startAgain )
 			{
-			iTimer.After( iStatus, iDelay ); // start timer
-			SetActive();
-			}
-		else if ( iNewDelay.Int() > 0 )
-			{
-			iDelay = iNewDelay;
-			iNewDelay = 0;
-			iTimer.After( iStatus, iDelay ); // start timer
+		    if( iNewDelay.Int() > 0 )
+		        {
+                iDelay = iNewDelay;
+                iNewDelay = 0;
+		        }
+            iTimer.After( iStatus, iDelay ); // start timer
 			SetActive();
 			}
 		}
