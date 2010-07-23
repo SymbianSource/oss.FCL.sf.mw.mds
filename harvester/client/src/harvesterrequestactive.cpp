@@ -40,6 +40,7 @@ CHarvesterRequestActive::~CHarvesterRequestActive()
         }
     
     delete iAlbumIds;
+    iAlbumIds = NULL;
     }
 
 // ---------------------------------------------------------------------------

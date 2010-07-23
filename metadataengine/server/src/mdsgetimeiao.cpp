@@ -47,6 +47,7 @@ CMdsGetImeiAO::~CMdsGetImeiAO()
 	Cancel();
 
 	delete iTelephony;
+	iTelephony = NULL;
 	}
 
 TInt64 CMdsGetImeiAO::GetIMEI()

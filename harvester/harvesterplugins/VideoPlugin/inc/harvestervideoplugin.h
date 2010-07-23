@@ -101,13 +101,20 @@ class CVideoHarvestData : public CBase
         ~CVideoHarvestData()
         	{
         	delete iCopyright;
+        	iCopyright = NULL;
             delete iAuthor;
+            iAuthor = NULL;
             delete iGenre;
+            iGenre = NULL;
             delete iPerformer;
+            iPerformer = NULL;
             delete iDescription;
+            iDescription = NULL;
             delete iTitle;
+            iTitle = NULL;
 
         	delete iMimeBuf;
+        	iMimeBuf = NULL;
         	}
     };
 

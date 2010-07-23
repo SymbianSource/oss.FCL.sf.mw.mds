@@ -24,7 +24,6 @@
 #include <locationdatatype.h>
 #include <geotagger.h>
 
-#include "reversegeocode.h"
 #include "mdccommon.h"
 #include "mdesession.h"
 #include "mdenamespacedef.h"
@@ -32,13 +31,17 @@
 #include "mdepropertydef.h"
 #include "mderelation.h"
 #include "mdequery.h"
-#include "ctagcreator.h"
 
 #ifdef LOC_GEOTAGGING_CELLID
 #include "cgeoconverter.h"
 #endif
 
+#ifdef LOC_REVERSEGEOCODE
+#include "ctagcreator.h"
+#include "reversegeocode.h"
 class CReverseGeoCoderPlugin;
+#endif
+
 
 /**
  *  GeoTagger converts a given cell ID(CGI Info) to geo-coordinates.
@@ -49,11 +52,13 @@ class CReverseGeoCoderPlugin;
  
 class CInternalGeoTagger : public CGeoTagger,
                    public MMdESessionObserver,
-                   public MMdEQueryObserver,
-                   public MReverseGeocodeObserver
+                   public MMdEQueryObserver
 #ifdef LOC_GEOTAGGING_CELLID	
                    ,public MGeoConverterObserver
 #endif				   
+#ifdef LOC_REVERSEGEOCODE
+                   ,public MReverseGeocodeObserver
+#endif
     {
 public:  
     
@@ -106,8 +111,22 @@ public:   //observer methods
       */    
       void HandleQueryCompleted(CMdEQuery& aQuery, TInt aError);
     
-    //MReverseGeocodeObserver
 
+#ifdef LOC_REVERSEGEOCODE
+    /**
+       * Get location objects, where lat, long not populated.
+      * @param  aCountryTagId The country tagId
+      * @param aCityTagId  The city tagId
+      */        
+    void AddressInfoL( const TItemId aCountryTagId, const TItemId aCityTagId );
+
+    /**
+       * Remove location info incase reverse geo code fails.
+      * @param aLocationId location id
+      */        
+    void RemoveLocationInfoOnFailureL(const TItemId aLocationId);
+    
+    //MReverseGeocodeObserver
     /**
       * This method is called when reverse geocoding is completed
       *@param  aErrorcode  Error if any
@@ -138,6 +157,7 @@ public:   //observer methods
     const RMobilePhone::TMobilePhoneNetworkInfoV1& 
         GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag);
     
+#endif //LOC_REVERSEGEOCODE
     
     // From MMdESessionObserver
 
@@ -155,7 +175,7 @@ public:   //observer methods
       */    
     void HandleSessionError(CMdESession& aSession, TInt aError);
 
-#ifdef LOC_GEOTAGGING_CELLID	
+#ifdef LOC_GEOTAGGING_CELLID
 public:     // MGeoConverterObserver
         /**
          * This method is used for notifying completion of geotagging
@@ -170,8 +190,15 @@ public:     // MGeoConverterObserver
 		* @param aError the error code
 		*/
 	 void HandleConversionError(TInt aError);
+        
+private:
+       /**
+       * Update media object with GPS info.
+       */
+    void UpdateGPSInfoL(const TLocality& aPosition);
+    
+#endif //LOC_GEOTAGGING_CELLID
 
-#endif    
 private:    
     
     /**
@@ -202,13 +229,6 @@ private:
        * Get location objects, where lat, long not populated.
       */    
     void GetAllLocationsL( );
-
-    /**
-       * Get location objects, where lat, long not populated.
-      * @param  aCountryTagId The country tagId
-      * @param aCityTagId  The city tagId
-      */        
-    void AddressInfoL( const TItemId aCountryTagId, const TItemId aCityTagId );
 
     /**
        * checks if the session is ready
@@ -267,7 +287,6 @@ private:
     
     TConnectionOption iConnectionOption;
     
-    CTagCreator* iTagCreator;
     
     /**
      * An active scheduler wait loop for waiting a session to MdE to open.
@@ -275,14 +294,17 @@ private:
     CActiveSchedulerWait* iASW;
     TBool iMdeSessionOwnFlag;
     TBool iTagPendingHandlerFlag;
-    CReverseGeoCoderPlugin* iRevGeocoderPlugin;
-    TUid iDtorKey;
 #ifdef LOC_GEOTAGGING_CELLID	
     /*
        * Geo converter
        */
 	CGeoConverter* iGeoConverter;
 #endif
+#ifdef LOC_REVERSEGEOCODE
+        CTagCreator* iTagCreator;
+        CReverseGeoCoderPlugin* iRevGeocoderPlugin;
+        TUid iDtorKey;
+#endif //LOC_REVERSEGEOCODE
     };
 
 #endif // C_CGEOTAGGER_H 

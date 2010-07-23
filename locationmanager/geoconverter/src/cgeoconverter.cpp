@@ -135,12 +135,12 @@ EXPORT_C void CGeoConverter::ConvertL( const CTelephony::TNetworkInfoV1& aNetwor
     
     //Set mobile country code
     TLex lexer( aNetworkInfo.iCountryCode );
-    TUint countryCode;
+    TUint countryCode = 0;
     
     User::LeaveIfError( lexer.Val( countryCode, EDecimal) );
     //Set mobile network code
     lexer = aNetworkInfo.iNetworkId;
-    TUint networkCode;
+    TUint networkCode = 0;
     User::LeaveIfError( lexer.Val( networkCode, EDecimal) );
     LOG1("Network mode - %d", aNetworkInfo.iMode);
     CLbsAreaInfoBase* areaInfoBase = NULL;
@@ -192,7 +192,12 @@ EXPORT_C void CGeoConverter::ConvertL( const CTelephony::TNetworkInfoV1& aNetwor
     //requested conversion and update the position estimate
     if(areaInfoBase != NULL) // self check
         {
+        // reset previous one.. to clear the local info.
+        iLocInfo->ResetAreaInfo(CLbsLocationInfo::ELbsAreaInfoAll);
         iLocInfo->AddAreaInfoL( areaInfoBase ); 
+        //ownership is transferred.
+        iWcdmaCellInfo = NULL;
+        iGsmCellInfo = NULL;
         //Request conversion of GSM cell information to corresponding coordinate information
         iLocConverter->ConvertLocationInfoL( *iLocInfo, ELbsConversionSilent, 
                                                 ELbsConversionOutputPosition  );

@@ -185,17 +185,22 @@ CHarvesterImagePlugin::~CHarvesterImagePlugin()
 		{
 		iDecoder->Reset();
 	    delete iDecoder;
+	    iDecoder = NULL;
 		}   
     
     if (iExifUtil)
 		{
 		delete iExifUtil;
+		iExifUtil = NULL;
 		}
    	
     delete iPropDefs;
+    iPropDefs = NULL;
     
     delete iPhoneImagesPath;
+    iPhoneImagesPath = NULL;
     delete iMmcImagesPath;
+    iMmcImagesPath = NULL;
     
     iMimeTypeMappings.Close();
     iFbs.Disconnect();

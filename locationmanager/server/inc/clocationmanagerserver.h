@@ -41,9 +41,7 @@
 #include "clocationservertimerhandler.h"
 
 class CMdESession;
-#ifdef LOC_REVERSEGEOCODE
 class CLocationGeoTagTimerAO;
-#endif
 class CGeoTagger;
 class REComSession;
 class CNwRegistrationStatusHandler;
@@ -590,6 +588,11 @@ private:
       * Retrieve home network
       */  
     void RetrieveHomeNetwork();
+    
+    /**
+      * Stop the server (if possible)
+      */  
+    void StopServer();
 
 private:
     /**
@@ -671,8 +674,9 @@ private:
     RMobilePhone::TMobilePhoneNetworkInfoV1 iHomeNetwork;
     TBool iHomeNwInfoAvailableFlag;
   
-#ifdef LOC_REVERSEGEOCODE
     CLocationGeoTagTimerAO* iGeoTagTimer;
+    
+#ifdef LOC_REVERSEGEOCODE
     CGeoTagger* iGeoTaggingPendingReqObj;
     RMessage2 iTagPendingMessage;
     RMessage2 iGeoTaggingMessage;

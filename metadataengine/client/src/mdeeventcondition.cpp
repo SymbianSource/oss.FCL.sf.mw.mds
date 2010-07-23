@@ -94,10 +94,15 @@ void CMdEEventCondition::ConstructL(const TMdETimeRange* aCreationTimeRange,
 CMdEEventCondition::~CMdEEventCondition()
 	{
     delete iCreationTimeRange;
+    iCreationTimeRange = NULL;
     delete iObjectConditions;
+    iObjectConditions = NULL;
     delete iSourceConditions;
+    iSourceConditions = NULL;
     delete iParticipantConditions;
+    iParticipantConditions = NULL;
     delete iURI;
+    iURI = NULL;
 	}
 
 

@@ -24,12 +24,16 @@
 #include "mdeconstants.h"
 #include "mdesession.h"
 #include "cinternalgeotagger.h"
+#ifdef LOC_REVERSEGEOCODE
 #include "reversegeocoderplugin.h"
+const TUid KReverseGeoCodeUid = {0x2002DD12};
+#endif
 
 using namespace MdeConstants;
 
 _LIT ( KCountry, "country:");   // country:india 
-const TUid KReverseGeoCodeUid = {0x2002DD12};
+
+const TReal64 KZeroLatLon (0.000000 );
 
 // --------------------------------------------------------------------------
 // CInternalGeoTagger::NewL
@@ -59,12 +63,14 @@ CInternalGeoTagger::CInternalGeoTagger( CMdESession* aMdeSession,
                         iIndex(0),
                         iSessionReady( EFalse ),
                         iObserver( aObserver ),
-                        iTagCreator(NULL),
                         iASW(NULL),
-                        iTagPendingHandlerFlag(EFalse),
-                        iRevGeocoderPlugin(NULL)
-#ifdef LOC_GEOTAGGING_CELLID	
+                        iTagPendingHandlerFlag(EFalse)
+#ifdef LOC_GEOTAGGING_CELLID
 						,iGeoConverter(NULL)
+#endif						
+#ifdef LOC_REVERSEGEOCODE
+                        ,iTagCreator(NULL)
+                        ,iRevGeocoderPlugin(NULL)
 #endif						
     {
     iMdeSessionOwnFlag = (iMdeSession == NULL);
@@ -82,10 +88,12 @@ void CInternalGeoTagger::ConstructL()
 		LOG("Not owning mds session");
         iMdeSessionOwnFlag = EFalse;
         //object is not owning iMdeSession
-        iTagCreator = CTagCreator::NewL();
         iSessionReady = ETrue;
+#ifdef LOC_REVERSEGEOCODE
+        iTagCreator = CTagCreator::NewL();
         
         iTagCreator->SetSession( iMdeSession );
+#endif //LOC_REVERSEGEOCODE
         }
     else
         {
@@ -93,7 +101,9 @@ void CInternalGeoTagger::ConstructL()
         iASW = new (ELeave) CActiveSchedulerWait();
         iMdeSession = CMdESession::NewL( *this );
         //for creating tags
+#ifdef LOC_REVERSEGEOCODE
         iTagCreator = CTagCreator::NewL();
+#endif
         
         iASW->Start();
         delete iASW;
@@ -102,20 +112,21 @@ void CInternalGeoTagger::ConstructL()
     
     //for reverse geocoding (geo-tagging)
     
+#ifdef LOC_REVERSEGEOCODE
     if (!iRevGeocoderPlugin)
-            {
-           
-		   TRAP_IGNORE(
-            iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
-               REComSession::CreateImplementationL(KReverseGeoCodeUid, iDtorKey));)
- 
-            if(iRevGeocoderPlugin)
-            	{
-               	iRevGeocoderPlugin->AddObserverL(*this); 
- 
-              }
- 
-            }
+        {
+       
+	   TRAP_IGNORE(
+        iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
+           REComSession::CreateImplementationL(KReverseGeoCodeUid, iDtorKey));)
+
+        if(iRevGeocoderPlugin)
+        	{
+           	iRevGeocoderPlugin->AddObserverL(*this); 
+
+          }
+        }
+#endif //LOC_REVERSEGEOCODE
 
     LOG("CInternalGeoTagger::ConstructL ,end");
     }
@@ -152,9 +163,13 @@ CInternalGeoTagger::~CInternalGeoTagger()
 		iTagQuery->Cancel();
 		delete iTagQuery;
 		}	
+#ifdef LOC_REVERSEGEOCODE
+    delete iTagCreator;
+    iTagCreator = NULL;
     delete iRevGeocoderPlugin;
     iRevGeocoderPlugin = NULL;
     REComSession::DestroyedImplementation(iDtorKey);	
+#endif //LOC_REVERSEGEOCODE
     if(iMdeSessionOwnFlag)
         {
     	delete iMdeSession;
@@ -198,7 +213,9 @@ void CInternalGeoTagger::HandleSessionOpened(CMdESession& /*aSession*/, TInt aEr
         {
         iSessionReady = ETrue;
         
+#ifdef LOC_REVERSEGEOCODE
         iTagCreator->SetSession( iMdeSession );
+#endif
         }
     else if(iMdeSessionOwnFlag)
         {
@@ -355,6 +372,7 @@ void CInternalGeoTagger::HandleQueryCompleted(CMdEQuery& aQuery, TInt aError)
             if(GPSInfoExists())
                 {
                 // GPS info exist go for reverse geo coding.
+#ifdef LOC_REVERSEGEOCODE
                 if(iRevGeocoderPlugin)
     			    {
                     TRAP_IGNORE( 
@@ -362,6 +380,7 @@ void CInternalGeoTagger::HandleQueryCompleted(CMdEQuery& aQuery, TInt aError)
     				   ( iLocationData.iPosition, iConnectionOption ) );
     				}
     			else
+#endif //LOC_REVERSEGEOCODE
     			    {
                     IterateNextLocation();  //Go through next location
     			    }
@@ -369,7 +388,6 @@ void CInternalGeoTagger::HandleQueryCompleted(CMdEQuery& aQuery, TInt aError)
     		else
     		    {
         		if ( iLocationData.iNetworkInfo.iCellId > 0 && 
-        				iLocationData.iNetworkInfo.iLocationAreaCode > 0 &&
         				iLocationData.iNetworkInfo.iCountryCode.Length() > 0 &&
         				iLocationData.iNetworkInfo.iNetworkId.Length() > 0 )
         			{
@@ -383,8 +401,21 @@ void CInternalGeoTagger::HandleQueryCompleted(CMdEQuery& aQuery, TInt aError)
                    
                     if(err == KErrNone && iGeoConverter != NULL)
                        {
+                       // there is no field to store type of network. 
+                       // but it's safe to take decission based on area code.
+                       if(iLocationData.iNetworkInfo.iLocationAreaCode > 0)
+                           {
+                           LOG("Valid areacode. Treat as GSM n/w");
+                           iLocationData.iNetworkInfo.iAccess = CTelephony::ENetworkAccessGsm;
+                           }
+                       else
+                           {
+                           LOG("Areacode is 0. Treat as 3G n/w");
+                           iLocationData.iNetworkInfo.iAccess = CTelephony::ENetworkAccessUtran;
+                           }
                        TRAP(err, iGeoConverter->ConvertL(iLocationData.iNetworkInfo);)
                        }
+                    LOG1("Error - %d", err);
                    if(err != KErrNone)
                        {
                        HandleConversionError(err);	
@@ -415,7 +446,9 @@ TBool CInternalGeoTagger::GPSInfoExists()
     LOG("CInternalGeoTagger::GPSInfoExists");
     TBool gpsInfoExists = EFalse;
     if ( !Math::IsNaN( iLocationData.iPosition.Latitude() ) && 
-                !Math::IsNaN( iLocationData.iPosition.Longitude() ))  //lat, long is there
+                !Math::IsNaN( iLocationData.iPosition.Longitude() ) &&
+                KZeroLatLon != iLocationData.iPosition.Latitude() && 
+                KZeroLatLon != iLocationData.iPosition.Longitude() )  //lat, long is there
         {
         
 		LOG("Valid lat/lon\n");
@@ -423,6 +456,7 @@ TBool CInternalGeoTagger::GPSInfoExists()
         }
     return gpsInfoExists;
     }
+
 
 // --------------------------------------------------------------------------
 // CInternalGeoTagger::StartGeoTagging()
@@ -481,20 +515,43 @@ void CInternalGeoTagger::GetLocationInfoL()
         iLocationData.iPosition.SetCoordinate( latProp->Real64ValueL(), 
                                                lonProp->Real64ValueL() );
         }
+    else
+        {
+        iLocationData.iPosition.SetCoordinate( KZeroLatLon, 
+                                               KZeroLatLon );
+        }
     
     locationObject->Property( cellIdDef, cellProp, 0 );
     locationObject->Property( lacCodeDef, lacProp, 0 );
     locationObject->Property( countryCodeDef, countryProp, 0 );
     locationObject->Property( networkCodeDef, networkProp, 0 );
-    if ( cellProp && lacProp && countryProp && networkProp)
+    if ( cellProp && countryProp && networkProp)
         {
         iLocationData.iNetworkInfo.iCellId = cellProp->Uint32ValueL();
-        iLocationData.iNetworkInfo.iLocationAreaCode = lacProp->Uint32ValueL();
         iLocationData.iNetworkInfo.iCountryCode = countryProp->TextValueL();
         iLocationData.iNetworkInfo.iNetworkId = networkProp->TextValueL();
-        
+        }
+    else
+        {
+        // set to invalid values.
+        iLocationData.iNetworkInfo.iCellId = 0;
+        iLocationData.iNetworkInfo.iAccess = CTelephony::ENetworkAccessUnknown;
+        iLocationData.iNetworkInfo.iLocationAreaCode = 0;
+        iLocationData.iNetworkInfo.iAreaKnown = EFalse;
+        iLocationData.iNetworkInfo.iCountryCode.Zero();
+        iLocationData.iNetworkInfo.iNetworkId.Zero();
         }
 
+    iLocationData.iNetworkInfo.iAreaKnown = EFalse;
+    if(lacProp)
+        {
+        iLocationData.iNetworkInfo.iLocationAreaCode = lacProp->Uint32ValueL();
+        if(iLocationData.iNetworkInfo.iLocationAreaCode > 0)
+            {
+            iLocationData.iNetworkInfo.iAreaKnown = ETrue;
+            }
+        }
+    delete locationObject;
 	LOG("CInternalGeoTagger::GetLocationInfoL ,end");
     }
 
@@ -517,12 +574,16 @@ TBool CInternalGeoTagger::LocationTagExists()
         TItemId tagId = relation.RightObjectId(); 
         CMdEObject* object = NULL;
         TRAP_IGNORE( object = iMdeSession->GetObjectL( tagId ) );
-        
-        error = object->Uri().Find( KCountry );
-        if ( error == KErrNone )
+        if(object)
             {
-            i = count;
-            tagFound = ETrue;
+            error = object->Uri().Find( KCountry );
+            delete object;
+            if ( error == KErrNone )
+                {
+                i = count;
+                tagFound = ETrue;
+                break;
+                }
             }
         }
                 
@@ -530,36 +591,6 @@ TBool CInternalGeoTagger::LocationTagExists()
 	LOG("CInternalGeoTagger::LocationTagExists ,end");
     return tagFound;
 
-    }
-
-// --------------------------------------------------------------------------
-// CInternalGeoTagger::AddressInfo()
-// --------------------------------------------------------------------------
-//
-void CInternalGeoTagger::AddressInfoL( const TItemId aCountryTagId, const TItemId aCityTagId )
-    {
-    LOG("CInternalGeoTagger::AddressInfoL ,begin");
-                               
-    const TInt count = iRelationQuery->Count();
-    
-    for ( TInt i = 0; i < count; i++ )
-        {
-        CMdERelation& relation = iRelationQuery->Result( i );
-        TItemId imageId = relation.LeftObjectId(); 
-        
-        if ( !GPSInfoExists() )   //to update EXIF
-            {
-            // update relation timestamp, composer will then update exif data   
-            TTime timestamp( 0 );
-            timestamp.UniversalTime();
-            relation.SetLastModifiedDate( timestamp );     
-            iMdeSession->UpdateRelationL( relation );
-            }
-        
-        iTagCreator->AttachTagsL( imageId, aCountryTagId, aCityTagId  );
-        }
-
-   LOG("CInternalGeoTagger::AddressInfoL ,end");
     }
 
 
@@ -626,42 +657,6 @@ void CInternalGeoTagger::GetAllLocationsL()
   LOG("CInternalGeoTagger::GetAllLocationsL ,end");
     }
 
-// --------------------------------------------------------------------------
-// CInternalGeoTagger::ReverseGeocodeComplete()
-//  Get address details like street, city, state, etc.
-// --------------------------------------------------------------------------
-//
-void CInternalGeoTagger::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aAddressInfo )
-    {
-    LOG("CInternalGeoTagger::ReverseGeocodeComplete ,begin");
-    TItemId countryTagId(0);
-    TItemId cityTagId(0);
-    
-    // create country and city tags
-    if( aErrorcode == KErrNone )
-        {
-        TPtrC countryPtr( aAddressInfo.GetCountryName() ); 
-        TPtrC cityPtr( aAddressInfo.GetCity() );
-        
-        TRAP_IGNORE( iTagCreator->CreateLocationTagsL( countryPtr, countryTagId, cityPtr, cityTagId ) );
-		
-        TRAP_IGNORE(AddressInfoL( countryTagId, cityTagId ));
-        
-        IterateNextLocation();
-        }
-    else
-        {
-        //handle error
-        if ( iObserver )
-            {
-            iIndex = 0;
-            iObserver->GeoTaggingCompleted( aErrorcode );
-            }
-        }
-   
-    
-    LOG("CInternalGeoTagger::ReverseGeocodeComplete ,end");
-    }
 
 // --------------------------------------------------------------------------
 // CInternalGeoTagger::GetTagsL()
@@ -702,6 +697,82 @@ void CInternalGeoTagger::GetTagsL( TItemId aImageID )
     }
 
 #ifdef LOC_GEOTAGGING_CELLID	
+
+// --------------------------------------------------------------------------
+// CInternalGeoTagger::UpdateGPSInfoL()
+// --------------------------------------------------------------------------
+//
+void CInternalGeoTagger::UpdateGPSInfoL(const TLocality& aPosition)
+	{
+	
+    LOG("CInternalGeoTagger::UpdateGPSInfoL ,start");
+    if(Math::IsNaN( aPosition.Latitude()) ||
+        Math::IsNaN( aPosition.Longitude()) )
+        {
+        LOG("Not a valid location info.");
+        LOG("CInternalGeoTagger::UpdateGPSInfoL ,end");
+        return;
+        }
+    
+	CMdENamespaceDef& namespaceDef = iMdeSession->GetDefaultNamespaceDefL();
+	CMdEObjectDef& locObjDef = namespaceDef.GetObjectDefL( Location::KLocationObject );
+	CMdEObject* location = iMdeSession->OpenObjectL(iLocationId, locObjDef);
+	CleanupStack::PushL( location );
+	
+	CMdEPropertyDef& propLatDef = locObjDef.GetPropertyDefL( Location::KLatitudeProperty );
+	CMdEPropertyDef& propLongDef = locObjDef.GetPropertyDefL( Location::KLongitudeProperty );
+	CMdEPropertyDef& propAltDef = locObjDef.GetPropertyDefL( Location::KAltitudeProperty );
+	CMdEPropertyDef& qualityDef = locObjDef.GetPropertyDefL( Location::KQualityProperty );
+
+	if (location->PropertyCount(propLatDef) == 0)
+		{
+		location->AddReal64PropertyL(propLatDef, aPosition.Latitude() ); //iLatitude
+		}
+	if (location->PropertyCount(propLongDef) == 0)
+		{
+		location->AddReal64PropertyL(propLongDef, aPosition.Longitude() ); //iLongitude
+		}
+	if (location->PropertyCount(propAltDef) == 0 &&
+        !Math::IsNaN( aPosition.Altitude()) )
+		{
+		location->AddReal64PropertyL(propAltDef, aPosition.Altitude());
+		}
+    LOG1( "Updating quality - %d", aPosition.HorizontalAccuracy());
+	if (location->PropertyCount(qualityDef) == 0 )
+		{
+		location->AddReal32PropertyL(qualityDef, aPosition.HorizontalAccuracy());
+		}
+	
+	CMdEProperty* modProp = NULL;
+	CMdEObjectDef& objImageDef = namespaceDef.GetObjectDefL( Image::KImageObject );
+	CMdEPropertyDef& propModifiedDef = objImageDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
+	location->Property( propModifiedDef, modProp, 0 );
+	if ( modProp )
+		{
+		TTime timestamp( 0 );
+		timestamp.UniversalTime();
+		modProp->SetTimeValueL( timestamp );
+		}
+	// commit to DB
+	iMdeSession->CommitObjectL(*location);
+	CleanupStack::PopAndDestroy( location );
+
+    // update the relation
+    const TInt count = iRelationQuery->Count();
+    LOG1("Relation count - %d", count);
+    for ( TInt i = 0; i < count; i++ )
+        {
+        CMdERelation& relation = iRelationQuery->Result( i );
+        // update relation timestamp, composer will then update exif data   
+        
+        TTime timestamp( 0 );
+        timestamp.UniversalTime();
+        relation.SetLastModifiedDate( timestamp );     
+        iMdeSession->UpdateRelationL( relation );
+        }
+    LOG("CInternalGeoTagger::UpdateGPSInfoL ,end");
+	}
+
 // --------------------------------------------------------------------------
 // CInternalGeoTagger::ConversionCompletedL()
 // --------------------------------------------------------------------------
@@ -714,13 +785,17 @@ void CInternalGeoTagger::ConversionCompletedL( const TInt aError,
     if(aError == KErrNone)
         {
         iLocationData.iPosition.SetCoordinate
-                ( aPosition.Latitude(), aPosition.Longitude());
+                ( aPosition.Latitude(), aPosition.Longitude(), aPosition.Altitude());
+        iLocationData.iQuality = aPosition.HorizontalAccuracy();
+        UpdateGPSInfoL(aPosition);
+#ifdef LOC_REVERSEGEOCODE
         if(iRevGeocoderPlugin)
 		    {
            	iRevGeocoderPlugin->GetAddressByCoordinateL
 			   ( iLocationData.iPosition, iConnectionOption ) ;
 			}
 		else
+#endif //LOC_REVERSEGEOCODE
 		    {
             IterateNextLocation();  //Go through next location
 		    }
@@ -745,7 +820,7 @@ void CInternalGeoTagger::HandleConversionError(TInt aError)
     LOG("CInternalGeoTagger::HandleConversionError, end");
 	}
 
-#endif
+#endif //LOC_GEOTAGGING_CELLID
 
 // --------------------------------------------------------------------------
 // CInternalGeoTagger::PendingGeoTagsL()
@@ -764,7 +839,7 @@ void CInternalGeoTagger::PendingGeoTagsL( TBool aTagInProgress )
         }
     else
         {
-        if(!iTagPendingHandlerFlag)
+        if(!iTagPendingHandlerFlag && iIndex <= 0)
             {
             LOG("Processing the request.\n");
             // tag pending request is not going on
@@ -779,6 +854,120 @@ void CInternalGeoTagger::PendingGeoTagsL( TBool aTagInProgress )
             }
         }
     LOG("CInternalGeoTagger::PendingGeoTagsL ,end");
+    }
+
+
+#ifdef LOC_REVERSEGEOCODE
+// --------------------------------------------------------------------------
+// CInternalGeoTagger::AddressInfo()
+// --------------------------------------------------------------------------
+//
+void CInternalGeoTagger::AddressInfoL( const TItemId aCountryTagId, const TItemId aCityTagId )
+    {
+    LOG("CInternalGeoTagger::AddressInfoL ,begin");
+                               
+    const TInt count = iRelationQuery->Count();
+    
+    for ( TInt i = 0; i < count; i++ )
+        {
+        CMdERelation& relation = iRelationQuery->Result( i );
+        TItemId imageId = relation.LeftObjectId(); 
+        
+        if ( !GPSInfoExists() )   //to update EXIF
+            {
+            // update relation timestamp, composer will then update exif data   
+            TTime timestamp( 0 );
+            timestamp.UniversalTime();
+            relation.SetLastModifiedDate( timestamp );     
+            iMdeSession->UpdateRelationL( relation );
+            }
+        
+        iTagCreator->AttachTagsL( imageId, aCountryTagId, aCityTagId  );
+        }
+
+   LOG("CInternalGeoTagger::AddressInfoL ,end");
+    }
+
+
+// --------------------------------------------------------------------------
+// CInternalGeoTagger::RemoveLocationInfoOnFailureL()
+// Remove the location info when reverse geo code fail so that retry can be ignore for the next iteration
+// --------------------------------------------------------------------------
+//
+void CInternalGeoTagger::RemoveLocationInfoOnFailureL(const TItemId aLocationId)
+	{
+	
+    LOG("CInternalGeoTagger::RemoveLocationInfoOnFailureL ,start");
+    
+	CMdENamespaceDef& namespaceDef = iMdeSession->GetDefaultNamespaceDefL();
+	CMdEObjectDef& locObjDef = namespaceDef.GetObjectDefL( Location::KLocationObject );
+	CMdEObject* location = iMdeSession->OpenObjectL(aLocationId, locObjDef);
+	CleanupStack::PushL( location );
+	
+	CMdEPropertyDef& propLatDef = locObjDef.GetPropertyDefL( Location::KLatitudeProperty );
+	CMdEPropertyDef& propLongDef = locObjDef.GetPropertyDefL( Location::KLongitudeProperty );
+
+	if (location->PropertyCount(propLatDef) == 0)
+		{
+		location->AddReal64PropertyL(propLatDef, KZeroLatLon ); //iLatitude
+		}
+	if (location->PropertyCount(propLongDef) == 0)
+		{
+		location->AddReal64PropertyL(propLongDef, KZeroLatLon ); //iLongitude
+		}
+	
+	CMdEProperty* modProp = NULL;
+	CMdEObjectDef& objImageDef = namespaceDef.GetObjectDefL( Image::KImageObject );
+	CMdEPropertyDef& propModifiedDef = objImageDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
+	location->Property( propModifiedDef, modProp, 0 );
+	if ( modProp )
+		{
+		TTime timestamp( 0 );
+		timestamp.UniversalTime();
+		modProp->SetTimeValueL( timestamp );
+		}
+	// commit to DB
+	iMdeSession->CommitObjectL(*location);
+	CleanupStack::PopAndDestroy( location );
+
+    LOG("CInternalGeoTagger::RemoveLocationInfoOnFailureL ,end");
+	}
+
+// --------------------------------------------------------------------------
+// CInternalGeoTagger::ReverseGeocodeComplete()
+//  Get address details like street, city, state, etc.
+// --------------------------------------------------------------------------
+//
+void CInternalGeoTagger::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aAddressInfo )
+    {
+    LOG("CInternalGeoTagger::ReverseGeocodeComplete ,begin");
+    TItemId countryTagId(0);
+    TItemId cityTagId(0);
+    
+    // create country and city tags
+    if( aErrorcode == KErrNone )
+        {
+        TPtrC countryPtr( aAddressInfo.GetCountryName() ); 
+        TPtrC cityPtr( aAddressInfo.GetCity() );
+        
+        TRAP_IGNORE( iTagCreator->CreateLocationTagsL( countryPtr, countryTagId, cityPtr, cityTagId ) );
+		
+        TRAP_IGNORE(AddressInfoL( countryTagId, cityTagId ));
+        
+        IterateNextLocation();
+        }
+    else
+        {
+        LOG1("Reverse geocode err - %d", aErrorcode);
+        // reverse geo code fails. may be because of lat/lon value (e.g. mid of ocean)
+        // based on error code, Remove lat/lon from location table so that it should n't try to for the next time. ??
+		// May not be a good idea to remove lan/lon because it may fails due to n/w.
+        //TRAP_IGNORE(RemoveLocationInfoOnFailureL(iLocationId));
+        IterateNextLocation();
+        }
+   
+    
+    LOG("CInternalGeoTagger::ReverseGeocodeComplete ,end");
     }
 
 // ----------------------------------------------------------------------------
@@ -808,6 +997,8 @@ const RMobilePhone::TMobilePhoneNetworkInfoV1&
     LOG( "CInternalReverseGeocode::GetHomeNetworkInfo" );
     return iObserver->GetHomeNetworkInfo(aHomeNwInfoAvailableFlag);
     }
+
+#endif //LOC_REVERSEGEOCODE
 
 // End of file
 

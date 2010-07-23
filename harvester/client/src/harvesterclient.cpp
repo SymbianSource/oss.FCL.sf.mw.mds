@@ -335,11 +335,13 @@ EXPORT_C void RHarvesterClient::HarvestFile( const TDesC& aURI, RArray<TItemId>&
             WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrServerBusy );
             iObserver->HarvestingComplete( const_cast<TDesC&>(aURI), KErrServerBusy );  
             delete harvestFileActive;
+            harvestFileActive = NULL;
             }
         else if( err )
             {
             WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrServerBusy );
             delete harvestFileActive;
+            harvestFileActive = NULL;
             }
         else
             {
@@ -352,11 +354,13 @@ EXPORT_C void RHarvesterClient::HarvestFile( const TDesC& aURI, RArray<TItemId>&
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         iObserver->HarvestingComplete( const_cast<TDesC&>(aURI), KErrDisconnected );  
         delete harvestFileActive;
+        harvestFileActive = NULL;
         }
     else
         {
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         delete harvestFileActive;
+        harvestFileActive = NULL;
         }
     WRITELOG( "RHarvesterClient::HarvestFile() - end" );
     }
@@ -408,11 +412,13 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
             WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrServerBusy );
             iObserver->HarvestingComplete( const_cast<TDesC&>(aURI), KErrServerBusy );  
             delete harvestFileActive;
+            harvestFileActive = NULL;
             }
         else if( err )
             {
             WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrServerBusy );
             delete harvestFileActive;
+            harvestFileActive = NULL;
             }
         else
             {
@@ -424,11 +430,13 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         iObserver->HarvestingComplete( const_cast<TDesC&>(aURI), KErrDisconnected );  
         delete harvestFileActive;
+        harvestFileActive = NULL;
         }
     else
         {
         WRITELOG1( "RHarvesterClient::HarvestFile() - cannot not send harvest request to server, error: %d", KErrDisconnected );
         delete harvestFileActive;
+        harvestFileActive = NULL;
         }
     }
 

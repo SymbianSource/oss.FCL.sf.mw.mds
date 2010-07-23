@@ -17,7 +17,7 @@
 &EN
 
 ;packet-header (name, uid, major, minor, build, type)
-#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 11, TYPE=SA, RU
+#{"Metadata System Upgrade"},(0x200009F5), 10, 10, 12, TYPE=SA, RU
 
 ; Localised vendor name
 %{"Nokia"}
@@ -94,6 +94,7 @@
 "\EPOC32\RELEASE\ARMV5\UREL\locationmanager.dll" -"c:\sys\bin\locationmanager.dll"
 "\EPOC32\RELEASE\ARMV5\UREL\locationmanagerserver.exe" -"c:\sys\bin\locationmanagerserver.exe"
 "\EPOC32\RELEASE\ARMV5\UREL\geoconverter.dll" -"c:\sys\bin\geoconverter.dll"
+"\EPOC32\RELEASE\ARMV5\UREL\geotagger.dll" -"c:\sys\bin\geotagger.dll"
 
 ; metadata engine
 "\EPOC32\RELEASE\ARMV5\UREL\mdeclient.dll" -"c:\sys\bin\mdeclient.dll"

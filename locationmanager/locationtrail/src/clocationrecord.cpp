@@ -21,6 +21,9 @@
 #include <ecom.h>
 #include <centralrepository.h>
 #include <hwrmpowerstatesdkpskeys.h>
+#ifdef LOC_GEOTAGGING_CELLID
+#include <lbslocationinfo.h>
+#endif //LOC_GEOTAGGING_CELLID
 
 #include "rlocationtrail.h"
 #include "clocationrecord.h"
@@ -101,6 +104,7 @@ CLocationRecord::CLocationRecord(MGeoTaggerObserver& aGeoTaggerObserver,
 	,iImageQuery(NULL)
 	,iTagQuery(NULL)
     ,iTagCreator( NULL )
+    ,iLastReverseGeocodeFails(EFalse)
 	,iRevGeocoderPlugin( NULL )
 #endif
     {
@@ -201,8 +205,11 @@ EXPORT_C CLocationRecord::~CLocationRecord()
     iLocationItems.Close();
 #endif    
     delete iNetworkInfoChangeListener;
+    iNetworkInfoChangeListener = NULL;
     delete iPositionInfo;
+    iPositionInfo = NULL;
     delete iNetworkInfoTimer;
+    iNetworkInfoTimer = NULL;
 #ifdef LOC_GEOTAGGING_CELLID
     if(iGeoConverter)
         {
@@ -707,10 +714,12 @@ void CLocationRecord::NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInf
         	{
         	iNetwork.iLocationAreaCode = 0;
         	}
+#ifdef LOC_GEOTAGGING_CELLID
         if ( iState == RLocationTrail::ETrailStarting && iTrailStarted )
         	{
         	SetCurrentState( RLocationTrail::ETrailStarted );
         	}
+#endif        
         }
     else
         {
@@ -797,13 +806,16 @@ void CLocationRecord::SetCurrentState( TLocTrailState aState )
     if( iTrailStarted )
         {
         // Set the property only when trail is started to avoid icon flickering and wrong icon update in UI
-        if( iGpsDataAvailableFlag  || 
-            iNetwork.iCellId > 0 && 
+        if( iGpsDataAvailableFlag  
+#ifdef LOC_GEOTAGGING_CELLID
+            || ( iNetwork.iCellId > 0 && 
             ((iNetwork.iLocationAreaCode == 0 && iNetwork.iAccess == CTelephony::ENetworkAccessUtran) || // 3G
             (iNetwork.iLocationAreaCode > 0 && (iNetwork.iAccess == CTelephony::ENetworkAccessGsm ||  // 2G
             						iNetwork.iAccess == CTelephony::ENetworkAccessGsmCompact)))  &&
             iNetwork.iCountryCode.Length() > 0 &&
             iNetwork.iNetworkId.Length() > 0 )
+#endif // LOC_GEOTAGGING_CELLID            
+            )
             {
             // set the value 3 to have Geo tag available icon else not available.
             iProperty.Set( KPSUidLocationTrail, KLocationTrailState, 
@@ -1053,7 +1065,11 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 			{
 			
 			// if both locations have valid coordinates, calculate distance between points
-			if ( !Math::IsNaN( lastLocationData.iPosition.Latitude() ) && 
+			if (
+#ifdef LOC_REVERSEGEOCODE
+                !iLastReverseGeocodeFails &&
+#endif //LOC_REVERSEGEOCODE
+                !Math::IsNaN( lastLocationData.iPosition.Latitude() ) && 
 					!Math::IsNaN( lastLocationData.iPosition.Longitude() ) && 
 					!Math::IsNaN( locationData.iPosition.Latitude() ) && 
 					!Math::IsNaN( locationData.iPosition.Longitude() ))
@@ -1322,6 +1338,8 @@ TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
 	if ( !Math::IsNaN( aLocationData.iPosition.Latitude() ) && 
 		 !Math::IsNaN( aLocationData.iPosition.Longitude() ))
 		{
+        LOG1("Lan - %f", aLocationData.iPosition.Latitude());
+        LOG1("Lon - %f", aLocationData.iPosition.Longitude());
 		locationObject->AddReal64PropertyL( *iLatitudeDef, aLocationData.iPosition.Latitude() );
 		locationObject->AddReal64PropertyL( *iLongitudeDef, aLocationData.iPosition.Longitude() );
 
@@ -1344,36 +1362,46 @@ TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
 		}
 
 	// network related properties
-	if ( aLocationData.iNetworkInfo.iAreaKnown )
+	if ( aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
 		{
-		if ( aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
-			{
-			locationObject->AddUint32PropertyL( cellIdDef, aLocationData.iNetworkInfo.iCellId );
-			
-			}
-		if ( aLocationData.iNetworkInfo.iLocationAreaCode != 0 &&
-			aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
-			{
-			locationObject->AddUint32PropertyL( locationCodeDef, 
-					aLocationData.iNetworkInfo.iLocationAreaCode );
-			
-			}
-		if ( aLocationData.iNetworkInfo.iCountryCode.Length() > 0 )
-			{
-			locationObject->AddTextPropertyL( countryCodeDef, 
-					aLocationData.iNetworkInfo.iCountryCode );
-			
-			}
-		if ( aLocationData.iNetworkInfo.iNetworkId.Length() > 0 )
-			{
-			locationObject->AddTextPropertyL(networkCodeDef, aLocationData.iNetworkInfo.iNetworkId);
-			
-			}
+		LOG1("Cell id - %d", aLocationData.iNetworkInfo.iCellId);
+		locationObject->AddUint32PropertyL( cellIdDef, aLocationData.iNetworkInfo.iCellId );
+		}
+	if ( aLocationData.iNetworkInfo.iAreaKnown && 
+        aLocationData.iNetworkInfo.iLocationAreaCode != 0 &&
+		aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
+		{
+		LOG1("Areacode - %d", aLocationData.iNetworkInfo.iLocationAreaCode);
+		locationObject->AddUint32PropertyL( locationCodeDef, 
+				aLocationData.iNetworkInfo.iLocationAreaCode );
+		}
+#ifdef _DEBUG
+    TLex lexer( aLocationData.iNetworkInfo.iCountryCode );
+    TUint countryCode = 0;
+    
+    User::LeaveIfError( lexer.Val( countryCode, EDecimal) );
+    LOG1("Country code - %d", countryCode);
+    
+    //Set mobile network code
+    lexer = aLocationData.iNetworkInfo.iNetworkId;
+    TUint networkCode = 0;
+    User::LeaveIfError( lexer.Val( networkCode, EDecimal) );
+    LOG1("Network id - %d", networkCode);
+#endif
+	if ( aLocationData.iNetworkInfo.iCountryCode.Length() > 0 )
+		{
+		locationObject->AddTextPropertyL( countryCodeDef, 
+				aLocationData.iNetworkInfo.iCountryCode );
+		}
+
+	if ( aLocationData.iNetworkInfo.iNetworkId.Length() > 0 )
+		{
+		locationObject->AddTextPropertyL(networkCodeDef, aLocationData.iNetworkInfo.iNetworkId);
 		}
 	        
 	// Add the location object to the database.
 	locationObjectId = iMdeSession->AddObjectL( *locationObject );
-
+    LOG1("Location id - %d", locationObjectId);
 	CleanupStack::PopAndDestroy( locationObject );
     LOG( "CLocationRecord::DoCreateLocationL(), end" );
 
@@ -1952,6 +1980,11 @@ void CLocationRecord::ConversionCompletedL( const TInt aError, TLocality& aPosit
             else if ( iMediaItems.Count() > 0 )
                 {
                 TLocationSnapshotItem* item = iMediaItems[0];
+                // Fails may be becuase of n/w reason..create location + relation so that we can handle at 3:00 AM.
+                TItemId locationId = DoCreateLocationL( iMediaItems[0]->iLocationData );
+                iMediaItems[0]->iLocationId = locationId;
+                CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+
                 iMediaItems.Remove(0);
                 iMediaItems.Compress();
                 iMediaHandlingFlag &= ~KLocationQueryInProgress;
@@ -2461,8 +2494,10 @@ void CLocationRecord::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aA
     
     iMediaHandlingFlag &= (~KReverseGeoCodingInProgress);
 	TLocationSnapshotItem* snapshotItem = NULL;
+    LOG1("Error - %d", aErrorcode);
     if( aErrorcode == KErrNone )
         {
+        iLastReverseGeocodeFails = EFalse;
         TPtrC countryPtr( aAddressInfo.GetCountryName() );
         TPtrC cityPtr( aAddressInfo.GetCity() );
         TRAP_IGNORE( iTagCreator->CreateLocationTagsL( countryPtr, countryTagId, 
@@ -2482,19 +2517,16 @@ void CLocationRecord::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aA
                 
                 TRAP_IGNORE( iTagCreator->AttachTagsL( 
                                 iLocationItems[0]->iObjectId, countryTagId, cityTagId  ) );
+                if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0 
+                    && iLastMediaItem.iLocationId == iLastLocationItem.iLocationId )
+                    {
+                    LOG("Updating country/city\n");
+                    iLastMediaItem.iCountryTagId = countryTagId;
+                    iLastMediaItem.iCityTagId = cityTagId;
+                    }
+                
                 }
             }
-        if(iLastMediaItem.iFlag == 0)
-            {
-            LOG("Last media item is null\n");
-            }
-        if ( iLastMediaItem.iFlag > 0 && iLastMediaItem.iLocationId == iLastLocationItem.iLocationId )
-            {
-            LOG("Updating country/city\n");
-            iLastMediaItem.iCountryTagId = countryTagId;
-            iLastMediaItem.iCityTagId = cityTagId;
-            }
-        
         //check other items in the array has same location 
         for ( TInt index = iLocationItems.Count() - 1; index > 0; index--)
             {
@@ -2512,6 +2544,8 @@ void CLocationRecord::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aA
     else
         {
         //handle error
+        LOG("Reverse geo coding fails");
+        iLastReverseGeocodeFails = ETrue;
         }
     
     //irrespective of error or not, remove current(first) item to proceed further

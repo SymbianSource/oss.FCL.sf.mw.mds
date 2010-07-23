@@ -25,6 +25,7 @@
 #include <caf/caf.h>
 #include <pathinfo.h>
 
+#include "harvestercommon.h"
 #include "harvesteraudioplugin.h"
 #include "harvesteraudiopluginutils.h"
 #include "mdsutils.h"
@@ -118,11 +119,16 @@ CHarvesterAudioPlugin::~CHarvesterAudioPlugin()
 	WRITELOG( "CHarvesterAudioPlugin::~CHarvesterAudioPlugin()" );
 	
 	delete iAudioParser;
+	iAudioParser = NULL;
 	delete iPropDefs;
+	iPropDefs = NULL;
 	delete iTNM;
+	iTNM = NULL;
 	
 	delete iPhoneSoundsPath;
+	iPhoneSoundsPath = NULL;
 	delete iMmcSoundsPath;
+	iMmcSoundsPath = NULL;
 	}
 
 // ---------------------------------------------------------------------------
@@ -145,6 +151,7 @@ void CHarvesterAudioPlugin::ConstructL()
         TRAP_IGNORE( iTNM = CThumbnailManager::NewL( *this ) );
         }
     
+    SetPriority( KHarvesterPriorityHarvestingPlugin - 2 );
 	
     TFileName sounds = PathInfo::SoundsPath();
     
@@ -534,6 +541,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         CleanupStack::Pop(); // jpegBuf
         iTNM->CreateThumbnails( *tnmSource );
         delete tnmSource;
+        tnmSource = NULL;
         TBool thumbnailPresent( ETrue );
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                           *iPropDefs->iThumbnailPropertyDef, &thumbnailPresent, aIsAdd );

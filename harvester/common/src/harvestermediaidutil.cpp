@@ -136,8 +136,10 @@ EXPORT_C void RMediaIdUtil::ReleaseInstance()
 		if (data->iRefCount <= 0)
 			{
 			delete data->iMediaIdUtil;
+			data->iMediaIdUtil = NULL;
 
 			delete data;
+			data = NULL;
 			UserSvr::DllFreeTls(KHarvesterMediaIdTLSKey);
 			}
 		}

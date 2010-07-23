@@ -46,8 +46,8 @@ class CMMCMountTaskAO : public CActive
 		static CMMCMountTaskAO* NewL();	
 		virtual ~CMMCMountTaskAO();
 		
-		void StartMount( TMountData& aMountData );
-		void StartUnmount( TMountData& aMountData );
+		void StartMountL( TMountData& aMountData );
+		void StartUnmountL( TMountData& aMountData );
 		void SetMonitorObserver( MMonitorPluginObserver& aObserver );
 		void SetMdeSession( CMdEHarvesterSession* aSession );
 		void SetHarvesterPluginFactory( CHarvesterPluginFactory* aPluginFactory );

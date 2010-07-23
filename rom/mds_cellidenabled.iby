@@ -85,6 +85,9 @@ file=ABI_DIR\BUILD_DIR\locationtrail.dll		    SHARED_LIB_DIR\locationtrail.dll
 REM geoconverter
 file=ABI_DIR\BUILD_DIR\geoconverter.dll		    SHARED_LIB_DIR\geoconverter.dll
 
+REM geotagger
+file=ABI_DIR\BUILD_DIR\geotagger.dll		    SHARED_LIB_DIR\geotagger.dll
+
 
 REM Location Manager data files
 data=ZPRIVATE\10202BE9\200071BE.txt					"PRIVATE\10202BE9\200071BE.txt"

@@ -521,6 +521,7 @@ CCLFModifiableItemImpl::~CCLFModifiableItemImpl()
     for ( HBufC* const* p = hashIter.NextValue(); p; p = hashIter.NextValue() )
         {
         delete *p;
+        p = NULL;
         }
     iTextMap.Close();
     }

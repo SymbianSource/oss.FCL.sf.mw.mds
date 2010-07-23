@@ -39,9 +39,13 @@ CHarvesterData::CHarvesterData( const HBufC* aUri )
 CHarvesterData::~CHarvesterData()
 	{
 	delete iUri;
+	iUri = NULL;
 	delete iClientData;
+	iClientData = NULL;
 	delete iMdeObject;
+	iMdeObject = NULL;
 	delete iLocationData;
+	iLocationData = NULL;
 	}
 
 //==========================================================================

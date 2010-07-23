@@ -743,6 +743,11 @@ private:
      */
    	CTagCreator *iTagCreator;
     /*
+     * Flag to track last reverse geocode failure sceenario
+     */
+	TBool iLastReverseGeocodeFails;
+
+    /*
      * Reverse geo coder plugin object
      */
 	CReverseGeoCoderPlugin* iRevGeocoderPlugin;

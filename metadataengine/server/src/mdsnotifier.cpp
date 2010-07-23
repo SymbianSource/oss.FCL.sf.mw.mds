@@ -80,6 +80,7 @@ void CMdSNotifier::ConstructL()
 CMdSNotifier::~CMdSNotifier()
     {
     delete iComparator;
+    iComparator = NULL;
     
     const TInt count = iEntries.Count();
     
@@ -586,7 +587,9 @@ void CMdSNotifier::RemoveEntriesBySession(
                 }
             
             delete e.iSerializedCondition;
+            e.iSerializedCondition = NULL;
             delete e.iDataBuffer;
+            e.iDataBuffer = NULL;
             iEntries.Remove( i );
             }
         }

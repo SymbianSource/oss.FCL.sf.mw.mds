@@ -20,7 +20,7 @@
 
 #if defined(WINSCW)
 deffile ../bwincw/reversegeocodewinscw.def
-#elif defined(ARMCC)
+#elif defined(EABI)
 deffile ../eabi/reversegeocodearm.def
 #endif
 nostrictdef

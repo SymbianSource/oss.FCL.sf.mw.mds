@@ -79,6 +79,7 @@ void CMdSMaintenanceEngine::ConstructL()
 CMdSMaintenanceEngine::~CMdSMaintenanceEngine()
     {
     delete iMaintenance;
+    iMaintenance = NULL;
     }
 
 // ------------------------------------------------
@@ -117,7 +118,17 @@ void CMdSMaintenanceEngine::DeleteDatabase()
 void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsSchema& aSchema )
     {
     __LOG1( ELogAlways, "Trying to validate MDS DB, error expected if not created(first boot): %d", 0 );
-    if ( !(iMaintenance->ValidateL( ) ) )
+	
+    TBool isValid(EFalse);
+    TRAPD(err, isValid = iMaintenance->ValidateL( ));
+    
+    if(err == KErrCorrupt)
+        {
+        DeleteDatabase();
+        User::Leave( err );
+        }
+    
+    else if ( !isValid )
         {
         // Pump up priority to load the MDS DB up as fast as possible to
         // enable client side session connections

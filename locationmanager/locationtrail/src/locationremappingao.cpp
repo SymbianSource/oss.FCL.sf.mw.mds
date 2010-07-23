@@ -385,12 +385,14 @@ void CLocationRemappingAO::RemapObjectsL()
 		relation = iMdEClient->GetRelationL( iRemapItems[i].iRelationId );
 		
 		if(relation)
-		    {   
+		    {
+		    CleanupStack::PushL(relation);
             TTime timestamp( 0 );
             timestamp.UniversalTime();
             relation->SetLastModifiedDate( timestamp );
     	
             iMdEClient->UpdateRelationL( *relation );
+		    CleanupStack::PopAndDestroy(relation);
 		    }
 		}
 	
@@ -460,14 +462,16 @@ void CLocationRemappingAO::UpdateRelationsL( TItemId aLocationId )
 						iRemapItems[i].iObjectId, aLocationId, 0 );
 				iMdEClient->AddRelationL( *relationObject );
 				CleanupStack::PopAndDestroy( relationObject );
-				LOG("CLocationRemappingAO::UpdateRelationsL - new relation created");
+				LOG("new relation created");
 				}
 			else
 				{
 				CMdERelation* relationObject = iMdEClient->GetRelationL( iRemapItems[i].iRelationId );
+                CleanupStack::PushL(relationObject);
 				relationObject->SetRightObjectIdL( aLocationId );
 				iMdEClient->UpdateRelationL( *relationObject );
-				LOG("CLocationRemappingAO::UpdateRelationsL - old relation updated");
+                CleanupStack::PopAndDestroy(relationObject);
+				LOG("old relation updated");
 				}
 			iRemapItems.Remove( i );
 			}

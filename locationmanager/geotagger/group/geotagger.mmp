@@ -28,7 +28,7 @@ VENDORID 	    VID_DEFAULT
 CAPABILITY 	    CAP_GENERAL_DLL
 
 #if defined(WINSCW)
-#elif defined(ARMCC)
+#elif defined(EABI)
 deffile ../eabi/geotaggerarm.def
 #endif
 nostrictdef
@@ -38,15 +38,17 @@ USERINCLUDE     ../../inc
 USERINCLUDE     ../../../inc
 
 
-USERINCLUDE     ../../tagcreator/inc
-
 #ifdef     _LOC_GEOTAGGING_CELLID
 MACRO LOC_GEOTAGGING_CELLID
 USERINCLUDE     ../../geoconverter/inc
 #endif
 
+#ifdef _LOC_REVERSEGEOCODE
+MACRO LOC_REVERSEGEOCODE
+USERINCLUDE     ../../tagcreator/inc
 USERINCLUDE     ../../ReverseGeocode/inc
 USERINCLUDE	../../ReverseGeoCoderPlugin/inc
+#endif
 
 
 SOURCEPATH      ../src
@@ -67,17 +69,17 @@ LIBRARY         estor.lib
 LIBRARY	        platformenv.lib
 
 DEBUGLIBRARY    flogger.lib
-LIBRARY         tagcreator.lib 
 LIBRARY         ecom.lib 
 LIBRARY	        libc.lib
-
-LIBRARY         reversegeocode.lib
-
 
 #ifdef     _LOC_GEOTAGGING_CELLID
 LIBRARY         geoconverter.lib
 #endif
 
+#ifdef _LOC_REVERSEGEOCODE
+LIBRARY        reversegeocode.lib 
+LIBRARY        tagcreator.lib 
+#endif
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

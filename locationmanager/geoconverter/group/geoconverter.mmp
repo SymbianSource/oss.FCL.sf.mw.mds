@@ -30,7 +30,7 @@ CAPABILITY 	 CAP_GENERAL_DLL
 
 #if defined(WINSCW)
 deffile ../bwincw/geoconverterwinscw.def
-#elif defined(ARMCC)
+#elif defined(EABI)
 deffile ../eabi/geoconverterarm.def
 #endif
 nostrictdef

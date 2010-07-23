@@ -83,6 +83,7 @@ void CFileEventHandlerAO::ConstructL( MMonitorPluginObserver& aObserver,
     User::LeaveIfError( error );
     
     TRAP( error, ReadCacheSizeFromCenrepL() );
+	
     if ( error == KErrNone )
     	{
     	iQueue.Reserve( iCacheSize );
@@ -104,10 +105,16 @@ CFileEventHandlerAO::~CFileEventHandlerAO()
     iFs.Close();
     
     delete iMapper;
+    iMapper = NULL;
+    
     delete iMoveTimer;
+    iMoveTimer = NULL;
+    
     delete iFolderRenamer;
+    iFolderRenamer = NULL;
     
     delete iEventArray;
+    iEventArray = NULL;
     
     iQueue.ResetAndDestroy();
     iQueue.Close();
@@ -146,6 +153,7 @@ void CFileEventHandlerAO::RunL()
     			ResetEvent();
     			item->GetAsFspStatus(iEvent);
     			delete item;
+    			item = NULL;
     			
     			if( iEvent.iFileEventType == EMdsFileDeleted )
     			    {

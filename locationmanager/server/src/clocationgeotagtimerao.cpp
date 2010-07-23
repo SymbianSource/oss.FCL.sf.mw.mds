@@ -108,11 +108,11 @@ void CLocationGeoTagTimerAO::StartTimer()
         
         //3 AM in seconds
         TInt targetTimeInSeconds = GEOTAGGING_TIME_IN_HOURS * HOUR_VALUE_IN_SECONDS;
-        TInt timeDifference;
+        TInt timeDifference = 0;
         
         //Find the time difference in seconds between current time to 3.00 AM 
         //Either on same day or next day.
-        if ( currentHr <= GEOTAGGING_TIME_IN_HOURS )
+        if ( currentHr < GEOTAGGING_TIME_IN_HOURS )
         {
            timeDifference = targetTimeInSeconds - 
                     ( ( currentHr * HOUR_VALUE_IN_SECONDS  ) + ( currentMin * HOUR_VALUE_IN_MINUTES ) + currentSec );
@@ -145,30 +145,26 @@ void CLocationGeoTagTimerAO::RunL( )
     {
     LOG ("CLocationGeoTagTimerAO::RunL(), begin");
     TInt status = iStatus.Int();
+    LOG1 ("Timedout error - %d", status);
    
     switch( status )
         {
-        case KErrAbort:
-            StartTimer();
-            break;
-        case KErrUnderflow:
-        case KErrOverflow:
-            StartTimer();
-            break;
         case KErrNone:
             {
             //Trigger the reverse geocoding and start the timer again
             //Create the instance of geotagger class
-            if(iGeoTagger)
+            if(iGeoTagger != NULL)
                 {
                 delete iGeoTagger;
                 iGeoTagger = NULL;
                 }
             iGeoTagger = CGeoTagger::NewL( this, NULL );
             iGeoTagger->CreateGeoTagsL();
+            LOG ("Started 3:00 AM geotagging.");
             break;
             }
         default:
+            StartTimer();
             break;      
        }
     LOG ("CLocationGeoTagTimerAO::RunL(), end");
@@ -181,8 +177,6 @@ void CLocationGeoTagTimerAO::RunL( )
 void CLocationGeoTagTimerAO::GeoTaggingCompleted(  const TInt aError )
     {    
     LOG ("CLocationGeoTagTimerAO::GeoTaggingCompleted(), begin");
-    delete iGeoTagger;
-    iGeoTagger = NULL;
     StartTimer();
     iObserver.GeoTaggingCompleted(aError);
     LOG ("CLocationGeoTagTimerAO::GeoTaggingCompleted(), end");

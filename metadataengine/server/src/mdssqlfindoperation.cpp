@@ -86,7 +86,9 @@ CMdSSqlFindOperation::~CMdSSqlFindOperation()
     iQueryId.Close();
 
    	delete iResults;
+   	iResults = NULL;
    	delete iFindClause;
+   	iFindClause = NULL;
     }
 
 TInt CMdSSqlFindOperation::ExecuteL()

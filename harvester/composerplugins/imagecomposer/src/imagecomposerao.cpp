@@ -71,16 +71,20 @@ CImageComposerAO::~CImageComposerAO() // destruct
     if ( iMdeObject )
         {
         delete iMdeObject;
+        iMdeObject = NULL;
         }
     if ( iExifUtil )
     	{
     	delete iExifUtil;
+    	iExifUtil = NULL;
     	}
 
     delete iRelationQuery;
+    iRelationQuery = NULL;
     iFs.Close();
     
     delete iMdEHarvesterSession;
+    iMdEHarvesterSession = NULL;
     }
 
 // ---------------------------------------------------------------------------

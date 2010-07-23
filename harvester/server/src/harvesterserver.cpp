@@ -444,8 +444,11 @@ CHarvesterServer::~CHarvesterServer()
     OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_CHARVESTERSERVER, "CHarvesterServer::~CHarvesterServer" );
     
     delete iHarvesterAO;
+    iHarvesterAO = NULL;
     delete iPauseObserverAO;
+    iPauseObserverAO = NULL;
     delete iShutdownObserver;
+    iShutdownObserver = NULL;
     OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERSERVER_CHARVESTERSERVER, "CHarvesterServer::~CHarvesterServer end" );
     
     WRITELOG( "CHarvesterServer::~CHarvesterServer() end" );

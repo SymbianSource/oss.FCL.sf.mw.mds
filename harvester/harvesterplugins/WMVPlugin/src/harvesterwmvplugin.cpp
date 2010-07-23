@@ -89,9 +89,12 @@ CHarvesterWMVPlugin::~CHarvesterWMVPlugin()
     {
     WRITELOG( "CHarvesterWMVPlugin::~CHarvesterWMVPlugin()" );
     delete iPropDefs;
+    iPropDefs = NULL;
     
     delete iPhoneVideosPath;
+    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
+    iMmcVideosPath = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -151,6 +154,7 @@ void CHarvesterWMVPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
         {
         err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
         delete content;
+        content = NULL;
         }
     }
 

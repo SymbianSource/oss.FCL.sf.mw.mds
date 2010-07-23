@@ -48,6 +48,7 @@ CMdSSqLiteConnection::~CMdSSqLiteConnection()
     CloseDb();
 
     delete iDbFileName;
+    iDbFileName = NULL;    
 
     iNotFinishFindQuery = NULL;
     }

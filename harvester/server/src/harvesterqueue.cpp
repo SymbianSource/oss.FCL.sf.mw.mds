@@ -174,6 +174,7 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
     if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
     	{
     	err = iItemQueue.Insert( aItem, 0 );
+    	
     	if( !iHarvesterAO->IsActive() )
     	    {
             iHarvesterAO->SetPriority( KHarvesterPriorityMonitorPlugin );

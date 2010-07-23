@@ -209,7 +209,8 @@ EXPORT_C TInt CHarvesterPluginFactory::HarvestL( CHarvesterData* aHD )
 			
 		if( aHD->ObjectType() == EFastHarvest || aHD->Origin() == MdeConstants::Object::ECamera )
 		   	{
-		   	hpi->iQueue.Insert( aHD, 0 );
+		   	hpi->iQueue.InsertL( aHD, 0 );
+		   	
 		   	if( !hpi->iPlugin->IsActive() )
 		   	    {
 	            hpi->iPlugin->SetPriority( KHarvesterPriorityHarvestingPlugin + 1 );

@@ -161,8 +161,10 @@ void CWatchdog::Start()
 //
 CWatchdog::~CWatchdog()
     {
-    delete iShutdownObserver;    
+    delete iShutdownObserver;
+    iShutdownObserver = NULL;
     delete iSelfShutdownObserver;
+    iSelfShutdownObserver = NULL;
     Cancel();
     }
 
@@ -304,5 +306,6 @@ TInt E32Main()
         }
   
     delete cleanupStack;
+    cleanupStack = NULL;
     return err;
     }

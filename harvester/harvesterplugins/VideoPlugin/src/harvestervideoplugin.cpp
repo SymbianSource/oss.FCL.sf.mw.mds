@@ -165,11 +165,14 @@ CHarvesterVideoPlugin* CHarvesterVideoPlugin::NewL()
 CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	{
 	delete iPropDefs;
+	iPropDefs = NULL;
 	iMimeTypeMappings.Close();
     RMediaIdUtil::ReleaseInstance();
 
     delete iPhoneVideosPath;
+    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
+    iMmcVideosPath = NULL;
     
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
@@ -591,10 +594,10 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     	CleanupClosePushL( mimes );
 
         TPtrC ext;
-        MdsUtils::GetExt( uri, ext );
+        const TBool exists = MdsUtils::GetExt( uri, ext );
         
         // Check for possibly protected content
-        if( ext.CompareF( KExtensionWmv ) == 0 )
+        if( exists && ext.CompareF( KExtensionWmv ) == 0 )
             {
             ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
             ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );

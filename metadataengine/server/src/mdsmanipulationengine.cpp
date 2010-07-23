@@ -93,8 +93,10 @@ void CMdSManipulationEngine::ConstructL()
 CMdSManipulationEngine::~CMdSManipulationEngine()
     {
     delete iManipulate;
+    iManipulate = NULL;
     
     delete iGarbageCollector;
+    iGarbageCollector = NULL;
     }
 
 // ---------------------------------------------------------------------------

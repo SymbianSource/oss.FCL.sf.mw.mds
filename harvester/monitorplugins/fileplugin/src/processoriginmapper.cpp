@@ -59,6 +59,7 @@ CProcessOriginMapper* CProcessOriginMapper::NewL()
 CProcessOriginMapper::~CProcessOriginMapper()
     {
     delete iLineBuffer;
+    iLineBuffer = NULL;
     iProcessOriginMap.Close();
     iReadStream.Close();
     iWriteStream.Close();

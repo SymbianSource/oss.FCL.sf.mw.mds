@@ -62,6 +62,7 @@ void CMdETextPropertyCondition::ConstructL(const TDesC& aText)
 CMdETextPropertyCondition::~CMdETextPropertyCondition()
 	{
     delete iText;
+    iText = NULL;
 	}
 
 TUint32 CMdETextPropertyCondition::InternalQueryOptimizationFlags(TUint32& aFlags)

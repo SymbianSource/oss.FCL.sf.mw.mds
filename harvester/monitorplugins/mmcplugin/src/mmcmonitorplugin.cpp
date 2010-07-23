@@ -60,21 +60,26 @@ CMMCMonitorPlugin::~CMMCMonitorPlugin() // destruct
     	{
     	iMMCMonitor->StopMonitoring();
     	delete iMMCMonitor;
+    	iMMCMonitor = NULL;
     	}
     
 	if (iUsbMonitor)
     	{
     	iUsbMonitor->StopMonitoring();
     	delete iUsbMonitor;
+    	iUsbMonitor = NULL;
     	}
     
 	if (iMountTask)
     	{
     	delete iMountTask;
+    	iMountTask = NULL;
     	}
 	
 	delete iMmcScanner;
+	iMmcScanner = NULL;
 	delete iHddScanner;
+	iHddScanner = NULL;
 	
 	iFs.Close();
     }
@@ -219,6 +224,7 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 
     TMountData* mountData = NULL;
     mountData = new TMountData;
+    
     if ( !mountData )
         {
         return;
@@ -248,7 +254,13 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EMounted" );
             mountData->iMountType = TMountData::EMount;
-            iMountTask->StartMount( *mountData );
+            TRAPD(err, iMountTask->StartMountL( *mountData ))
+			
+            if(err != KErrNone )
+                {
+                delete mountData;
+                mountData = NULL;
+                }
             }
         break;
         
@@ -262,7 +274,13 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             	{
 	            WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EDismounted" );
 	            mountData->iMountType = TMountData::EUnmount;
-	            iMountTask->StartUnmount( *mountData );
+	            TRAPD(err, iMountTask->StartUnmountL( *mountData ));
+	            
+	            if(err != KErrNone )
+	                {
+	                delete mountData;
+	                mountData = NULL;
+	                }
             	}
             else
                 {
@@ -276,7 +294,13 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EFormatted" );
             mountData->iMountType = TMountData::EFormat;
-            iMountTask->StartUnmount( *mountData );
+            TRAPD(err, iMountTask->StartUnmountL( *mountData ));
+			
+            if(err != KErrNone)
+                {
+                delete mountData;
+                mountData = NULL;
+                }
             }
         break;
         

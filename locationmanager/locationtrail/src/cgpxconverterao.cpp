@@ -82,11 +82,14 @@ CGpxConverterAO::~CGpxConverterAO()
     iBoundQueue.Close();
 
     delete iTempFile;
+    iTempFile = NULL;
     delete iBoundaries;
+    iBoundaries = NULL;
         
     delete iWriteBuf;
+    iWriteBuf = NULL;
     delete iFormatBuf;
-
+    iFormatBuf = NULL;
 	LOG( "CGpxConverterAO::~CGpxConverterAO ,end" );
     }
 
@@ -179,7 +182,9 @@ void CGpxConverterAO::RunL()
 				TInt err;
 				iFixLost = ETrue;
                 delete iTempFile;
+                iTempFile = NULL;
                 delete iBoundaries;
+                iBoundaries = NULL;
 				// get next temp-file from queue
 				iTempFile = iFileQueue[0];
 				iBoundaries = iBoundQueue[0];

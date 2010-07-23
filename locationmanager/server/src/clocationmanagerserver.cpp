@@ -33,9 +33,7 @@
 #include "mdeobjectdef.h"
 #include "mdepropertydef.h"
 #include "mdcserializationbuffer.h"
-#ifdef LOC_REVERSEGEOCODE
 #include "clocationgeotagtimerao.h"
-#endif //LOC_REVERSEGEOCODE
 #include "nwregistrationstatushandler.h"
 
 using namespace MdeConstants;
@@ -116,9 +114,9 @@ CLocationManagerServer::CLocationManagerServer()
                      iTelServerIsOpen(EFalse),
                      iPhoneIsOpen(EFalse),
                      iNwRegistrationStatusHandler(NULL),
-                     iHomeNwInfoAvailableFlag(EFalse)
+                     iHomeNwInfoAvailableFlag(EFalse),
+                     iGeoTagTimer(NULL)
 #ifdef LOC_REVERSEGEOCODE
-                     ,iGeoTagTimer(NULL)
 					 ,iGeoTaggingPendingReqObj(NULL)
 					 ,iEcomSession(NULL)
 #endif //LOC_REVERSEGEOCODE
@@ -171,31 +169,32 @@ void CLocationManagerServer::ConstructL()
         CRepository* repository = CRepository::NewLC( KRepositoryUid );
     	TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
     	
-        LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay:%d", iLocManStopDelay);
+        LOG1("iLocManStopDelay:%d", iLocManStopDelay);
         
         if ( err != KErrNone )
         	{
-            LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay err:%d", err);
+            LOG1("iLocManStopDelay err:%d", err);
             iLocManStopDelay = KLocationTrailShutdownDelay;
         	}
 
         err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
         CleanupStack::PopAndDestroy( repository );
         
-        LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
+        LOG1("iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
         
         if ( err != KErrNone )
             {
-            LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay err:%d", err);
+            LOG1("iLocManStopRemapDelay err:%d", err);
             iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
             }
         
-#ifdef LOC_REVERSEGEOCODE
         //Create the instance of the geotagging timer object
+        // Create timer, if n/w or reverse geo code based feature flag is enabled
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
         iGeoTagTimer = CLocationGeoTagTimerAO::NewL(*iMdeSession, *this);
         //Schedule a task for geotagging every day at 3.00 AM
         iGeoTagTimer->StartTimer();
-#endif //LOC_REVERSEGEOCODE
+#endif        
         }
     else
         {
@@ -213,18 +212,27 @@ void CLocationManagerServer::ConstructL()
 CLocationManagerServer::~CLocationManagerServer()
     {
 	LOG("CLocationManagerServer::~CLocationManagerServer ,begin");
-
-#ifdef LOC_REVERSEGEOCODE
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
     delete iGeoTagTimer;
+    iGeoTagTimer = NULL;
+#endif    
+#ifdef LOC_REVERSEGEOCODE
     delete iGeoTaggingPendingReqObj;
+    iGeoTaggingPendingReqObj = NULL;
 #endif //LOC_REVERSEGEOCODE
     
     delete iLocationRecord;    
+    iLocationRecord = NULL;
     delete iTrackLog;    
+    iTrackLog = NULL;
     delete iTimer;
+    iTimer = NULL;
     delete iASW;
+    iASW = NULL;
     delete iMdeSession;
+    iMdeSession = NULL;
     delete iNwRegistrationStatusHandler;
+    iNwRegistrationStatusHandler = NULL;
     iTargetObjectIds.Close();
     CancelRequests(iNotifReqs);
     iNotifReqs.Close();
@@ -474,14 +482,9 @@ void CLocationManagerServer::AddSession()
 //    
 void CLocationManagerServer::RemoveSession()
     {
+    LOG1( "CLocationManagerServer::RemoveSession. Session count - %d", iSessionCount);
     iSessionCount--;
-    if ( !iSessionCount 
-        && iLocationRecord 
-        && !iLocationRecord->TaggingInProgress())
-        {
-        // Nothing in progress. shutdown the server
-        CActiveScheduler::Stop();
-        }
+    StopServer();
     }    
 
 // --------------------------------------------------------------------------
@@ -1657,17 +1660,37 @@ void CLocationManagerServer::GeoTaggingCompleted(  const TInt aError  )
 		iGeoTaggingMessage = RMessage2 ();
     	}
 #endif //LOC_REVERSEGEOCODE
+    StopServer();
+	LOG("CLocationManagerServer::GeoTaggingCompleted ,end");
+    }
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StopServer
+// --------------------------------------------------------------------------
+//
+
+void CLocationManagerServer::StopServer()
+    {    
+    LOG("CLocationManagerServer::StopServer ,begin");
     // once geo tagging completed, check whether, we can terminate the server
+    // dont't stop this process if
+    // 1. when client are connected.
+    // 2. 3AM timer is going on.
+    // 3. Tagging is in progress.
     if ( !iSessionCount 
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
+        && iGeoTagTimer == NULL
+#endif        
         && iLocationRecord 
         && !iLocationRecord->TaggingInProgress())
         {
         // Nothing in progress. shutdown the server
+        LOG("Stop the schedular");
         CActiveScheduler::Stop();
         }
-	LOG("CLocationManagerServer::GeoTaggingCompleted ,end");
+	LOG("CLocationManagerServer::StopServer ,end");
     }
-
 
 // --------------------------------------------------------------------------
 // CLocationManagerServer::PendingGeoTagReqComplete
@@ -1788,7 +1811,7 @@ void CLocationManagerServer::CancelGeoTaggingRequest( const RMessage2& aMessage 
         }
     aMessage.Complete(KErrNone);
 #else
-        aMessage.Complete(KErrNotSupported);
+    aMessage.Complete(KErrNotSupported);
 #endif //LOC_REVERSEGEOCODE
     }
 

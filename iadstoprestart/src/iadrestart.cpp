@@ -55,6 +55,7 @@ GLDEF_C TInt E32Main()
     TRAP(err, MainL());
 
     delete cleanup;
+    cleanup = NULL;
     __UHEAP_MARKEND;
     return err;
     }

@@ -71,6 +71,7 @@ CFileMonitorAO::~CFileMonitorAO()
     StopMonitoring();
 
     delete iMdeSession;
+    iMdeSession = NULL;
     }
 
 // ---------------------------------------------------------------------------

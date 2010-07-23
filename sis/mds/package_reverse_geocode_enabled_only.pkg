@@ -93,6 +93,11 @@
 "\EPOC32\RELEASE\ARMV5\UREL\LocationTrail.dll" -"c:\sys\bin\LocationTrail.dll"
 "\EPOC32\RELEASE\ARMV5\UREL\locationmanager.dll" -"c:\sys\bin\locationmanager.dll"
 "\EPOC32\RELEASE\ARMV5\UREL\locationmanagerserver.exe" -"c:\sys\bin\locationmanagerserver.exe"
+"\EPOC32\RELEASE\ARMV5\UREL\ReverseGeocode.dll" -"c:\sys\bin\ReverseGeocode.dll"
+"\EPOC32\RELEASE\ARMV5\UREL\tagcreator.dll" -"c:\sys\bin\tagcreator.dll"
+"\EPOC32\RELEASE\ARMV5\UREL\geotagger.dll" -"c:\sys\bin\geotagger.dll"
+"\epoc32\RELEASE\armv5\UREL\ReverseGeoCoderPlugin.dll"-"c:\sys\bin\ReverseGeoCoderPlugin.dll"
+"\epoc32\data\z\resource\plugins\reversegeocoderplugin.rsc"-"c:\resource\plugins\reversegeocoderplugin.rsc"
 
 ; metadata engine
 "\EPOC32\RELEASE\ARMV5\UREL\mdeclient.dll" -"c:\sys\bin\mdeclient.dll"

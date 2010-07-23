@@ -47,8 +47,11 @@ USERINCLUDE     ../../tagcreator/inc
 USERINCLUDE     ../../ReverseGeocode/inc 
 #endif
 
-
+#ifdef     _LOC_GEOTAGGING_CELLID
+MACRO LOC_GEOTAGGING_CELLID
 USERINCLUDE     ../../geoconverter/inc
+#endif
+
 
 SYSTEMINCLUDE     /epoc32/include/platform/lbs
 SYSTEMINCLUDE     /epoc32/include/stdapis
@@ -58,9 +61,7 @@ MW_LAYER_SYSTEMINCLUDE
 SOURCEPATH      ../src
 SOURCE	    clocationmanagerserver.cpp
 SOURCE	    clocationmanagersession.cpp
-#ifdef _LOC_REVERSEGEOCODE
 SOURCE	    clocationgeotagtimerao.cpp 
-#endif
 SOURCE	    clocationservertimerhandler.cpp
 SOURCE      nwregistrationstatushandler.cpp
 
@@ -79,9 +80,7 @@ LIBRARY         etel.lib
 LIBRARY         etelmm.lib
 LIBRARY         commsdat.lib
 
-#ifdef _LOC_REVERSEGEOCODE
 LIBRARY         geotagger.lib
-#endif
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

@@ -31,7 +31,7 @@
  *  @since S60 9.2
  */
  
-class CGeoTagger : public CBase
+NONSHARABLE_CLASS(CGeoTagger) : public CBase
     {
 public:  
     /**

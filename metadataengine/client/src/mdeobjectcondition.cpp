@@ -144,15 +144,18 @@ void CMdEObjectCondition::ConstructL( const RArray<TItemId>* aObjectIds,
 CMdEObjectCondition::~CMdEObjectCondition()
 	{
    	delete iString;
+   	iString = NULL;
 
    	if( iObjectIds )
     	{
     	iObjectIds->Close();
     	
     	delete iObjectIds;
+    	iObjectIds = NULL;
     	}
     
    	delete iRange;
+   	iRange = NULL;
 	}
 
 EXPORT_C const CMdEObjectDef* CMdEObjectCondition::ObjectDef() const

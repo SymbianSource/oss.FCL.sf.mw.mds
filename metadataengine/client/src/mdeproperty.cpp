@@ -95,6 +95,7 @@ CMdEProperty::~CMdEProperty()
 	if (iDef.PropertyType() == EPropertyText)
 		{
 		delete iValue.iText;
+		iValue.iText = NULL;
 		}
 	}
 

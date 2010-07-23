@@ -281,8 +281,8 @@ void CInternalReverseGeocode::OnParseCompletedL( TInt aError, MAddressInfo& aLoc
 // ---------------------------------------------------------------------------- 
 void CInternalReverseGeocode::ClientEvent( const THttpStatus& aEvent )
     {
-    LOG( "CInternalReverseGeocode::ClientEvent,begin" );
-    TInt err;
+    LOG1( "CInternalReverseGeocode::ClientEvent,begin. Err - %d", aEvent);
+    TInt err = KErrNone;
     //Have a Switch here
     switch( aEvent )
         {
@@ -318,6 +318,11 @@ void CInternalReverseGeocode::ClientEvent( const THttpStatus& aEvent )
             err = KErrPermissionDenied;
             iObserver.ReverseGeocodeComplete( err , *iAddressInfo );
             break;
+        }
+    if(err != KErrNone)
+        {
+        LOG("Error occur while getting data.");
+        StartTimer();
         }
 	LOG( "CInternalReverseGeocode::ClientEvent,end" );
     }

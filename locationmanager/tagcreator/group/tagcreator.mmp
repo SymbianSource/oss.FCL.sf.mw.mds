@@ -27,7 +27,7 @@ CAPABILITY 	    CAP_GENERAL_DLL
 
 #if defined(WINSCW)
 deffile ../bwincw/tagcreatorwinscw.def
-#elif defined(ARMCC)
+#elif defined(EABI)
 deffile ../eabi/tagcreatorarm.def
 #endif
 nostrictdef
