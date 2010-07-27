@@ -65,7 +65,7 @@
     /**
      * Macro for defining debug-only literal strings (empty release version)
      */
-    #define MG_DEBUG_STRING(name, s) const TMGEmptyDebugString name
+    #define MG_DEBUG_STRING(name, s) const TMGEmptyDebugString name = {}
 
     /**
      * Output to debugger output (empty)

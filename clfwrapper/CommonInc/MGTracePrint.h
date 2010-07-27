@@ -65,7 +65,7 @@
     /**
      * Macro for defining debug-only literal strings (empty release version)
      */
-    #define MG_TRACE_STRING(name, s) const TMGEmptyTraceString name
+    #define MG_TRACE_STRING(name, s) const TMGEmptyTraceString name = {}
 
     /**
      * Output to debugger output (empty)
