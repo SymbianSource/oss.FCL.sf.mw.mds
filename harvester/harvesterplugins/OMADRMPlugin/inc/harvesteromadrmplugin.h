@@ -100,7 +100,8 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterOmaDrmPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+        static CHarvesterOmaDrmPluginPropertyDefs* NewL();
+        void SetByObjectDefL( CMdEObjectDef& aObjectDef) ;
 	};
 
 class CHarvesterOMADRMPlugin : public CHarvesterPlugin
@@ -173,6 +174,8 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
 		*/
 		void ConstructL();
 		
+	    void InitPropDefsL( CMdEObjectDef& aObjectDef );
+	      
   protected:
         /** 
          * Handle to File server session.

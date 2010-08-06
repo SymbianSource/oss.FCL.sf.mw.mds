@@ -25,16 +25,14 @@
 
 #include "harvesterclient.h"
 
-class RHarvesterClient;
-class MHarvestObserver;
-
 NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
     {
     public:
         /**
         * Construction.
         */
-        static CHarvesterClientAO* NewL( RHarvesterClient &aHarvesterClient );
+        static CHarvesterClientAO* NewL( RHarvesterClient& aHarvesterClient,
+                                                            CHarvesterNotificationQueue* aNotificationQueue );
 
         /**
         * Destruction.
@@ -46,20 +44,14 @@ NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
         * @param aObserver  Pointer to observer object.
         */
         void SetObserver( MHarvestObserver* aObserver );
-
-        /**
-        * Method for removing an observer.
-        * @param aObserver  Pointer to observer object.
-        */		
-        void RemoveObserver( MHarvestObserver* aObserver );
-        
-        void NotificateObserver( TInt aErr );
         
         /**
          * Set AO to active state. RunL is launched from harvesting complete
          * request which are subscribed from server.
          */ 
-        void Active();
+        void Active( TDesC& aUri );
+        
+        TBool RequestComplete();
         
     protected:
 		
@@ -88,7 +80,8 @@ NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
         * 
         * @param aHarvesterClient Reference to session class
         */	
-        CHarvesterClientAO( RHarvesterClient &aHarvesterClient );
+        CHarvesterClientAO( RHarvesterClient& aHarvesterClient,
+                                           CHarvesterNotificationQueue* aNotificationQueue );
 
         /**
         * 2nd phase construction
@@ -104,13 +97,20 @@ NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
 
         /**
         * Reference to Harvester client session
-        */   	
+        */      
         RHarvesterClient& iHarvesterClient;
+        
+        /**
+        * Pointer to harvest notification request queue, not owned
+        */   	
+        CHarvesterNotificationQueue* iNotificationQueue;
 
         /**
          * Harvester server assigned file name
          */ 
-        TFileName iURI;
+        HBufC* iURI;
+        
+        TBool iRequestComplete;
     };
 
 #endif // __CHARVESTERCLIENTAO_H__

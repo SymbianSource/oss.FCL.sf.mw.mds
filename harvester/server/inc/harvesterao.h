@@ -74,7 +74,8 @@ class CHarvesterAoPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterAoPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+        static CHarvesterAoPropertyDefs* NewL();
+        void SetByObjectDefL( CMdEObjectDef& aObjectDef );
 	};
 
 /**
@@ -554,8 +555,6 @@ class CHarvesterAO : public CActive,
         CHarvesterMediaIdUtil* iMediaIdUtil;
         
         CHarvesterAoPropertyDefs* iPropDefs;
-        
-        TBool iMassMemoryIdChecked;
         
         // Own.
         CDesCArray* iCameraExtensionArray;

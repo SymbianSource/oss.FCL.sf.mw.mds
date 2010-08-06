@@ -425,7 +425,6 @@ TBool CInternalReverseGeocode::SilentConnectionAllowed()
     return retVal;
     }
 
-
 // ----------------------------------------------------------------------------
 // CInternalReverseGeocode::GetCurrentRegisterNw()
 // ---------------------------------------------------------------------------- 

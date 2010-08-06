@@ -120,11 +120,6 @@ public:   //observer methods
       */        
     void AddressInfoL( const TItemId aCountryTagId, const TItemId aCityTagId );
 
-    /**
-       * Remove location info incase reverse geo code fails.
-      * @param aLocationId location id
-      */        
-    void RemoveLocationInfoOnFailureL(const TItemId aLocationId);
     
     //MReverseGeocodeObserver
     /**

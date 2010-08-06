@@ -102,10 +102,11 @@ class CHarvesterImagePluginPropertyDefs : public CBase
 	private:
 		CHarvesterImagePluginPropertyDefs();
 	
-		void ConstructL(CMdEObjectDef& aObjectDef);
+		void ConstructL( CMdEObjectDef& aObjectDef );
 
 	public:	
-		static CHarvesterImagePluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+		static CHarvesterImagePluginPropertyDefs* NewL();
+		void SetByObjectDefL( CMdEObjectDef& aObjectDef) ;
 	};
 
 class CHarvesterImagePlugin : public CHarvesterPlugin
@@ -168,7 +169,9 @@ class CHarvesterImagePlugin : public CHarvesterPlugin
 		
 		// 2nd phase constructor
 		void ConstructL();
-	
+		
+		void InitPropDefsL( CMdEObjectDef& aObjectDef );
+
 	private:
 	
 		enum TImageMetadataHandling

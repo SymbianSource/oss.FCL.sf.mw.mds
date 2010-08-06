@@ -44,7 +44,7 @@ CXmlHandler* CXmlHandler::NewL( MXmlHandlerObserver& aObserver,  CInternalAddres
     {
     LOG("CXmlHandler::NewL ,begin");
     CXmlHandler* self = CXmlHandler::NewLC( aObserver, aAddressInfo );
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //self
     return self;
     }
 

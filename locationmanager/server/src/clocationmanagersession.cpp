@@ -52,8 +52,8 @@ CLocationManagerSession::~CLocationManagerSession()
     // we are expecting the application to start and stop else on server terminate, we will do the same.
     // this is not okay when user takes a photograph and then transfer photo using BT/PC .
     // at this point, it will stop the trail for camera where as camera session is still valid.
-    // DON"T CALL StopGPSPositioningL METHOD.
-//    TRAP_IGNORE(Server().StopGPSPositioningL());
+    
+
     Server().CancelNotificationRequest( iNotificationHandle );
     Server().CancelLocationRequest( iLocationHandle );
     Server().CancelTrackLogNotificationRequest( iTrackLogNotificationHandle );

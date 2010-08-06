@@ -66,4 +66,5 @@ EXPORTS
 	?HandleObjectPropertyL@CMdeObjectWrapper@@SAXAAVCMdEObject@@AAVCMdEPropertyDef@@PAXH@Z @ 65 NONAME ; void CMdeObjectWrapper::HandleObjectPropertyL(class CMdEObject &, class CMdEPropertyDef &, void *, int)
 	?SendHarvestingStatusEventL@CHarvesterPluginFactory@@QAEXH@Z @ 66 NONAME ; void CHarvesterPluginFactory::SendHarvestingStatusEventL(int)
 	?PauseHarvester@CHarvesterPluginFactory@@QAEXH@Z @ 67 NONAME ; void CHarvesterPluginFactory::PauseHarvester(int)
+	?GetObjectDefL@CHarvesterPluginFactory@@QAEXPAVCHarvesterData@@AAVTDes16@@@Z @ 68 NONAME ; void CHarvesterPluginFactory::GetObjectDefL(class CHarvesterData *, class TDes16 &)
 

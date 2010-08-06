@@ -49,7 +49,7 @@ CNwRegistrationStatusHandler* CNwRegistrationStatusHandler::NewL(RMobilePhone& a
     CNwRegistrationStatusHandler* self = new( ELeave ) CNwRegistrationStatusHandler(aMobilePhone);
        CleanupStack::PushL( self );
        self->ConstructL();
-       CleanupStack::Pop();
+       CleanupStack::Pop(); //self
        
        return self;
     }

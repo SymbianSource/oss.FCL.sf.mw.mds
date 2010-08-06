@@ -136,16 +136,12 @@ void CLocationRecord::ConstructL()
 #ifdef LOC_REVERSEGEOCODE
     iTagCreator = CTagCreator::NewL();
 
+    iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
+          REComSession::CreateImplementationL(KReverseGeoCodeUid,iDtorKey));
 
-    if (!iRevGeocoderPlugin)
-        {
-        iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
-              REComSession::CreateImplementationL(KReverseGeoCodeUid,iDtorKey));
-        if(iRevGeocoderPlugin)
-            {
-            iRevGeocoderPlugin->AddObserverL(*this);
-            }
-         }
+     iRevGeocoderPlugin->AddObserverL(*this);
+
+
  
  #endif
 
@@ -362,7 +358,7 @@ EXPORT_C void CLocationRecord::GetLocationByTimeL( const TTime aTime,
     LOG1( "CLocationRecord::GetLocationByTimeL - aTime: %Ld", aTime.Int64() );
     TBuf<DateTimeStrMaxLength> str1;
     aTime.FormatL( str1, KDateTimeFormat );
-   // LOG1( "CLocationRecord::GetLocationByTimeL - aTime: %S", &str1 );
+    LOG1( "CLocationRecord::GetLocationByTimeL - aTime: %S", &str1 );
 #endif
 
     TTimeIntervalSeconds interval;
@@ -377,7 +373,7 @@ EXPORT_C void CLocationRecord::GetLocationByTimeL( const TTime aTime,
         LOG1( "CLocationRecord::GetLocationByTimeL - Trail timestamp: %Ld", iTrail[i]->iTimeStamp.Int64() );
         TBuf<DateTimeStrMaxLength> str;
         iTrail[i]->iTimeStamp.FormatL( str, KDateTimeFormat );
-        //LOG1( "CLocationRecord::GetLocationByTimeL - Trail timestamp: %S", &str );
+        LOG1( "CLocationRecord::GetLocationByTimeL - Trail timestamp: %S", &str );
         LOG1( "CLocationRecord::GetLocationByTimeL - timeDiff: %d", timeDiff );
 #endif
 
@@ -1207,8 +1203,6 @@ void CLocationRecord::FindLocationFromDBL()
      const TReal64 KMeterInDegrees = 0.000009;
      const TReal64 KPi = 3.14159265358979;
      const TReal32 K180Degrees = 180.0;
-     
-     //TLocationData locationData = iMediaItems[0].iLocationData;
             
      TReal64 latitude = iMediaItems[0]->iLocationData.iPosition.Latitude();
      TReal64 longitude = iMediaItems[0]->iLocationData.iPosition.Longitude();
@@ -1581,7 +1575,6 @@ void CLocationRecord::HandleFindLocationFromDB()
     LOG( "CLocationRecord::HandleFindLocationFromDB(), begin" );    
 	if ( iMediaItems.Count() > 0 )
 	   {
-		//TODO: by module owner
 		TInt trapErr = KErrNone;
 		TRAP(trapErr,FindLocationFromDBL());
 		// no memory, don't proceed further
@@ -1852,10 +1845,21 @@ void CLocationRecord::HandleNetLocationQueryL( CMdEQuery& aQuery )
             iMediaHandlingFlag &= ~KSnapGeoConvertInPendingState;
             }
 #else
+        // cell id based geo tagging is not supported.. go for remapping.
         locationId = DoCreateLocationL( iMediaItems[0]->iLocationData );
         iMediaItems[0]->iLocationId = locationId;
-        CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+        TItemId relationId = CreateRelationL( iMediaItems[0]->iObjectId, locationId );
         TLocationSnapshotItem* firstPtr = iMediaItems[0];
+
+        // Go for remapping.. get locationdata from trail with object time
+        TTime timestamp = GetMdeObjectTimeL( iMediaItems[0]->iObjectId );
+        TRemapItem remapItem;
+        remapItem.iObjectId = iMediaItems[0]->iObjectId;
+        remapItem.iTime = timestamp;
+        remapItem.iLocationId = locationId;
+        remapItem.iRelationId = relationId;
+        iRemapper->Append( remapItem );
+        
         iMediaItems.Remove(0);
         delete firstPtr;
         iMediaItems.Compress();
@@ -1909,7 +1913,6 @@ void CLocationRecord::ConversionCompletedL( const TInt aError, TLocality& aPosit
             iNewItem.iLocationData.iQuality = aPosition.HorizontalAccuracy();
             TItemId locationId = DoCreateLocationL( iNewItem.iLocationData );
             iRemapper->UpdateRelationsL( locationId ); 
-            // TODO: remap.
 #ifdef LOC_REVERSEGEOCODE
             if(!(iMediaHandlingFlag & KReverseGeoCodingInProgress))
                 {
@@ -1939,7 +1942,17 @@ void CLocationRecord::ConversionCompletedL( const TInt aError, TLocality& aPosit
            TLocationSnapshotItem* item = iMediaItems[0];
            TItemId locationId = DoCreateLocationL( iMediaItems[0]->iLocationData );
            iMediaItems[0]->iLocationId = locationId;
-           CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+           TItemId relationId = CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+
+           // Go for remapping.. get locationdata from trail with object time
+           TTime timestamp = GetMdeObjectTimeL( iMediaItems[0]->iObjectId );
+           TRemapItem remapItem;
+           remapItem.iObjectId = iMediaItems[0]->iObjectId;
+           remapItem.iTime = timestamp;
+           remapItem.iLocationId = locationId;
+           remapItem.iRelationId = relationId;
+           iRemapper->Append( remapItem );
+
            if((iMediaItems[0]->iFlag & KSnapMediaFile) > 0)
                {
                iLastMediaItem = *(iMediaItems[0]);
@@ -1983,7 +1996,16 @@ void CLocationRecord::ConversionCompletedL( const TInt aError, TLocality& aPosit
                 // Fails may be becuase of n/w reason..create location + relation so that we can handle at 3:00 AM.
                 TItemId locationId = DoCreateLocationL( iMediaItems[0]->iLocationData );
                 iMediaItems[0]->iLocationId = locationId;
-                CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+                TItemId relationId = CreateRelationL( iMediaItems[0]->iObjectId, locationId );
+
+                // Go for remapping.. get locationdata from trail with object time
+                TTime timestamp = GetMdeObjectTimeL( iMediaItems[0]->iObjectId );
+                TRemapItem remapItem;
+                remapItem.iObjectId = iMediaItems[0]->iObjectId;
+                remapItem.iTime = timestamp;
+                remapItem.iLocationId = locationId;
+                remapItem.iRelationId = relationId;
+                iRemapper->Append( remapItem );
 
                 iMediaItems.Remove(0);
                 iMediaItems.Compress();
@@ -2242,7 +2264,6 @@ void CLocationRecord::FindLocationWithSameNetInfoL()
             
         iNetLocationQuery->FindL(1, 1); 
         iMediaHandlingFlag |= KLocationQueryInProgress;
-    //    iMediaHandlingFlag |= KNetQueryInProgress;
         }
     else
         {

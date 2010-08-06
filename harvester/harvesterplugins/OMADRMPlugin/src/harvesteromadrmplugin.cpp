@@ -48,11 +48,24 @@ _LIT( KRingingToneMime, "application/vnd.nokia.ringing-tone" );
 
 _LIT(KInUse, "InUse");
 
-CHarvesterOmaDrmPluginPropertyDefs::CHarvesterOmaDrmPluginPropertyDefs() : CBase()
+CHarvesterOmaDrmPluginPropertyDefs::CHarvesterOmaDrmPluginPropertyDefs() : CBase(),
+    iCreationDatePropertyDef( NULL )
 	{
 	}
 
-void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
+void CHarvesterOmaDrmPluginPropertyDefs::ConstructL( CMdEObjectDef& aObjectDef )
+    {
+    SetByObjectDefL( aObjectDef );
+    }
+
+CHarvesterOmaDrmPluginPropertyDefs* CHarvesterOmaDrmPluginPropertyDefs::NewL()
+    {
+    CHarvesterOmaDrmPluginPropertyDefs* self = 
+        new (ELeave) CHarvesterOmaDrmPluginPropertyDefs();
+    return self;
+    }
+
+void CHarvesterOmaDrmPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef )
 	{
 	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 	
@@ -79,16 +92,6 @@ void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iBitsPerSamplePropertyDef = &imageDef.GetPropertyDefL( MdeConstants::Image::KBitsPerSampleProperty );
 	iFrameCountPropertyDef = &imageDef.GetPropertyDefL( MdeConstants::Image::KFrameCountProperty );
 	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
-	}
-
-CHarvesterOmaDrmPluginPropertyDefs* CHarvesterOmaDrmPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
-	{
-	CHarvesterOmaDrmPluginPropertyDefs* self = 
-		new (ELeave) CHarvesterOmaDrmPluginPropertyDefs();
-	CleanupStack::PushL( self );
-	self->ConstructL( aObjectDef );
-	CleanupStack::Pop( self );
-	return self;
 	}
 
 /**
@@ -140,9 +143,6 @@ CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()
     iPhoneSoundsPath = NULL;
     delete iMmcSoundsPath;
     iMmcSoundsPath = NULL;
-	
-	delete iPropDefs;
-	iPropDefs = NULL;
 	}
 
 /**
@@ -155,6 +155,8 @@ void CHarvesterOMADRMPlugin::ConstructL()
     
     User::LeaveIfError( iFs.Connect() );
 	
+    iPropDefs = CHarvesterOmaDrmPluginPropertyDefs::NewL();
+    
 	TFileName phoneRoot = PathInfo::PhoneMemoryRootPath();
 	TFileName mmcRoot = PathInfo::MemoryCardRootPath();
 	
@@ -194,6 +196,7 @@ void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHarvesterData )
 	WRITELOG( "CHarvesterImagePlugin::HarvestL()" );
     CMdEObject& mdeObject = aHarvesterData->MdeObject();
 	CDRMHarvestData* drmHarvestData = CDRMHarvestData::NewL();
+	CleanupStack::PushL( drmHarvestData );
 	
     CFileData* fileData = CFileData::NewL();
     CleanupStack::PushL( fileData );
@@ -230,7 +233,7 @@ void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHarvesterData )
         aHarvesterData->SetErrorCode( convertedError );
         }
 
-    CleanupStack::PopAndDestroy( 2, fileData );
+    CleanupStack::PopAndDestroy( 3, drmHarvestData );
 	}
 
 // ---------------------------------------------------------------------------
@@ -238,7 +241,7 @@ void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHarvesterData )
 // ---------------------------------------------------------------------------
 //
 TInt CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject, CDRMHarvestData& aDRMharvestData, 
-        CFileData& aFileData, CHarvestData& aHarvestData )
+        CFileData& aFileData, CHarvestData& /*aHarvestData*/ )
     {
     WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL" );
     
@@ -359,19 +362,13 @@ TInt CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject, CDRMHarve
 // HandleObjectPropertiesL
 // ---------------------------------------------------------------------------
 //
-void CHarvesterOMADRMPlugin::HandleObjectPropertiesL( CHarvestData& aHarvestData, CDRMHarvestData& aDRMharvestData, CFileData& aFileData, 
+void CHarvesterOMADRMPlugin::HandleObjectPropertiesL( CHarvestData& /*aHarvestData*/, CDRMHarvestData& aDRMharvestData, CFileData& aFileData, 
         CHarvesterData& aHarvesterData, TBool aIsAdd )
     {
     WRITELOG("CHarvesterOMADRMPlugin - HandleNewObject ");
     CMdEObject& mdeObject = aHarvesterData.MdeObject();
 
-    if( !iPropDefs )
-    	{
-    	CMdEObjectDef& objectDef = mdeObject.Def();
-    	iPropDefs = CHarvesterOmaDrmPluginPropertyDefs::NewL( objectDef );
-    	// Prefetch max text lengt for validity checking
-    	iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
-    	}
+    InitPropDefsL( mdeObject.Def() );
     
     TTimeIntervalSeconds timeOffset = User::UTCOffset();
     
@@ -644,6 +641,16 @@ void CHarvesterOMADRMPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
         err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
         delete content;
         content = NULL;
+        }
+    }
+
+void CHarvesterOMADRMPlugin::InitPropDefsL( CMdEObjectDef& aObjectDef )
+    {
+    if( !iPropDefs->iCreationDatePropertyDef )
+        {
+        iPropDefs->SetByObjectDefL( aObjectDef );
+        // Prefetch max text lengt for validity checking
+        iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
         }
     }
 

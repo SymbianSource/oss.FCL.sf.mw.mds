@@ -58,7 +58,6 @@ LIBRARY         lbslocationinfoconverter.lib
 LIBRARY         lbslocationinfodatatypes.lib
 #endif
 LIBRARY         lbs.lib
-DEBUGLIBRARY flogger.lib
 LIBRARY           libc.lib
 
 PAGED

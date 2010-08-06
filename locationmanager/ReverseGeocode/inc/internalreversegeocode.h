@@ -33,72 +33,70 @@ NONSHARABLE_CLASS( CInternalReverseGeocode ) : public CReverseGeocode,
                     public MConnectionTimeoutHandlerInterface
     {
 public:
-    /**
-        * Factory function to create the instance
-        * @param aObserver The observer instance that is to be notified when reverse geocoding is over
-        * @return A pointer to the CInternalReverseGeocode instance
-        */
+   /**
+    * Factory function to create the instance
+    * @param aObserver The observer instance that is to be notified when reverse geocoding is over
+    * @return A pointer to the CInternalReverseGeocode instance
+    */
     static CInternalReverseGeocode* NewL( MReverseGeocodeObserver& aObserver );
 
-    /**
-        * Gets the address for the given geo-coordinaates.
-        * @param aLocality  The locality information
-        *		   aOption    The connection option whether 	its silent or not
-        */			
+   /**
+    * Gets the address for the given geo-coordinaates.
+    * @param aLocality  The locality information
+    *		   aOption    The connection option whether 	its silent or not
+    */			
     virtual void GetAddressByCoordinateL( TLocality aLocality, const TConnectionOption aOption );
 
     /**
-        * Checks if a silent connection is allowed
-        * @return ETrue If silentconnection is allowed
-        */	
+     * Checks if a silent connection is allowed
+     * @return ETrue If silentconnection is allowed
+     */	
     virtual TBool SilentConnectionAllowed();
-    
-    
-    /**
-        * Helper function to get the appropriate language for the request.
-        * @param aLanguage  The language for the request 
-        */    
+   
+   /**
+    * Helper function to get the appropriate language for the request.
+    * @param aLanguage  The language for the request 
+    */    
     void GetLanguageForTheRequest( TDes8& aLanguage );
 
 
-    /**
-        * destructor
-        *
-        */	
+   /**
+    * destructor
+    *
+    */	
     ~CInternalReverseGeocode();
 
-    // MConnectionTimeoutHandlerInterface
-    /**
-        * Closes the connection once it times out
-        * @param aErrorCode The Error code
-        */    
+   // MConnectionTimeoutHandlerInterface
+   /**
+    * Closes the connection once it times out
+    * @param aErrorCode The Error code
+    */    
     void HandleTimedoutEvent(TInt aErrorCode);
     
 protected:
    
-    /**
-        * Second phase construction
-        */    
+   /**
+    * Second phase construction
+    */    
     void ConstructL();
-        
-    
+  
     /**
-        * First phase construction.
-        * @param aObserver The observer instance that is to be notified when reverse geocoding is over
-        */    
+    * First phase construction.
+    * @param aObserver The observer instance that is to be notified when reverse geocoding is over
+    */    
     CInternalReverseGeocode( MReverseGeocodeObserver& aObserver );
         
     //From MClientObserver
     /**
-        * callback which notifies progess of HTTP request
-        * @param aEvent The Httpstatus
-        */    
+    * callback which notifies progess of HTTP request
+    * @param aEvent The Httpstatus
+    */    
     void ClientEvent( const THttpStatus& aEvent );
 	
     /**
-        * callback through which the HTTP body data is recieved. 
-        * @param aBodyData The body recieved
-        */	
+    * callback through which the HTTP body data is recieved. 
+    * @param aBodyData The body recieved
+    */	
     void ClientBodyReceived(const TDesC8& aBodyData);
 
     /*
@@ -110,10 +108,10 @@ protected:
 
     //From MXmlHandlerObserver    
     /**
-        * callback which notifys the completion of parsing.
-        * @param aError The err code
-        * 		   aAddressInfo The address info obtained after parsing
-        */    
+    * callback which notifys the completion of parsing.
+    * @param aError The err code
+    * 		   aAddressInfo The address info obtained after parsing
+    */    
     void OnParseCompletedL( TInt aError, MAddressInfo& aAddressInfo ); 
     
     /*
@@ -135,13 +133,13 @@ protected:
 private:
 
     /**
-        * Starts the timer
-        */		
+     * Starts the timer
+     */		
     void StartTimer();
 
     /**
-        * Closes the http connection and notifies the observer
-        */	
+     * Closes the http connection and notifies the observer
+     */	
     void CloseConnection();
 
 private:

@@ -78,7 +78,6 @@ LIBRARY         ecom.lib
 LIBRARY         commsdat.lib
 
 LIBRARY        geotagger.lib
-DEBUGLIBRARY flogger.lib
 LIBRARY        libc.lib
 
 #ifdef _LOC_REVERSEGEOCODE

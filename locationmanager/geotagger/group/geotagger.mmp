@@ -68,7 +68,6 @@ LIBRARY         etel3rdparty.lib
 LIBRARY         estor.lib
 LIBRARY	        platformenv.lib
 
-DEBUGLIBRARY    flogger.lib
 LIBRARY         ecom.lib 
 LIBRARY	        libc.lib
 

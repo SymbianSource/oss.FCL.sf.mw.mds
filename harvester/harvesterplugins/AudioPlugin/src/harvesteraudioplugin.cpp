@@ -37,52 +37,55 @@ const TInt KMimeLength( 10 );
 const TUid KHarvesterRepoUid = { 0x200009FE };
 const TUint32 KEnableAlbumArtHarvest = 0x00090001;
 
-CHarvesterAudioPluginPropertyDefs::CHarvesterAudioPluginPropertyDefs() : CBase()
+CHarvesterAudioPluginPropertyDefs::CHarvesterAudioPluginPropertyDefs() : CBase(),
+    iCreationDatePropertyDef( NULL )
 	{
 	}
 
 void CHarvesterAudioPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
-	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
+    SetByObjectDefL( aObjectDef );
+	}
 
-	// Common property definitions
-	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
-	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
-	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
-	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
-	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
-	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+CHarvesterAudioPluginPropertyDefs* CHarvesterAudioPluginPropertyDefs::NewL()
+    {
+    CHarvesterAudioPluginPropertyDefs* self = 
+        new (ELeave) CHarvesterAudioPluginPropertyDefs();
+    return self;
+    }
+
+void CHarvesterAudioPluginPropertyDefs::SetByObjectDefL(CMdEObjectDef& aObjectDef)
+    {
+    CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
+
+    // Common property definitions
+    CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
+    iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
+    iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
+    iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
+    iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
+    iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
     iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTimeOffsetProperty );
     iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 
-	// Media property definitions
-	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
-	iRatingPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KRatingProperty );
-	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
-	iArtistPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KArtistProperty );
-	iDurationPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDurationProperty );
-	iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KCopyrightProperty );
-	iTrackPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KTrackProperty );
-	iThumbnailPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KThumbnailPresentProperty );
-	iDatePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KReleaseDateProperty );
+    // Media property definitions
+    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
+    iRatingPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KRatingProperty );
+    iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
+    iArtistPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KArtistProperty );
+    iDurationPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDurationProperty );
+    iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KCopyrightProperty );
+    iTrackPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KTrackProperty );
+    iThumbnailPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KThumbnailPresentProperty );
+    iDatePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KReleaseDateProperty );
     iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
 
-	// Audio property definitions
-	CMdEObjectDef& audioDef = nsDef.GetObjectDefL( MdeConstants::Audio::KAudioObject );
-	iAlbumPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KAlbumProperty );
-	iComposerPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KComposerProperty );
-	iOriginalArtistPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KOriginalArtistProperty );
-	}
-
-CHarvesterAudioPluginPropertyDefs* CHarvesterAudioPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
-	{
-	CHarvesterAudioPluginPropertyDefs* self = 
-		new (ELeave) CHarvesterAudioPluginPropertyDefs();
-	CleanupStack::PushL( self );
-	self->ConstructL( aObjectDef );
-	CleanupStack::Pop( self );
-	return self;
-	}
+    // Audio property definitions
+    CMdEObjectDef& audioDef = nsDef.GetObjectDefL( MdeConstants::Audio::KAudioObject );
+    iAlbumPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KAlbumProperty );
+    iComposerPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KComposerProperty );
+    iOriginalArtistPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KOriginalArtistProperty );
+    }
 
 using namespace MdeConstants;
 
@@ -150,6 +153,8 @@ void CHarvesterAudioPlugin::ConstructL()
         {
         TRAP_IGNORE( iTNM = CThumbnailManager::NewL( *this ) );
         }
+		
+    iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL();
     
     SetPriority( KHarvesterPriorityHarvestingPlugin - 2 );
 	
@@ -294,13 +299,7 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
     TTime localModifiedDate = entry.iModified + timeOffsetSeconds;
 	
-	if( !iPropDefs )
-		{
-		CMdEObjectDef& objectDef = mdeObject.Def();
-		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
-		// Prefetch max text lengt for validity checking
-		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-		}
+	InitPropDefsL( mdeObject.Def() );
 	
 	CMdeObjectWrapper::HandleObjectPropertyL(
                  mdeObject, *iPropDefs->iCreationDatePropertyDef, &localModifiedDate, aIsAdd );
@@ -329,13 +328,7 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
     
     if ( mapping && !mdeObject.Placeholder() )
         {
-    	if( !iPropDefs )
-    		{
-    		CMdEObjectDef& objectDef = mdeObject.Def();
-    		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
-    		// Prefetch max text lengt for validity checking
-    		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-    		}
+        InitPropDefsL( mdeObject.Def() );
         
     	CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
     			*iPropDefs->iItemTypePropertyDef, (TAny*)&(mapping->iMimeType), aIsAdd );
@@ -361,13 +354,7 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     CMdEObject& mdeObject = aHD->MdeObject();
     const TDesC& uri = mdeObject.Uri();
  
-    if( !iPropDefs )
-        {
-        CMdEObjectDef& audioObjectDef = mdeObject.Def();
-        iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( audioObjectDef );
-        // Prefetch max text lengt for validity checking
-        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-        }
+    InitPropDefsL( mdeObject.Def() );
 
     TBool possiblyProtectedContent( EFalse );
     if( aMimeType.Length() > 0 )
@@ -559,6 +546,16 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     dStop.UniversalTime();
     WRITELOG1( "CHarvesterAudioPlugin::GetMusicPropertiesL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
 #endif   
+    }
+
+void CHarvesterAudioPlugin::InitPropDefsL(CMdEObjectDef& aObjectDef)
+    {
+    if( !iPropDefs->iCreationDatePropertyDef )
+        {
+        iPropDefs->SetByObjectDefL( aObjectDef );
+        // Prefetch max text lengt for validity checking
+        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+        }
     }
 
 // End of file

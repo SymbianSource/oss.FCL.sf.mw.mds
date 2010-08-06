@@ -76,6 +76,7 @@ TInt E32Main()
         {
         TRAP( ret, RunServerL() );
         delete cleanup;
+        cleanup = NULL;
         }
     return ret;
     }
@@ -99,7 +100,7 @@ CLocationManagerServer* CLocationManagerServer::NewLC()
 // --------------------------------------------------------------------------
 //
 CLocationManagerServer::CLocationManagerServer() 
-    : CPolicyServer( CActive::EPriorityStandard, 
+    : CPolicyServer( KLocManagerSessionPriority, 
                      KLocationManagerPolicy, 
                      ESharableSessions ),
                      iASW(NULL),
@@ -133,10 +134,6 @@ void CLocationManagerServer::ConstructL()
     LOG ("CLocationManagerServer::ConstructL() begin");
     
     StartL( KLocServerName );
-    
-    RProcess process;
-    process.SetPriority( EPriorityBackground );
-    process.Close();
 
     // initialize etel
     InitialisePhoneL();
@@ -149,45 +146,49 @@ void CLocationManagerServer::ConstructL()
     
     iNwRegistrationStatusHandler = CNwRegistrationStatusHandler::NewL(iPhone);
     
-    iMdeSession = CMdESession::NewL( *this );
     iLocationRecord = CLocationRecord::NewL(*this, iPhone);
     iTrackLog = CTrackLog::NewL();
+    iMdeSession = CMdESession::NewL( *this );   
+
+    iLocationRecord->SetObserver( this );
     
-    iASW->Start();
+    iLocationRecord->SetAddObserver( iTrackLog );
+    
+    iTrackLog->AddGpxObserver( this );
+    
+    CRepository* repository = CRepository::NewLC( KRepositoryUid );
+    TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
+    
+    LOG1("iLocManStopDelay:%d", iLocManStopDelay);
+    
+    if ( err != KErrNone )
+        {
+        LOG1("iLocManStopDelay err:%d", err);
+        iLocManStopDelay = KLocationTrailShutdownDelay;
+        }
+
+    err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
+    CleanupStack::PopAndDestroy( repository );
+    
+    LOG1("iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
+    
+    if ( err != KErrNone )
+        {
+        LOG1("iLocManStopRemapDelay err:%d", err);
+        iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
+        }
+
+    if( !iSessionReady )
+        {
+        iASW->Start();      
+        }
+
     delete iASW;
-    iASW = NULL;
-    if(iSessionReady)
+    iASW = NULL;   
+
+    if( iSessionReady )
         {
         LOG("Session is ready to give service");
-        
-        iLocationRecord->SetObserver( this );
-        
-        iLocationRecord->SetAddObserver( iTrackLog );
-        
-        iTrackLog->AddGpxObserver( this );
-        
-        CRepository* repository = CRepository::NewLC( KRepositoryUid );
-    	TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
-    	
-        LOG1("iLocManStopDelay:%d", iLocManStopDelay);
-        
-        if ( err != KErrNone )
-        	{
-            LOG1("iLocManStopDelay err:%d", err);
-            iLocManStopDelay = KLocationTrailShutdownDelay;
-        	}
-
-        err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
-        CleanupStack::PopAndDestroy( repository );
-        
-        LOG1("iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
-        
-        if ( err != KErrNone )
-            {
-            LOG1("iLocManStopRemapDelay err:%d", err);
-            iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
-            }
-        
         //Create the instance of the geotagging timer object
         // Create timer, if n/w or reverse geo code based feature flag is enabled
 #if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
@@ -199,8 +200,13 @@ void CLocationManagerServer::ConstructL()
     else
         {
         LOG("Unable to open MDE session. Closing..");
-        User::Leave(KErrCouldNotConnect);
+        User::Leave( KErrCouldNotConnect );
         }
+        
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
+    
     LOG ("CLocationManagerServer::ConstructL() end");
     }
 
@@ -227,6 +233,8 @@ CLocationManagerServer::~CLocationManagerServer()
     iTrackLog = NULL;
     delete iTimer;
     iTimer = NULL;
+    delete iRelationQuery;
+    iRelationQuery = NULL;
     delete iASW;
     iASW = NULL;
     delete iMdeSession;
@@ -1108,6 +1116,7 @@ void CLocationManagerServer::HandleQueryCompleted( CMdEQuery& aQuery, TInt aErro
 						}
 					iCopyReqs[i].iMessage.Complete( aError );
 					delete iCopyReqs[i].iQuery;
+					iCopyReqs[i].iQuery = NULL;
 					iCopyReqs.Remove( i );
 					break;
 					}
@@ -1154,6 +1163,7 @@ void CLocationManagerServer::CopyLocationL( CMdEQuery& aQuery )
     		{
     		iCopyReqs[i].iMessage.Complete( KErrNone );
     		delete iCopyReqs[i].iQuery;
+    		iCopyReqs[i].iQuery = NULL;
     		iCopyReqs.Remove( i );
     		break;
     		}

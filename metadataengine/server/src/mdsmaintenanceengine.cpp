@@ -16,8 +16,6 @@
 */
 
 // INCLUDE FILES
-#include <driveinfo.h>
-
 #include "mdsmaintenanceengine.h"
 #include "mdslogger.h"
 #include "mdsmanipulationengine.h"
@@ -283,31 +281,6 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     User::LeaveIfError( fs.Volume( volumeInfo, EDriveC ) );
     MMdsPreferences::InsertL( KCMediaIdKey, MMdsPreferences::EPreferenceValueSet,
     		(TUint32) volumeInfo.iUniqueID );
-
-    TInt drive( -1 );
-    TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
-    if( massStorageError == KErrNone )
-        {
-        TVolumeInfo massStorageVolumeInfo;
-        massStorageError = fs.Volume( massStorageVolumeInfo, drive );
-        if( massStorageError == KErrNone )
-            {
-            const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
-            massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
-            if( massStorageError == KErrNone )
-                {
-                massStorageError = fs.Volume( massStorageVolumeInfo, drive );
-                // Update mass storage media id if the mass storage is not memory card
-                if( massStorageError == KErrNone &&
-                    massStorageVolumeInfo.iUniqueID != massStorageMediaId &&
-                    massStorageMediaId != 0 )
-                    {
-                    MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
-                            (TUint32) massStorageMediaId );
-                    }        
-                }
-            }
-        }
     
     CleanupStack::PopAndDestroy( &fs );
 	}

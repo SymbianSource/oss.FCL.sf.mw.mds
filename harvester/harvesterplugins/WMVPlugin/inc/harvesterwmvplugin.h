@@ -55,7 +55,8 @@ class CHarvesterWmvPluginPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterWmvPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+	    static CHarvesterWmvPluginPropertyDefs* NewL();
+	    void SetByObjectDefL( CMdEObjectDef& aObjectDef );
 	};
 
 /**
@@ -180,6 +181,7 @@ private:
          CHarvesterWmvClipDetails& aClipDetails,
          TBool aIsAdd);
 
+    void InitPropDefsL( CMdEObjectDef& aObjectDef );
 
 private: // data
 	CHarvesterWmvPluginPropertyDefs* iPropDefs;

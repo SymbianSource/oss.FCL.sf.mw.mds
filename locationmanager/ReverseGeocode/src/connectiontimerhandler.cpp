@@ -46,7 +46,7 @@ CConnectionTimerHandler* CConnectionTimerHandler::NewL(MConnectionTimeoutHandler
     CConnectionTimerHandler* self = new( ELeave ) CConnectionTimerHandler(aConnectionTimeoutHandlerInterface);
        CleanupStack::PushL( self );
        self->ConstructL();
-       CleanupStack::Pop();
+       CleanupStack::Pop(); // self
        
        return self;
     }

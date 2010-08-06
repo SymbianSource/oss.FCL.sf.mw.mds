@@ -162,7 +162,8 @@ class CHarvesterVideoPluginPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterVideoPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+		static CHarvesterVideoPluginPropertyDefs* NewL();
+		void SetByObjectDefL( CMdEObjectDef& aObjectDef );
 	};
 
 class CHarvesterVideoPlugin : public CHarvesterPlugin
@@ -239,6 +240,8 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		
 		void CheckForCodecSupport( HBufC* aMimeBuffer, CVideoHarvestData& aVHD );
 		
+        void InitPropDefsL( CMdEObjectDef& aObjectDef );
+
 	private:
 		RArray<THarvestingHandling> iMimeTypeMappings;
 		

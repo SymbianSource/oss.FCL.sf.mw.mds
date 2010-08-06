@@ -162,7 +162,7 @@ CHarvesterServer* CHarvesterServer::NewLC()
     WRITELOG( "CHarvesterServer::NewLC() - begin" );
     
 	CHarvesterServer* self = new (ELeave) CHarvesterServer(
-			CActive::EPriorityUserInput, KHarvesterServerPolicy, 
+	        KHarvesterServerSessionPriority, KHarvesterServerPolicy, 
 			ESharableSessions );
 	CleanupStack::PushL( self );
 	self->ConstructL();

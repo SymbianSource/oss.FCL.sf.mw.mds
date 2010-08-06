@@ -44,6 +44,8 @@ NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 		
 		IMPORT_C void SendHarvestingStatusEventL( TBool aStarted );
 		IMPORT_C void PauseHarvester( TBool aPaused );
+		
+		IMPORT_C void GetObjectDefL( CHarvesterData* aHD, TDes& aObjectDef );
 
 	private:
 		CHarvesterPluginFactory();

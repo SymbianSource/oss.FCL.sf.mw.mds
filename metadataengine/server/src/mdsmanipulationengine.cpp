@@ -155,7 +155,7 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
         CleanupClosePushL(objStmt);
 		
         RMdSTransaction transaction( connection );
-        CleanupClosePushL(transaction);
+        CleanupClosePushL (transaction );
         const TInt beginError( transaction.Error() );
         if( beginError != KErrNone )
             {
@@ -1074,13 +1074,19 @@ void CMdSManipulationEngine::CheckMassStorageMediaIdL( const TUint32 aMediaId )
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
     RMdSTransaction transaction( connection );
     CleanupClosePushL( transaction );
-    User::LeaveIfError( transaction.Error() );
+    const TInt beginError( transaction.Error() );
+    if( beginError != KErrNone )
+        {
+        CleanupStack::PopAndDestroy( &transaction );
+        }
     
     iManipulate->CheckMassStorageMediaIdL( aMediaId );
     
-    transaction.CommitL();
-
-    CleanupStack::PopAndDestroy( &transaction );
+    if( beginError == KErrNone )
+        {
+        transaction.CommitL();
+        CleanupStack::PopAndDestroy( &transaction );
+        }
     }
 
 void CMdSManipulationEngine::AddRelationDefL( TDefId aNamespaceId, const TDesC& aRelationDefName )

@@ -19,7 +19,7 @@ PRJ_PLATFORMS
 
 
 PRJ_EXPORTS
-
+       
 
 PRJ_MMPFILES
 reversegeocoderplugin.mmp

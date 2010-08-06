@@ -19,6 +19,8 @@ PRJ_PLATFORMS
 DEFAULT
 
 PRJ_EXPORTS
+     
 
 PRJ_MMPFILES
 reversegeocode.mmp
+

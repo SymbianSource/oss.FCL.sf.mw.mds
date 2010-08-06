@@ -49,7 +49,6 @@ LIBRARY     efsrv.lib
 LIBRARY	    mdeclient.lib
 LIBRARY     estor.lib
 LIBRARY	    platformenv.lib
-DEBUGLIBRARY flogger.lib
 
 
 PAGED

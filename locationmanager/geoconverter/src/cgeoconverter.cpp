@@ -31,7 +31,7 @@ EXPORT_C CGeoConverter* CGeoConverter::NewL( MGeoConverterObserver& aObserver )
     CGeoConverter* self = new( ELeave ) CGeoConverter( aObserver );
     CleanupStack::PushL( self );
     self->ConstructL();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); // self
     return self;
     }
 
@@ -185,7 +185,6 @@ EXPORT_C void CGeoConverter::ConvertL( const CTelephony::TNetworkInfoV1& aNetwor
         default:
             LOG("Unknown network mode");
             User::Leave(KErrNotSupported);
-            break;
         }
     //Add the cell information to the location info class. This class
     //would be sent to the Location Monitor server that would perform the

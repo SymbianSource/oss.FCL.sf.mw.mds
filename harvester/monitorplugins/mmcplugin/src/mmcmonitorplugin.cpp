@@ -254,6 +254,49 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EMounted" );
             mountData->iMountType = TMountData::EMount;
+            
+            // If mass storage mounting was delayed in boot so that mount event
+            // occures in mmc monitor, update the mass storage media id in the
+            // db in case factory settings were reseted and mass storage formatted
+            TInt drive( -1 );
+            TInt internalMassStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+            if( internalMassStorageError == KErrNone )
+                {
+                TVolumeInfo internalMassStorageVolumeInfo;
+                internalMassStorageError = iFs.Volume( internalMassStorageVolumeInfo, drive );
+                if( internalMassStorageError == KErrNone )
+                    {
+                    const TUint32 massStorageMediaId( internalMassStorageVolumeInfo.iUniqueID );
+                    TUint32 mmcMediaId( 0 );
+                    TInt mmcError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive ) );
+                    if( mmcError == KErrNone )
+                        {
+                        TVolumeInfo mmcVolumeInfo;
+                        mmcError = iFs.Volume( mmcVolumeInfo, drive );
+                        if( mmcError == KErrNone )
+                            {
+                            mmcMediaId = mmcVolumeInfo.iUniqueID;
+                            }
+                        }
+                    
+                    // If removable storage is not found, assume internal mass storage was mounted
+                    if( mmcError )
+                        {
+                        if( massStorageMediaId != 0 && 
+                            massStorageMediaId == aMediaID )
+                            {
+                            iMdEClient->CheckMassStorageMediaId( massStorageMediaId );
+                            }                    
+                        }
+                    else if( massStorageMediaId != mmcMediaId && 
+                                massStorageMediaId != 0 && 
+                                massStorageMediaId == aMediaID )
+                        {
+                        iMdEClient->CheckMassStorageMediaId( massStorageMediaId );
+                        }          
+                    }
+                }
+            
             TRAPD(err, iMountTask->StartMountL( *mountData ))
 			
             if(err != KErrNone )

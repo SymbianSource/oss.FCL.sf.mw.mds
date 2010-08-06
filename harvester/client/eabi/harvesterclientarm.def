@@ -20,4 +20,6 @@ EXPORTS
 	_ZTV22CHarvesterRequestQueue @ 19 NONAME ; #<VT>#
 	_ZN16RHarvesterClient19AddSessionObserverLER25MHarvesterSessionObserver @ 20 NONAME
 	_ZN16RHarvesterClient21RemoveSessionObserverEv @ 21 NONAME
+	_ZTI27CHarvesterNotificationQueue @ 22 NONAME
+	_ZTV27CHarvesterNotificationQueue @ 23 NONAME
 

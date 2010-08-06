@@ -113,19 +113,14 @@ void CInternalGeoTagger::ConstructL()
     //for reverse geocoding (geo-tagging)
     
 #ifdef LOC_REVERSEGEOCODE
-    if (!iRevGeocoderPlugin)
-        {
-       
+      
 	   TRAP_IGNORE(
         iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
            REComSession::CreateImplementationL(KReverseGeoCodeUid, iDtorKey));)
 
-        if(iRevGeocoderPlugin)
-        	{
-           	iRevGeocoderPlugin->AddObserverL(*this); 
+        iRevGeocoderPlugin->AddObserverL(*this); 
 
-          }
-        }
+
 #endif //LOC_REVERSEGEOCODE
 
     LOG("CInternalGeoTagger::ConstructL ,end");
@@ -204,7 +199,7 @@ void CInternalGeoTagger::CreateGeoTagsL( const TConnectionOption aOption )
 void CInternalGeoTagger::HandleSessionOpened(CMdESession& /*aSession*/, TInt aError)
     {
     LOG("CInternalGeoTagger::HandleSessionOpened ,begin");
-    if ( iMdeSessionOwnFlag && iASW && iASW->IsStarted() )
+    if ( iASW && iASW->IsStarted() )
         {
         iASW->AsyncStop();
         }
@@ -217,7 +212,7 @@ void CInternalGeoTagger::HandleSessionOpened(CMdESession& /*aSession*/, TInt aEr
         iTagCreator->SetSession( iMdeSession );
 #endif
         }
-    else if(iMdeSessionOwnFlag)
+    else 
         {
         delete iMdeSession;
         iMdeSession = NULL;
@@ -232,16 +227,15 @@ void CInternalGeoTagger::HandleSessionOpened(CMdESession& /*aSession*/, TInt aEr
 void CInternalGeoTagger::HandleSessionError(CMdESession& /*aSession*/, TInt /*aError*/)
     {
     LOG("CInternalGeoTagger::HandleSessionError ,begin");
-    if ( iMdeSessionOwnFlag && iASW && iASW->IsStarted() )
+    if (iASW && iASW->IsStarted() )
         {
         iASW->AsyncStop();
         }
     iSessionReady = EFalse;
-    if(iMdeSessionOwnFlag)
-    	{
-	    delete iMdeSession;
-	    iMdeSession = NULL;
-    	}
+
+	delete iMdeSession;
+	iMdeSession = NULL;
+
     LOG("CInternalGeoTagger::HandleSessionError ,end");
     }
 
@@ -890,50 +884,6 @@ void CInternalGeoTagger::AddressInfoL( const TItemId aCountryTagId, const TItemI
 
 
 // --------------------------------------------------------------------------
-// CInternalGeoTagger::RemoveLocationInfoOnFailureL()
-// Remove the location info when reverse geo code fail so that retry can be ignore for the next iteration
-// --------------------------------------------------------------------------
-//
-void CInternalGeoTagger::RemoveLocationInfoOnFailureL(const TItemId aLocationId)
-	{
-	
-    LOG("CInternalGeoTagger::RemoveLocationInfoOnFailureL ,start");
-    
-	CMdENamespaceDef& namespaceDef = iMdeSession->GetDefaultNamespaceDefL();
-	CMdEObjectDef& locObjDef = namespaceDef.GetObjectDefL( Location::KLocationObject );
-	CMdEObject* location = iMdeSession->OpenObjectL(aLocationId, locObjDef);
-	CleanupStack::PushL( location );
-	
-	CMdEPropertyDef& propLatDef = locObjDef.GetPropertyDefL( Location::KLatitudeProperty );
-	CMdEPropertyDef& propLongDef = locObjDef.GetPropertyDefL( Location::KLongitudeProperty );
-
-	if (location->PropertyCount(propLatDef) == 0)
-		{
-		location->AddReal64PropertyL(propLatDef, KZeroLatLon ); //iLatitude
-		}
-	if (location->PropertyCount(propLongDef) == 0)
-		{
-		location->AddReal64PropertyL(propLongDef, KZeroLatLon ); //iLongitude
-		}
-	
-	CMdEProperty* modProp = NULL;
-	CMdEObjectDef& objImageDef = namespaceDef.GetObjectDefL( Image::KImageObject );
-	CMdEPropertyDef& propModifiedDef = objImageDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
-	location->Property( propModifiedDef, modProp, 0 );
-	if ( modProp )
-		{
-		TTime timestamp( 0 );
-		timestamp.UniversalTime();
-		modProp->SetTimeValueL( timestamp );
-		}
-	// commit to DB
-	iMdeSession->CommitObjectL(*location);
-	CleanupStack::PopAndDestroy( location );
-
-    LOG("CInternalGeoTagger::RemoveLocationInfoOnFailureL ,end");
-	}
-
-// --------------------------------------------------------------------------
 // CInternalGeoTagger::ReverseGeocodeComplete()
 //  Get address details like street, city, state, etc.
 // --------------------------------------------------------------------------
@@ -959,10 +909,7 @@ void CInternalGeoTagger::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo&
     else
         {
         LOG1("Reverse geocode err - %d", aErrorcode);
-        // reverse geo code fails. may be because of lat/lon value (e.g. mid of ocean)
-        // based on error code, Remove lat/lon from location table so that it should n't try to for the next time. ??
-		// May not be a good idea to remove lan/lon because it may fails due to n/w.
-        //TRAP_IGNORE(RemoveLocationInfoOnFailureL(iLocationId));
+
         IterateNextLocation();
         }
    

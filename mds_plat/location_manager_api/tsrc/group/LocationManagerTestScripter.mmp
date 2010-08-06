@@ -33,7 +33,6 @@ DEFFILE         LocationManagerTestScripter.def
 MACRO LOC_REVERSEGEOCODE
 #endif
 
-
 SOURCEPATH      ../src
 SOURCE          LocationManagerTestScripter.cpp
 SOURCE          LocationManagerTestScripterBlocks.cpp

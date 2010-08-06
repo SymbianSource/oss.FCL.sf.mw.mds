@@ -223,6 +223,8 @@ void CTrackLog::WriteBufferToFileL()
 	RFile64 file;
 	RFileWriteStream writer;
 	
+	CleanupClosePushL( writer );
+	
 	TInt err;
 	err = file.Open( iFs, iTmpFileName, EFileRead );
 	if ( err != KErrNone )
@@ -248,8 +250,6 @@ void CTrackLog::WriteBufferToFileL()
 			}
 		writer.Sink()->SeekL( MStreamBuf::EWrite, TStreamPos( endpos ));
 		}
-	
-	CleanupClosePushL( writer );
 	
 	TInt count = iTrackLogItemArray.Count();
 	

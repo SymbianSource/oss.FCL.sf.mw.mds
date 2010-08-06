@@ -19,6 +19,7 @@
 #include "harvesterclient.h"
 #include "harvestercommon.h"
 #include "harvesterrequestqueue.h"
+#include "harvesternotificationqueue.h"
 #include "harvestereventobserverao.h"
 #include "harvesterlog.h"
 #include "harvesterclientao.h"
@@ -54,10 +55,10 @@ EXPORT_C RHarvesterClient::RHarvesterClient() : RSessionBase()
     WRITELOG( "RHarvesterClient::RHarvesterClient() - Constructor" );
     OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_RHARVESTERCLIENT, "RHarvesterClient::RHarvesterClient" );
     
-    iHarvesterClientAO = NULL;
     iObserver = NULL;
     iHEO = NULL;
     iRequestQueue = NULL;
+    iNotificationQueue = NULL;
     }
 
 // ----------------------------------------------------------------------------------------
@@ -68,7 +69,6 @@ EXPORT_C TInt RHarvesterClient::Connect()
     {
     WRITELOG( "RHarvesterClient::Connect()" );
     OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_CONNECT, "RHarvesterClient::Connect" );
-    
     
     RProperty property;
     const TInt error( property.Attach( KHarvesterPSShutdown, KShutdown, EOwnerThread ) );
@@ -81,26 +81,29 @@ EXPORT_C TInt RHarvesterClient::Connect()
         return KErrLocked;
         }
     
-    if( iHarvesterClientAO )
+    if( iRequestQueue )
     	{
     	return KErrAlreadyExists;
     	}
     
-    TRAPD( err, iHarvesterClientAO = CHarvesterClientAO::NewL(*this) );
-    if ( err != KErrNone )
-        {
-        WRITELOG( "RHarvesterClient::RHarvesterClient() - Couldn't create active object" );
-        return err;
-        }
-    
     // request processor
-    TRAP( err, iRequestQueue = CHarvesterRequestQueue::NewL() )
+    TRAPD( err, iRequestQueue = CHarvesterRequestQueue::NewL() )
         {
         if ( err != KErrNone )
             {
             WRITELOG( "RHarvesterClient::RHarvesterClient() - Couldn't create harvester request queue" );
-            delete iHarvesterClientAO;
-            iHarvesterClientAO = NULL;
+            return err;
+            }
+        }
+
+    // request processor
+    TRAP( err, iNotificationQueue = CHarvesterNotificationQueue::NewL() )
+        {
+        if ( err != KErrNone )
+            {
+            WRITELOG( "RHarvesterClient::RHarvesterClient() - Couldn't create harvester notification queue" );
+            delete iRequestQueue;
+            iRequestQueue = NULL;
             return err;
             }
         }
@@ -114,10 +117,10 @@ EXPORT_C TInt RHarvesterClient::Connect()
         }
     else
         {
-        delete iHarvesterClientAO;
-        iHarvesterClientAO = NULL;
         delete iRequestQueue;
         iRequestQueue = NULL;
+        delete iNotificationQueue;
+        iNotificationQueue = NULL;
         }
 
 #ifdef _DEBUG
@@ -185,6 +188,8 @@ EXPORT_C void RHarvesterClient::Close()
     
     // cancels Harvest Complete request if it exist at server
     UnregisterHarvestComplete();
+    delete iNotificationQueue;
+    iNotificationQueue = NULL;
     
     WRITELOG( "RHarvesterClient::Close() - UnregisterHarvest done" );
     
@@ -196,9 +201,6 @@ EXPORT_C void RHarvesterClient::Close()
     
     delete iRequestQueue;
     iRequestQueue = NULL;
-    
-    delete iHarvesterClientAO;
-    iHarvesterClientAO = NULL;
     
     delete iHEO;
     iHEO = NULL;
@@ -217,11 +219,8 @@ EXPORT_C void RHarvesterClient::SetObserver( MHarvestObserver* aObserver )
     WRITELOG( "RHarvesterClient::SetObserver()" );
     OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_SETOBSERVER, "RHarvesterClient::SetObserver" );
 
-    if ( iHarvesterClientAO )
-        {
-        iHarvesterClientAO->SetObserver( aObserver );
-        }
 	iObserver = aObserver;
+	iNotificationQueue->SetObserver( iObserver );
     }
 
 // ----------------------------------------------------------------------------------------
@@ -233,18 +232,11 @@ EXPORT_C void RHarvesterClient::RemoveObserver( MHarvestObserver* aObserver )
     WRITELOG( "RHarvesterClient::RemoveObserver()" );
     OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_REMOVEOBSERVER, "RHarvesterClient::RemoveObserver" );
     
-    if ( iHarvesterClientAO )
-        {
-        iHarvesterClientAO->RemoveObserver( aObserver );
-        }
-    
 	if ( aObserver == iObserver )
 		{
-		if ( iObserver )
-			{
-			WRITELOG( "CHarvesterClientAO::RemoveObserver() - deleting observer" );
-			iObserver = NULL;
-			}
+		WRITELOG( "RHarvesterClient::RemoveObserver() - deleting observer" );
+		iObserver = NULL;
+		iNotificationQueue->SetObserver( iObserver );
 		}
     }
 
@@ -300,7 +292,6 @@ EXPORT_C void RHarvesterClient::HarvestFile( const TDesC& aURI, RArray<TItemId>&
     WRITELOG1( "RHarvesterClient::HarvestFile() - file %S", &aURI );
     OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_HARVESTFILE, "RHarvesterClient::HarvestFile" );
     
-    
     HBufC8* paramBuf = NULL;
     TRAPD( err, paramBuf = SerializeArrayL( aAlbumIds ) );
     if ( err )
@@ -314,7 +305,7 @@ EXPORT_C void RHarvesterClient::HarvestFile( const TDesC& aURI, RArray<TItemId>&
     	}
         
     CHarvesterRequestActive* harvestFileActive( NULL );
-    TRAP( err, harvestFileActive = CHarvesterRequestActive::NewL( *this, iObserver, (TInt)EHarvestFile, aURI, 
+    TRAP( err, harvestFileActive = CHarvesterRequestActive::NewL( *this, (TInt)EHarvestFile, aURI, 
                                                                                                    paramBuf, aAddLocation, iRequestQueue ) );
     if( err )
         {
@@ -391,7 +382,7 @@ EXPORT_C void RHarvesterClient::HarvestFileWithUID( const TDesC& aURI,
         }
 
     CHarvesterRequestActive* harvestFileActive( NULL );
-    TRAP( err, harvestFileActive = CHarvesterRequestActive::NewL( *this, iObserver, (TInt)EHarvestFile, aURI, 
+    TRAP( err, harvestFileActive = CHarvesterRequestActive::NewL( *this, (TInt)EHarvestFile, aURI, 
                                                                                                    paramBuf, aAddLocation, iRequestQueue ) );
     if( err )
         {
@@ -476,7 +467,6 @@ void RHarvesterClient::RegisterHarvestComplete(TDes& aURI, TRequestStatus& aStat
 	TIpcArgs ipcArgs( &aURI );
 	OstTrace0( TRACE_NORMAL, RHARVESTERCLIENT_REGISTERHARVESTCOMPLETE, "RHarvesterClient::RegisterHarvestComplete" );
 	
-	
 	if( !iHandle )
 		{
 		return;
@@ -496,17 +486,43 @@ void RHarvesterClient::UnregisterHarvestComplete()
 		return;
 		}	
 	
-	Send( EUnregisterHarvestComplete );
+	SendReceive( EUnregisterHarvestComplete );
 	}
 
 // ----------------------------------------------------------------------------------------
 // HarvestFile
 // ----------------------------------------------------------------------------------------
 //
-void RHarvesterClient::HarvestFile( TInt& aService, TIpcArgs& aArgs, TRequestStatus& aStatus )
+void RHarvesterClient::HarvestFile( TInt& aService, TIpcArgs& aArgs, TRequestStatus& aStatus, TDesC& aUri )
     {
     // send to server harvesting complete observer
-    iHarvesterClientAO->Active();
+    if( iObserver )
+        {
+        CHarvesterClientAO* harvestNotificationRequest( NULL );
+        TRAPD( err, harvestNotificationRequest = CHarvesterClientAO::NewL(*this, iNotificationQueue ) );
+        if( err )
+            {
+            WRITELOG1( "RHarvesterClient::HarvestFile() - cannot issue harvesting notitification request, error: %d", err );
+            iObserver->HarvestingComplete( const_cast<TDesC&>(aUri), KErrCompletion );  
+            delete harvestNotificationRequest;
+            harvestNotificationRequest = NULL;
+            }
+        else
+            {
+            TRAP( err, iNotificationQueue->AddRequestL( harvestNotificationRequest ) );
+            if( err )
+                {
+                iObserver->HarvestingComplete( const_cast<TDesC&>(aUri), KErrCompletion );  
+                delete harvestNotificationRequest;
+                harvestNotificationRequest = NULL;            
+                }
+            else
+                {
+                harvestNotificationRequest->SetObserver( iObserver );
+                harvestNotificationRequest->Active( aUri );
+                }
+            }
+        }
     SendReceive( aService, aArgs, aStatus );
     }
 
@@ -516,8 +532,6 @@ void RHarvesterClient::HarvestFile( TInt& aService, TIpcArgs& aArgs, TRequestSta
 //
 void RHarvesterClient::ForceHarvestFile( TInt& aService, TIpcArgs& aArgs )
     {
-    // send to server harvesting complete observer
-    iHarvesterClientAO->Active();
     SendReceive( aService, aArgs );
     }
 

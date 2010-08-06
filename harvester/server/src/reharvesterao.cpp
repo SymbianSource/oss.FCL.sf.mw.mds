@@ -19,8 +19,8 @@
 #include "mdeobject.h"
 #include "mdsutils.h"
 
-const TInt KResumeTime = 2000000;  //microseconds
-const TInt KTimeIncrease = 500000; //microseconds
+const TInt KResumeTime = 3000000;  //microseconds
+const TInt KTimeIncrease = 1000000; //microseconds
 const TInt KTimeLimit = 30000000;    //microseconds
 
 // ---------------------------------------------------------------------------

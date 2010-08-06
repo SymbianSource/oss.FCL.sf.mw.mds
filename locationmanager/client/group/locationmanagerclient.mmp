@@ -52,7 +52,6 @@ LIBRARY	    efsrv.lib
 LIBRARY	    lbs.lib
 LIBRARY	    mdccommon.lib
 
-DEBUGLIBRARY   flogger.lib
 PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime

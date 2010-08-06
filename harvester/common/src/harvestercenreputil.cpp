@@ -198,7 +198,9 @@ void CHarvesterCenRepUtil::GetPathsL( TUint32 aPartialKey, RPointerArray<HBufC>&
 	        continue;
 	        }
 		HBufC* pathBuf = path.AllocL();
+		CleanupStack::PushL( pathBuf );
 		aPaths.AppendL( pathBuf );
+		CleanupStack::Pop( pathBuf );
 		}
 
 	CleanupStack::PopAndDestroy( &scanPathKeys );

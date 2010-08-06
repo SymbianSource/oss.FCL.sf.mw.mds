@@ -93,7 +93,6 @@ LIBRARY		etel3rdparty.lib
 LIBRARY           flogger.lib
 LIBRARY           hash.lib
 LIBRARY			  inetprotutil.lib
-LIBRARY           platformenv.lib 
 
 UNPAGED
 

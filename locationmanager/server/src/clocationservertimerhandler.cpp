@@ -53,7 +53,7 @@ CLocationServerTimerHandler* CLocationServerTimerHandler::NewL(MLocationServerTi
         new( ELeave ) CLocationServerTimerHandler(aLocationServerTimerObserver);
     CleanupStack::PushL( self );
     self->ConstructL();
-    CleanupStack::Pop();
+    CleanupStack::Pop(); //self
     return self;
     }
 
