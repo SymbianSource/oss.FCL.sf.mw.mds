@@ -48,10 +48,13 @@ CComposerImagePlugin::~CComposerImagePlugin() // destruct
     WRITELOG( "CComposerImagePlugin::~CComposerImagePlugin()" );
 
     delete iImageComposerAO;
+    iImageComposerAO = NULL;
     delete iLocationRelationObserver;
+    iLocationRelationObserver = NULL;
     delete iImagePresentObserver;
-    
+    iImagePresentObserver = NULL;
     delete iMdEHarvesterSession;
+    iMdEHarvesterSession = NULL;
     }
 
 // ---------------------------------------------------------------------------

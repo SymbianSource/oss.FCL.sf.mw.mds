@@ -114,6 +114,7 @@ EXPORT_C void RLocationObjectManipulator::CopyLocationData (TItemId aSourceId,
         }
     
     delete paramBuf;
+    paramBuf = NULL;
 	LOG( "RLocationObject::CopyLocationData end" );
 	}
 // --------------------------------------------------------------------------
@@ -146,6 +147,7 @@ EXPORT_C void RLocationObjectManipulator::CopyLocationData (TDesC& aSourceURI,
         {
         LOG( "RLocationObject::CopyLocationData CMdCSerializationBuffer creation failed" );
         delete uriBuffer;
+        uriBuffer = NULL;
         CompleteRequest( aStatus, error );
         return;
         }
@@ -177,6 +179,7 @@ EXPORT_C void RLocationObjectManipulator::CopyLocationData (TDesC& aSourceURI,
         }
     
     delete uriBuffer;
+    uriBuffer = NULL;
     LOG( "RLocationObject::CopyLocationData end" );
 	}
 

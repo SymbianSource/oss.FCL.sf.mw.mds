@@ -157,7 +157,9 @@ CCLFItemListModelImpl::~CCLFItemListModelImpl()
     {
     iChangedItemProvider.RemoveChangedItemProviderObserver( this );
     delete iMimeTypeArray;
+    iMimeTypeArray = NULL;
     delete iMediaTypeArray;
+    iMediaTypeArray = NULL;
     iItemArray.ResetAndDestroy();
     delete iItemProvider;
     iResultArray.Close();

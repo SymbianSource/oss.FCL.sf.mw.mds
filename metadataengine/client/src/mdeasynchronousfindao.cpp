@@ -132,8 +132,10 @@ CMdEAsynchronousFindAO::~CMdEAsynchronousFindAO()
     Cancel(); // Causes call to DoCancel()
 
 	delete iDistinctResults;
+	iDistinctResults = NULL;
 
 	delete iConditionBuffer;
+	iConditionBuffer = NULL;
 
     iResultList.ResetAndDestroy();
     iResultList.Close();

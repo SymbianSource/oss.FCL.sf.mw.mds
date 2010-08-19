@@ -403,6 +403,7 @@ void CMdSServer::InitializeL()
     // TRAP InstallL - first time for if there has been schema update, and 
     // the DB version is too old. Delete the DB and try to recreate it
     TRAPD( error, iMaintenance->InstallL( *iManipulate, *iSchema ) );
+    
     if( error == KErrCorrupt )
         {
         delete iSchema;
@@ -419,6 +420,7 @@ void CMdSServer::InitializeL()
         // during update, and the first attempt to recreate the DB fails. 
         // Then schema file in rom is used for final attempt to recreate the DB
         TRAP( error, iMaintenance->InstallL( *iManipulate, *iSchema ) );
+        
         if( error == KErrCorrupt )
             {
             delete iSchema;
@@ -487,19 +489,30 @@ CMdSServer::~CMdSServer()
     iClientThread.Close();
     
 	delete iBURWatcher;
+	iBURWatcher = NULL;
 	delete iDiskSpaceGarbageCollectorNotifier;
+	iDiskSpaceGarbageCollectorNotifier = NULL;
 	delete iDiskFullNotifier;
+	iDiskFullNotifier = NULL;
     delete iManipulate;
+    iManipulate = NULL;
     delete iSchema;
+    iSchema = NULL;
     delete iNotifier;
+    iNotifier = NULL;
     delete iLockList;
+    iLockList = NULL;
     delete iMaintenance;
+    iMaintenance = NULL;
     delete iDefaultDBConnection;
+    iDefaultDBConnection = NULL;
 
     delete iHarvestingPrioritizationSerializationBuffer;
+    iHarvestingPrioritizationSerializationBuffer = NULL;
 	iHarvestingPrioritizationChunk.Close();
 	
 	delete iShutdownObserver;
+	iShutdownObserver = NULL;
 
     __LOGLB( ELogAlways, "Server stop" );
     __DESTROY_LOGGER;
@@ -947,6 +960,7 @@ TInt E32Main()
  		{
  		TRAP(result, CMdSServer::ThreadFunctionL());
 		delete cleanup;
+		cleanup = NULL;
  		}
     __UHEAP_MARKEND;
  	return result;

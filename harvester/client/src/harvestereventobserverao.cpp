@@ -126,6 +126,7 @@ void CHarvesterEventObserverAO::RemoveHarvesterEventObserverL(
 			iHarvesterClient.Send( EUnregisterHarvesterEvent, ipcArgs );
 			iObservers.Remove( i );
 			delete observer;
+			observer = NULL;
 			}
 		}
 

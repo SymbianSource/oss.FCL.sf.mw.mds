@@ -427,6 +427,7 @@ class CMdSServerSession : public CSession2
 		    	~CNotificationCacheItem()
 			    	{
 			    	delete iData;
+			    	iData = NULL;
 			    	}
 
 	    	public:

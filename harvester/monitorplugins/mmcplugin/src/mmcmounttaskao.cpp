@@ -79,6 +79,7 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 	iHarvestEntryArray.Close();
 	
 	delete iMdeSession;
+	iMdeSession = NULL;
   
 	Deinitialize();
 	
@@ -88,6 +89,7 @@ CMMCMountTaskAO::~CMMCMountTaskAO()
 		}
 	
 	delete iMmcFileList;
+	iMmcFileList = NULL;
 	iHdArray.ResetAndDestroy();
 	iHdArray.Close();
 	}
@@ -108,17 +110,19 @@ void CMMCMountTaskAO::SetHarvesterPluginFactory( CHarvesterPluginFactory* aPlugi
 	iHarvesterPluginFactory = aPluginFactory;
 	}
 	
-void CMMCMountTaskAO::StartMount( TMountData& aMountData )
+void CMMCMountTaskAO::StartMountL( TMountData& aMountData )
 	{
 	WRITELOG("CMMCMountTaskAO::StartMount");
-	iMountDataQueue.Append( &aMountData );
+	
+	User::LeaveIfError( iMountDataQueue.Append( &aMountData ));
+	
 	if ( iNextRequest == ERequestIdle )
 		{
 		SetNextRequest( ERequestStartTask );
 		}
 	}
 	
-void CMMCMountTaskAO::StartUnmount(TMountData& aMountData)
+void CMMCMountTaskAO::StartUnmountL(TMountData& aMountData)
 	{
 	WRITELOG("CMMCMountTaskAO::StartUnmount");
 	
@@ -132,7 +136,8 @@ void CMMCMountTaskAO::StartUnmount(TMountData& aMountData)
 			}
 		}
 		
-	iMountDataQueue.Append( &aMountData );
+	User::LeaveIfError( iMountDataQueue.Append( &aMountData ));
+		
 	SetNextRequest( ERequestStartTask );
 	}
 	
@@ -146,7 +151,10 @@ void CMMCMountTaskAO::RunL()
 		{
 		if ( iMountData )
 			{
-			iMountDataQueue.Insert( iMountData, 0 );
+			if( iMountDataQueue.Insert( iMountData, 0 ) != KErrNone)
+			    {
+                delete iMountData;
+			    }
 			iMountData = NULL;
 			}
 		Deinitialize();
@@ -205,7 +213,11 @@ void CMMCMountTaskAO::RunL()
 			TRAPD( err, iMmcFileList->BuildFileListL( iFs, iMountData->iDrivePath, iEntryArray ));
 			if ( err == KErrNoMemory )
 				{
-				iMountDataQueue.Insert( iMountData, 0 );
+				if( iMountDataQueue.Insert( iMountData, 0 ) != KErrNone)
+				    {
+                    delete iMountData;
+				    }
+					
 				iMountData = NULL;
 				Deinitialize();
 				SetNextRequest( ERequestStartTask );
@@ -284,9 +296,14 @@ void CMMCMountTaskAO::RunL()
 					{
 					if( err == KErrNoMemory )
 						{
-						iMountDataQueue.Insert( iMountData, 0 );
+						if(iMountDataQueue.Insert( iMountData, 0 ) != KErrNone)
+						    {
+                            delete iMountData;
+						    }
+							
 						iMountData = NULL;
 						}
+						
 					Deinitialize();
 					SetNextRequest( ERequestStartTask );
 					break;
@@ -437,6 +454,7 @@ void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray 
 			hd->SetEventType( EHarvesterEdit );
 			hd->SetObjectType( ENormal );
 			delete ei;
+			ei = NULL;
 			}
 		else
 			{
@@ -445,7 +463,12 @@ void CMMCMountTaskAO::HandleReharvestL( RPointerArray<CPlaceholderData>& aArray 
 			hd->SetClientData( ei );
 			}
 		
-		iHdArray.Append( hd );
+		if(iHdArray.Append( hd ) != KErrNone )
+		    {
+            delete hd;
+            hd = NULL;
+		    }
+			
 		aArray.Remove( i );
 		}
 	

@@ -82,6 +82,7 @@ CMmcScannerAO::~CMmcScannerAO()
 	// Delete instance variables if any
 	
 	delete iMmcFileList;
+	iMmcFileList = NULL;
 	
 	iEntryArray.ResetAndDestroy();
 	iEntryArray.Close();
@@ -248,6 +249,7 @@ void CMmcScannerAO::HandleReharvestL()
 			hd->SetEventType( EHarvesterEdit );
 			hd->SetObjectType( ENormal );
 			delete ei;
+			ei = NULL;
 			}
 		else
 			{
@@ -255,7 +257,12 @@ void CMmcScannerAO::HandleReharvestL()
 			hd->SetObjectType( EPlaceholder );
 			hd->SetClientData( ei );
 			}
-		iHdArray.Append( hd );
+			
+		if(iHdArray.Append( hd ) != KErrNone )
+		    {
+            delete hd;
+            hd = NULL;
+		    }
         iHarvestEntryArray.Remove( i );
         }
 

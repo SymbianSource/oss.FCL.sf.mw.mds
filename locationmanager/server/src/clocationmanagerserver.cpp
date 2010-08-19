@@ -17,6 +17,10 @@
 
 #include <e32debug.h>
 #include <w32std.h>
+#include <ecom.h>
+#include <commsdattypesv1_1.h>
+#include <cdblen.h>
+#include <commsdat_partner.h>
 
 #include "clocationmanagerserver.h"
 #include "clocationmanagersession.h"
@@ -29,8 +33,12 @@
 #include "mdeobjectdef.h"
 #include "mdepropertydef.h"
 #include "mdcserializationbuffer.h"
+#include "clocationgeotagtimerao.h"
+#include "nwregistrationstatushandler.h"
 
 using namespace MdeConstants;
+using namespace CommsDat;
+
 
 // --------------------------------------------------------------------------
 // RunServerL
@@ -68,6 +76,7 @@ TInt E32Main()
         {
         TRAP( ret, RunServerL() );
         delete cleanup;
+        cleanup = NULL;
         }
     return ret;
     }
@@ -91,9 +100,10 @@ CLocationManagerServer* CLocationManagerServer::NewLC()
 // --------------------------------------------------------------------------
 //
 CLocationManagerServer::CLocationManagerServer() 
-    : CPolicyServer( CActive::EPriorityStandard, 
+    : CPolicyServer( KLocManagerSessionPriority, 
                      KLocationManagerPolicy, 
                      ESharableSessions ),
+                     iASW(NULL),
                      iTimer( NULL ),
 			         iSessionReady( EFalse ),
                      iTagId( 0 ),
@@ -101,7 +111,16 @@ CLocationManagerServer::CLocationManagerServer()
                      iLocManStopRemapDelay( 0 ),
                      iCaptureSetting( RLocationTrail::EOff ),
                      iRemoveLocation( EFalse ),
-                     iWaitForPositioningStopTimeout ( EFalse )
+                     iWaitForPositioningStopTimeout ( EFalse ),
+                     iTelServerIsOpen(EFalse),
+                     iPhoneIsOpen(EFalse),
+                     iNwRegistrationStatusHandler(NULL),
+                     iHomeNwInfoAvailableFlag(EFalse),
+                     iGeoTagTimer(NULL)
+#ifdef LOC_REVERSEGEOCODE
+					 ,iGeoTaggingPendingReqObj(NULL)
+					 ,iEcomSession(NULL)
+#endif //LOC_REVERSEGEOCODE
     {
     }
 
@@ -115,18 +134,22 @@ void CLocationManagerServer::ConstructL()
     LOG ("CLocationManagerServer::ConstructL() begin");
     
     StartL( KLocServerName );
+
+    // initialize etel
+    InitialisePhoneL();
     
-    RProcess process;
-    process.SetPriority( EPriorityBackground );
-    process.Close();
-    
+#ifdef LOC_REVERSEGEOCODE
+    iEcomSession = &(REComSession::OpenL());
+#endif //LOC_REVERSEGEOCODE
+
     iASW = new (ELeave) CActiveSchedulerWait();
-    iMdeSession = CMdESession::NewL( *this );
-    iLocationRecord = CLocationRecord::NewL();
+    
+    iNwRegistrationStatusHandler = CNwRegistrationStatusHandler::NewL(iPhone);
+    
+    iLocationRecord = CLocationRecord::NewL(*this, iPhone);
     iTrackLog = CTrackLog::NewL();
-    
-    iASW->Start();
-    
+    iMdeSession = CMdESession::NewL( *this );   
+
     iLocationRecord->SetObserver( this );
     
     iLocationRecord->SetAddObserver( iTrackLog );
@@ -134,34 +157,55 @@ void CLocationManagerServer::ConstructL()
     iTrackLog->AddGpxObserver( this );
     
     CRepository* repository = CRepository::NewLC( KRepositoryUid );
-	TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
-	
-    LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay:%d", iLocManStopDelay);
+    TInt err = repository->Get( KLocationTrailShutdownTimer, iLocManStopDelay );
+    
+    LOG1("iLocManStopDelay:%d", iLocManStopDelay);
     
     if ( err != KErrNone )
-    	{
-        LOG1("CLocationManagerServer::ConstructL, iLocManStopDelay err:%d", err);
+        {
+        LOG1("iLocManStopDelay err:%d", err);
         iLocManStopDelay = KLocationTrailShutdownDelay;
-    	}
+        }
 
     err = repository->Get( KLocationTrailRemapShutdownTimer, iLocManStopRemapDelay );
     CleanupStack::PopAndDestroy( repository );
     
-    LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
+    LOG1("iLocManStopRemapDelay:%d", iLocManStopRemapDelay);
     
     if ( err != KErrNone )
         {
-        LOG1("CLocationManagerServer::ConstructL, iLocManStopRemapDelay err:%d", err);
+        LOG1("iLocManStopRemapDelay err:%d", err);
         iLocManStopRemapDelay = KLocationTrailRemapShutdownDelay;
         }
-    
-    TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );    
-    if ( error != KErrNone )
+
+    if( !iSessionReady )
         {
-        LOG("CLocationManagerServer::ConstructL - iTimer not created");
-        iTimer = NULL;
-        }  
-    
+        iASW->Start();      
+        }
+
+    delete iASW;
+    iASW = NULL;   
+
+    if( iSessionReady )
+        {
+        LOG("Session is ready to give service");
+        //Create the instance of the geotagging timer object
+        // Create timer, if n/w or reverse geo code based feature flag is enabled
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
+        iGeoTagTimer = CLocationGeoTagTimerAO::NewL(*iMdeSession, *this);
+        //Schedule a task for geotagging every day at 3.00 AM
+        iGeoTagTimer->StartTimer();
+#endif        
+        }
+    else
+        {
+        LOG("Unable to open MDE session. Closing..");
+        User::Leave( KErrCouldNotConnect );
+        }
+        
+    RProcess process;
+    process.SetPriority( EPriorityBackground );
+    process.Close();
     
     LOG ("CLocationManagerServer::ConstructL() end");
     }
@@ -173,13 +217,30 @@ void CLocationManagerServer::ConstructL()
 //
 CLocationManagerServer::~CLocationManagerServer()
     {
-    delete iLocationRecord;    
-    delete iTrackLog;    
-    delete iTimer;
-    //delete iRelationQuery;
-    delete iASW;
-    delete iMdeSession;
+	LOG("CLocationManagerServer::~CLocationManagerServer ,begin");
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
+    delete iGeoTagTimer;
+    iGeoTagTimer = NULL;
+#endif    
+#ifdef LOC_REVERSEGEOCODE
+    delete iGeoTaggingPendingReqObj;
+    iGeoTaggingPendingReqObj = NULL;
+#endif //LOC_REVERSEGEOCODE
     
+    delete iLocationRecord;    
+    iLocationRecord = NULL;
+    delete iTrackLog;    
+    iTrackLog = NULL;
+    delete iTimer;
+    iTimer = NULL;
+    delete iRelationQuery;
+    iRelationQuery = NULL;
+    delete iASW;
+    iASW = NULL;
+    delete iMdeSession;
+    iMdeSession = NULL;
+    delete iNwRegistrationStatusHandler;
+    iNwRegistrationStatusHandler = NULL;
     iTargetObjectIds.Close();
     CancelRequests(iNotifReqs);
     iNotifReqs.Close();
@@ -190,9 +251,115 @@ CLocationManagerServer::~CLocationManagerServer()
     CancelCopyRequests(iCopyReqs);
     iCopyReqs.Close();
     iSessionCount = 0;
+	if(iPhoneIsOpen)
+        {   
+        iPhoneIsOpen = EFalse; // not required
+        iPhone.Close();
+        }
+    if(iTelServerIsOpen)
+        {
+        iTelServerIsOpen = EFalse;
+        iTelServer.Close();
+        }
+#ifdef LOC_REVERSEGEOCODE
+	if(iEcomSession)
+        {
+        iEcomSession->Close();
+        }
+#endif //LOC_REVERSEGEOCODE
+	LOG("CLocationManagerServer::~CLocationManagerServer ,end");
     }
+
 // --------------------------------------------------------------------------
-// CLocationManagerServer::CompleteRequests()
+// CLocationManagerServer::GetCommDbTSYnameL
+// --------------------------------------------------------------------------
+//    
+void CLocationManagerServer::GetCommDbTSYnameL(TDes& aTsyName)
+	{
+    LOG( "CLocationManagerServer::GetCommDbTSYnameL(), begin" );
+#ifdef SYMBIAN_NON_SEAMLESS_NETWORK_BEARER_MOBILITY
+	CMDBSession* db = CMDBSession::NewL(KCDVersion1_2);
+#else
+	CMDBSession* db = CMDBSession::NewL(KCDVersion1_1);
+#endif
+	CleanupStack::PushL(db);
+
+	CMDBField<TDesC>* globalSettingField = new(ELeave) CMDBField<TDesC>(KCDTIdBearerAvailabilityCheckTSY);
+	CleanupStack::PushL(globalSettingField);
+	globalSettingField->SetRecordId(1);
+	globalSettingField->SetMaxLengthL(KMaxTextLength);
+	globalSettingField->LoadL(*db);
+	aTsyName = *globalSettingField;
+	CleanupStack::PopAndDestroy(globalSettingField);
+
+	CleanupStack::PopAndDestroy(db);
+    LOG( "CLocationManagerServer::GetCommDbTSYnameL(), end" );
+	}
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::InitialisePhoneL
+// --------------------------------------------------------------------------
+//    
+void CLocationManagerServer::InitialisePhoneL()
+	{
+    LOG( "CLocationManagerServer::InitialisePhoneL(), begin" );
+	User::LeaveIfError(iTelServer.Connect());
+	iTelServerIsOpen = ETrue;
+	TBuf<KCommsDbSvrMaxFieldLength> tsyName;
+	GetCommDbTSYnameL(tsyName);
+
+	User::LeaveIfError(iTelServer.LoadPhoneModule(tsyName));
+
+	TInt numPhones;
+	User::LeaveIfError(iTelServer.EnumeratePhones(numPhones));
+
+	TInt phoneIndx;
+	TInt ret = KErrHardwareNotAvailable;
+
+	for(phoneIndx=0; phoneIndx<numPhones; phoneIndx++)
+		{
+		RTelServer::TPhoneInfo tInfo;
+		ret = iTelServer.GetPhoneInfo(phoneIndx, tInfo);
+		if(ret != KErrNone)
+			{
+			continue;
+			}
+		
+		ret = iPhone.Open(iTelServer, tInfo.iName);	
+		if(ret != KErrNone)
+			{
+			continue;
+			}
+
+		iPhoneIsOpen = ETrue;
+
+		RPhone::TStatus status;
+		User::LeaveIfError(iPhone.GetStatus(status));
+		if(status.iModemDetected!=RPhone::EDetectedPresent)
+			{
+			ret = iPhone.Initialise();
+			if(ret != KErrNone)
+				{
+				iPhone.Close();
+				iPhoneIsOpen = EFalse;
+				continue;
+				}
+			}
+        // we found the correct phone
+        break;
+		}
+
+	//
+	// ret will be KErrNone if a valid phone was found...
+	//
+	
+    LOG1( "CLocationManagerServer::InitialisePhoneL(), end. Err - %d", ret );
+	User::LeaveIfError(ret);
+	}
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CancelRequests()
 // --------------------------------------------------------------------------
 //
 void CLocationManagerServer::CancelRequests(RArray<RMessage2>& aMessageList)
@@ -211,6 +378,10 @@ void CLocationManagerServer::CancelRequests(RArray<RMessage2>& aMessageList)
     aMessageList.Reset();
 	}
 
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CancelCopyRequests
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CancelCopyRequests(RArray<TMessageQuery>& aMessageList)
 	{
 	const TInt count = aMessageList.Count();
@@ -227,10 +398,14 @@ void CLocationManagerServer::CancelCopyRequests(RArray<TMessageQuery>& aMessageL
     aMessageList.Reset();
 	}
 
-
+// --------------------------------------------------------------------------
+// CLocationManagerServer::HandleSessionOpened
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::HandleSessionOpened(CMdESession& /*aSession*/, TInt aError)
 	{
-	if ( iASW->IsStarted() )
+	LOG ("CLocationManagerServer::HandleSessionOpened() start");
+	if ( iASW && iASW->IsStarted() )
 		{
 		iASW->AsyncStop();
 		}
@@ -249,18 +424,31 @@ void CLocationManagerServer::HandleSessionOpened(CMdESession& /*aSession*/, TInt
 		}
 	}
 
-void CLocationManagerServer::HandleSessionError(CMdESession& /*aSession*/, TInt /*aError*/)
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::HandleSessionError
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::HandleSessionError(CMdESession& /*aSession*/, TInt aError)
 	{
+	LOG1 ("CLocationManagerServer::HandleSessionError() start, Error - %d", aError);
+    ARG_USED(aError);
 	iSessionReady = EFalse;
 	delete iMdeSession;
 	iMdeSession = NULL;
 
-	if ( iASW->IsStarted() )
+	if ( iASW && iASW->IsStarted() )
 		{
 		iASW->AsyncStop();
 		}	
 	}
 
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::IsSessionReady
+// --------------------------------------------------------------------------
+//
 TBool CLocationManagerServer::IsSessionReady()
 	{
 	return iSessionReady;
@@ -302,11 +490,9 @@ void CLocationManagerServer::AddSession()
 //    
 void CLocationManagerServer::RemoveSession()
     {
+    LOG1( "CLocationManagerServer::RemoveSession. Session count - %d", iSessionCount);
     iSessionCount--;
-    if ( !iSessionCount )
-        {
-        CActiveScheduler::Stop();
-        }
+    StopServer();
     }    
 
 // --------------------------------------------------------------------------
@@ -334,7 +520,8 @@ void CLocationManagerServer::StartGPSPositioningL( RLocationTrail::TTrailCapture
     
     if ( iTimer )
     	{
-    	iTimer->Cancel();
+    	delete iTimer;
+    	iTimer = NULL;
     	}
     
     iLocationRecord->StartL( aCaptureSetting );
@@ -355,24 +542,19 @@ void CLocationManagerServer::StopGPSPositioningL()
      
     if( state != RLocationTrail::ETrailStopped && state != RLocationTrail::ETrailStopping )
         {
-        if(!iTimer)
+        if(iTimer == NULL)
             {
-            TRAPD( error, iTimer = CPeriodic::NewL( CActive::EPriorityUserInput ) );    
-            if ( error != KErrNone )
-                {
-                LOG("CLocationManagerServer::StopGPSPositioningL() - iTimer not created");
-                iTimer = NULL;
-                }
-            }        
-        if(iTimer)
-            {
-			iTimer->Cancel();
-            iLocationRecord->SetStateToStopping();
-            iTimer->Start( iLocManStopDelay * 1000000, 0, TCallBack( CheckForRemappingCallback, this ) );
+            TRAP_IGNORE(iTimer = CLocationServerTimerHandler::NewL(*this));
             }
+        if ( iTimer == NULL)
+            {
+            // If timer can't be created we stop the location trail immediately.
+            iLocationRecord->Stop();
+            }   
         else
             {
-            iLocationRecord->Stop();
+            iLocationRecord->SetStateToStopping();
+            iTimer->StartTimer( iLocManStopDelay * 1000000, MLocationServerTimerObserver::EStopRecording);
             }
         }
     
@@ -389,48 +571,61 @@ void CLocationManagerServer::StopRecording()
     LOG( "CLocationManagerServer::StopRecording()" );    
     iWaitForPositioningStopTimeout = EFalse;
     iLocationRecord->Stop();		
-	if(iTimer)
-	    {
-        iTimer->Cancel();
-	    }
-	
+	}
+
+// --------------------------------------------------------------------------
+// CLocationUtilityServer::LocationServerTimerCallBackL
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::LocationServerTimerCallBackL
+    (const TLocationServerTimerType aLocationServerTimerType, const TInt /*aErrorCode*/)
+	{
+    LOG1( "CLocationManagerServer::LocationServerTimerCallBackL, begin, Type - %d",
+                aLocationServerTimerType);
+	switch(aLocationServerTimerType)
+        {
+        case MLocationServerTimerObserver::EStopRecording:
+            CheckForRemappingCallback();
+            break;
+        case MLocationServerTimerObserver::EPositioningStopTimeout:
+            PositioningStopTimeout();
+            break;
+        case MLocationServerTimerObserver::ELocGeneralPurpose:
+        default:
+            // execution shouldn't come over here.
+            LOG("Invalid timer type");
+            break;
+        }
+    LOG( "CLocationManagerServer::LocationServerTimerCallBackL, end" );
 	}
 
 // --------------------------------------------------------------------------
 // CLocationUtilityServer::PositioningStopTimeout
 // --------------------------------------------------------------------------
 //
-TInt CLocationManagerServer::PositioningStopTimeout( TAny* aAny )
+void CLocationManagerServer::PositioningStopTimeout()
 	{
     LOG( "CLocationManagerServer::PositioningStopTimeout" );
-	CLocationManagerServer* self = STATIC_CAST( CLocationManagerServer*, aAny );
-	self->StopRecording();
-	
-	return KErrNone;
+	StopRecording();
 	}
 
 // --------------------------------------------------------------------------
-// CLocationUtilityServer::PositioningStopTimeout
+// CLocationUtilityServer::CheckForRemappingCallback
 // --------------------------------------------------------------------------
 //
-TInt CLocationManagerServer::CheckForRemappingCallback( TAny* aAny )
+void CLocationManagerServer::CheckForRemappingCallback()
     {
-    LOG( "CLocationManagerServer::CheckForRemappingCallback" );
-    CLocationManagerServer* self = STATIC_CAST( CLocationManagerServer*, aAny );
-
-    self->iTimer->Cancel();    
-    
-    if ( self->iLocationRecord->RemappingNeeded() && !self->iLocationRecord->IsLowBattery())
+    LOG( "CLocationManagerServer::CheckForRemappingCallback, begin" );
+    if ( iLocationRecord->RemappingNeeded() && !iLocationRecord->IsLowBattery())
         {     
-        self->iTimer->Start( self->iLocManStopRemapDelay * 1000000, 0, TCallBack( PositioningStopTimeout, self ) );
-        self->iWaitForPositioningStopTimeout = ETrue;
+        iTimer->StartTimer( iLocManStopRemapDelay * 1000000, MLocationServerTimerObserver::EPositioningStopTimeout);
+        iWaitForPositioningStopTimeout = ETrue;
         }
     else
         {        
-        self->StopRecording();
+        StopRecording();
         }
-    
-    return KErrNone;
+    LOG( "CLocationManagerServer::CheckForRemappingCallback, end" );
     }
 
 // --------------------------------------------------------------------------
@@ -548,7 +743,7 @@ void CLocationManagerServer::CancelLocationRequest( const TInt aHandle )
     }
 
 // --------------------------------------------------------------------------
-// CLocationManagerServer::GetCurrentCellId
+// CLocationManagerServer::GetCurrentNetworkInfo
 // --------------------------------------------------------------------------
 //    
 void CLocationManagerServer::GetCurrentNetworkInfo( CTelephony::TNetworkInfoV1& aNetworkInfo )
@@ -630,6 +825,11 @@ void CLocationManagerServer::CurrentLocation( const TPositionSatelliteInfo& aSat
     LOG( "CLocationManagerServer::CurrentLocation(), end" );    
     }
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::GPSSignalQualityChanged
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo )
 	{
 	LOG( "CLocationManagerServer::GPSSignalQualityChanged" );
@@ -677,7 +877,10 @@ void CLocationManagerServer::GPSSignalQualityChanged( const TPositionSatelliteIn
 	}
 
 
-
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CancelTrackLogNotificationRequest
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CancelTrackLogNotificationRequest( const TInt aHandle )
 	{
 	LOG( "CLocationManagerServer::CancelTrackLogNotificationRequest(), begin" );
@@ -704,6 +907,11 @@ void CLocationManagerServer::CancelTrackLogNotificationRequest( const TInt aHand
     LOG( "CLocationManagerServer::CancelTrackLogNotificationRequest(), end" );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CreateLocationObjectL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CreateLocationObjectL( const TLocationData& aLocationData,
 													const TUint& aObjectId )
 	{
@@ -715,13 +923,21 @@ void CLocationManagerServer::CreateLocationObjectL( const TLocationData& aLocati
 	iLocationRecord->CreateLocationObjectL( aLocationData, aObjectId );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::LocationSnapshotL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::LocationSnapshotL( const TUint& aObjectId )
 	{
+    LOG( "CLocationManagerServer::LocationSnapshotL(), begin" );
 	if ( !IsSessionReady() )
 		{
+        LOG( "Session is not ready" );
 		User::Leave( KErrNotReady );
 		}
 	iLocationRecord->LocationSnapshotL( aObjectId );
+    LOG( "CLocationManagerServer::LocationSnapshotL(), end" );
 	}
 
 // --------------------------------------------------------------------------
@@ -757,6 +973,11 @@ void CLocationManagerServer::RemoveLocationObjectL(TUint& aObjectId)
     iRelationQuery->FindL( 1, 1 );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CopyLocationObjectL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CopyLocationObjectL( TItemId aSource, 
 		const RArray<TItemId>& aTargets, TMessageQuery& aMessageQuery )
 	{
@@ -818,6 +1039,11 @@ void CLocationManagerServer::CopyLocationObjectL( TItemId aSource,
     	}
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CopyLocationObjectL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CopyLocationObjectL( const TDesC& aSource, 
 		const RArray<TPtrC>& aTargets, TMessageQuery& aQuery )
 	{
@@ -839,13 +1065,24 @@ void CLocationManagerServer::CopyLocationObjectL( const TDesC& aSource,
 	CopyLocationObjectL( source, iTargetObjectIds, aQuery );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::HandleQueryNewResults
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::HandleQueryNewResults( CMdEQuery& /*aQuery*/, 
 		TInt /*aFirstNewItemIndex*/, TInt /*aNewItemCount*/ )
 	{
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::HandleQueryCompleted
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::HandleQueryCompleted( CMdEQuery& aQuery, TInt aError )
 	{	
+	LOG("CLocationManagerServer::HandleQueryCompleted");
 	if ( iRemoveLocation )
 		{
 		if( aQuery.Count() > 0 && aError == KErrNone )
@@ -879,6 +1116,7 @@ void CLocationManagerServer::HandleQueryCompleted( CMdEQuery& aQuery, TInt aErro
 						}
 					iCopyReqs[i].iMessage.Complete( aError );
 					delete iCopyReqs[i].iQuery;
+					iCopyReqs[i].iQuery = NULL;
 					iCopyReqs.Remove( i );
 					break;
 					}
@@ -889,6 +1127,11 @@ void CLocationManagerServer::HandleQueryCompleted( CMdEQuery& aQuery, TInt aErro
 	iTargetObjectIds.Reset();
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::NewLC
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CopyLocationL( CMdEQuery& aQuery )
 	{
 	CMdEObjectDef& locationDef = aQuery.NamespaceDef().GetObjectDefL( Location::KLocationObject );
@@ -920,12 +1163,18 @@ void CLocationManagerServer::CopyLocationL( CMdEQuery& aQuery )
     		{
     		iCopyReqs[i].iMessage.Complete( KErrNone );
     		delete iCopyReqs[i].iQuery;
+    		iCopyReqs[i].iQuery = NULL;
     		iCopyReqs.Remove( i );
     		break;
     		}
     	}
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::InitCopyLocationByIdL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::InitCopyLocationByIdL( const RMessage2& aMessage )
 	{
 	const TInt KParamSourceId = 0;
@@ -959,6 +1208,11 @@ void CLocationManagerServer::InitCopyLocationByIdL( const RMessage2& aMessage )
 	CleanupStack::PopAndDestroy(&targetIds);
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::InitCopyLocationByURIL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::InitCopyLocationByURIL( const RMessage2& aMessage )
 	{
     LOG( "CLocationManagerSession::CopyLocationDataByUriL begin" );
@@ -1008,8 +1262,14 @@ void CLocationManagerServer::InitCopyLocationByURIL( const RMessage2& aMessage )
     LOG( "CLocationManagerSession::CopyLocationDataByUriL end" );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StartTrackLogL
+// --------------------------------------------------------------------------
+//
 TItemId CLocationManagerServer::StartTrackLogL()
 	{
+	LOG("CLocationManagerServer::StartTrackLogL");
 	if ( iTrackLog->IsRecording() )
 		{
 		User::Leave( KErrInUse );
@@ -1026,8 +1286,14 @@ TItemId CLocationManagerServer::StartTrackLogL()
 	return iTagId;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StopTrackLogL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::StopTrackLogL()
 	{
+	LOG("CLocationManagerServer::StopTrackLogL");
 	if ( iTrackLog->IsRecording() )
 		{
 		iTrackLog->StopRecordingL();
@@ -1040,8 +1306,14 @@ void CLocationManagerServer::StopTrackLogL()
 		}
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CompleteNotifyRequest
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CompleteNotifyRequest( TEventTypes aEventType, TInt aError )
 	{
+	LOG("CLocationManagerServer::CompleteNotifyRequest");
 	const TInt KEventTypeParam = 2;
 	TPckg<TEventTypes> wrapEventType( aEventType );
 	
@@ -1059,19 +1331,35 @@ void CLocationManagerServer::CompleteNotifyRequest( TEventTypes aEventType, TInt
 	iTrackLogNotifyReqs.Reset();
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::IsTrackLogRecording
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::IsTrackLogRecording( TBool &aRec )
 	{
 	aRec = iTrackLog->IsRecording();
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::GpxFileCreated
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::GpxFileCreated( const TDesC& aFileName, TItemId aTagId,
 		TReal32 aLength, TTime aStart, TTime aEnd )
 	{
 	TRAP_IGNORE( CreateTrackLogL( aTagId, aFileName, aLength, aStart, aEnd ) );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CreateTrackLogTagL
+// --------------------------------------------------------------------------
+//
 TItemId CLocationManagerServer::CreateTrackLogTagL()
 	{
+	LOG("CLocationManagerServer::CreateTrackLogTagL");
 	if ( !IsSessionReady() )
 		{
 		User::Leave( KErrNotReady );
@@ -1104,9 +1392,15 @@ TItemId CLocationManagerServer::CreateTrackLogTagL()
 	return tagId;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CreateTrackLogL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::CreateTrackLogL( TItemId aTagId, const TDesC& aUri, TReal32 aLength,
 		TTime aStart, TTime aEnd )
 	{
+	LOG("CLocationManagerServer::CreateTrackLogL");
 	if ( !IsSessionReady() )
 		{
 		User::Leave( KErrNotReady );
@@ -1153,6 +1447,11 @@ void CLocationManagerServer::CreateTrackLogL( TItemId aTagId, const TDesC& aUri,
     CleanupStack::PopAndDestroy( trackLog );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::GetTrackLogStatus
+// --------------------------------------------------------------------------
+//
 TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality)
 	{
 	if ( !iTrackLog )
@@ -1165,6 +1464,11 @@ TInt CLocationManagerServer::GetTrackLogStatus( TBool& aRecording, TPositionSate
 	return KErrNone;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::DeleteTrackLogL
+// --------------------------------------------------------------------------
+//
 TInt CLocationManagerServer::DeleteTrackLogL( const TDesC& aUri )
 	{
     LOG( "CLocationManagerServer::DeleteTrackLogL enter" );
@@ -1205,6 +1509,11 @@ TInt CLocationManagerServer::DeleteTrackLogL( const TDesC& aUri )
     return err;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::TrackLogName
+// --------------------------------------------------------------------------
+//
 TInt CLocationManagerServer::TrackLogName( TFileName& aFileName )
 	{
 	if ( iTrackLog->IsRecording() )
@@ -1215,11 +1524,21 @@ TInt CLocationManagerServer::TrackLogName( TFileName& aFileName )
 	return KErrNotFound;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::GetCaptureSetting
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::GetCaptureSetting( RLocationTrail::TTrailCaptureSetting& aCaptureSetting )
 	{
 	aCaptureSetting = iCaptureSetting;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::HandleObjectNotification
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::HandleObjectNotification( CMdESession& /*aSession*/,
 		TObserverNotificationType aType,
 		const RArray<TItemId>& aObjectIdArray )
@@ -1234,6 +1553,11 @@ void CLocationManagerServer::HandleObjectNotification( CMdESession& /*aSession*/
 	TRAP_IGNORE( LinkObjectToTrackLogTagL( aObjectIdArray ) );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StartListeningTagRemovalsL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::StartListeningTagRemovalsL()
 	{
 	if ( !IsSessionReady() )
@@ -1249,6 +1573,11 @@ void CLocationManagerServer::StartListeningTagRemovalsL()
     CleanupStack::Pop( condition );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StartListeningObjectCreationsL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::StartListeningObjectCreationsL()
 	{
 	if ( !IsSessionReady() )
@@ -1271,6 +1600,11 @@ void CLocationManagerServer::StartListeningObjectCreationsL()
 	
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::LinkObjectToTrackLogTagL
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::LinkObjectToTrackLogTagL( const RArray<TItemId>& aObjectIdArray )
 	{
 	CMdERelationDef& containsRelDef = iMdeSession->GetDefaultNamespaceDefL()
@@ -1288,21 +1622,299 @@ void CLocationManagerServer::LinkObjectToTrackLogTagL( const RArray<TItemId>& aO
 		}
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::AddGpxObserver
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::AddGpxObserver( MGpxConversionObserver* aObserver )
 	{
 	iTrackLog->AddGpxObserver( aObserver );
 	}
 
+// --------------------------------------------------------------------------
+// CLocationManagerServer::RemapedCompleted()
+// --------------------------------------------------------------------------
+//
 void CLocationManagerServer::RemapedCompleted()
     {
     LOG( "CLocationManagerServer::RemapedCompleted()" );
     StopRecording();
     }
 
+// --------------------------------------------------------------------------
+// CLocationManagerServer::WaitForPositioningStopTimeout()
+// --------------------------------------------------------------------------
+//
 TBool CLocationManagerServer::WaitForPositioningStopTimeout()
     {
     LOG( "CLocationManagerServer::WaitForPositioningStopTimeout()" );
     return iWaitForPositioningStopTimeout;
+    }
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::GeoTaggingCompleted
+// --------------------------------------------------------------------------
+//
+
+void CLocationManagerServer::GeoTaggingCompleted(  const TInt aError  )
+    {    
+    LOG("CLocationManagerServer::GeoTaggingCompleted ,begin");
+    ARG_USED(aError);
+    // do nothing  because we are only handling pending request for this object.    
+#ifdef LOC_REVERSEGEOCODE
+    if(!iGeoTaggingMessage.IsNull())
+    	{
+		LOG("Completing the request");
+		iGeoTaggingMessage.Complete(aError);
+		iGeoTaggingMessage = RMessage2 ();
+    	}
+#endif //LOC_REVERSEGEOCODE
+    StopServer();
+	LOG("CLocationManagerServer::GeoTaggingCompleted ,end");
+    }
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StopServer
+// --------------------------------------------------------------------------
+//
+
+void CLocationManagerServer::StopServer()
+    {    
+    LOG("CLocationManagerServer::StopServer ,begin");
+    // once geo tagging completed, check whether, we can terminate the server
+    // dont't stop this process if
+    // 1. when client are connected.
+    // 2. 3AM timer is going on.
+    // 3. Tagging is in progress.
+    if ( !iSessionCount 
+#if defined(LOC_REVERSEGEOCODE) || defined(LOC_GEOTAGGING_CELLID)
+        && iGeoTagTimer == NULL
+#endif        
+        && iLocationRecord 
+        && !iLocationRecord->TaggingInProgress())
+        {
+        // Nothing in progress. shutdown the server
+        LOG("Stop the schedular");
+        CActiveScheduler::Stop();
+        }
+	LOG("CLocationManagerServer::StopServer ,end");
+    }
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::PendingGeoTagReqComplete
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::PendingGeoTagReqComplete(  const TInt aError  )
+    {
+    LOG("CLocationManagerServer::PendingGeoTagReqComplete ,begin");
+    ARG_USED(aError);
+#ifdef LOC_REVERSEGEOCODE
+    if(!iTagPendingMessage.IsNull())
+    	{
+       
+	    TGeoTaggingSatus pendingGeoTagEntry = EGeoTagCmpt;
+        switch(aError)
+            {
+            case KErrNotFound:
+                pendingGeoTagEntry = EGeoTaggingPending;
+                LOG("Geo tagging pending");
+                break;
+            case KErrInUse:
+                pendingGeoTagEntry = EGeoTaggingGoingOn;
+                LOG("Geo tagging going on");
+                break;
+            default:
+                break;
+            }
+                    
+	    TPckg<TGeoTaggingSatus> pendingGeoTagEntryPkg( pendingGeoTagEntry );    
+	    TRAPD(err, iTagPendingMessage.WriteL( 0, pendingGeoTagEntryPkg ));
+	    iTagPendingMessage.Complete((err == KErrNone) ? KErrNone : err);
+	    iTagPendingMessage = RMessage2 ();
+    	}
+#endif //LOC_REVERSEGEOCODE
+	LOG("CLocationManagerServer::PendingGeoTagReqComplete ,end");
+    }
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::TagPendingRequestL
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::TagPendingRequestL( const RMessage2& aMessage )
+    {    
+    LOG("CLocationManagerServer::TagPendingRequestL ,begin");
+    // Only one request at a time
+#ifdef LOC_REVERSEGEOCODE
+    if(iTagPendingMessage.IsNull() && iGeoTaggingMessage.IsNull())
+        {
+        iTagPendingMessage = RMessage2( aMessage );
+        // search for pending entry.
+        //Create the instance of geotagger class
+        TBool tagProgress = iLocationRecord->TaggingInProgress();
+        if(tagProgress)
+            {
+            LOG("Tagging is going on.\n");
+            // Let UI to send start geo tagging command.
+            PendingGeoTagReqComplete(KErrNotFound);
+            }
+        else
+            {
+            LOG("Tagging is not going on.\n");
+            if(iGeoTaggingPendingReqObj == NULL)
+                {
+                iGeoTaggingPendingReqObj = CGeoTagger::NewL( this, NULL );
+                }
+            iGeoTaggingPendingReqObj->PendingGeoTagsL( tagProgress);
+    		}
+        }
+    else
+        {
+		LOG("Server busy\n");
+        aMessage.Complete(KErrServerBusy);
+        }
+#else
+    aMessage.Complete(KErrNotSupported);
+#endif //LOC_REVERSEGEOCODE
+	LOG("CLocationManagerServer::TagPendingRequestL ,end");
+    }
+
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CancelTagPendingRequest
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::CancelTagPendingRequest( const RMessage2& aMessage )
+    {    
+    LOG("CLocationManagerServer::CancelTagPendingRequest ,begin");
+    // Only one request at a time
+#ifdef LOC_REVERSEGEOCODE
+    if(!iTagPendingMessage.IsNull())
+        {
+        iTagPendingMessage.Complete(KErrCancel);
+        iLocationRecord->CancelGeoTagging();
+        }
+    aMessage.Complete(KErrNone);
+#else
+    aMessage.Complete(KErrNotSupported);
+#endif //LOC_REVERSEGEOCODE
+    }
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::CancelGeoTaggingRequest
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::CancelGeoTaggingRequest( const RMessage2& aMessage )
+    {    
+    LOG("CLocationManagerServer::CancelGeoTaggingRequest ,begin");
+    // Only one request at a time
+#ifdef LOC_REVERSEGEOCODE
+    if(!iGeoTaggingMessage.IsNull())
+        {
+        iGeoTaggingMessage.Complete(KErrCancel);
+        iGeoTaggingMessage = RMessage2 ();
+        iLocationRecord->CancelGeoTagging();
+        }
+    aMessage.Complete(KErrNone);
+#else
+    aMessage.Complete(KErrNotSupported);
+#endif //LOC_REVERSEGEOCODE
+    }
+
+
+// --------------------------------------------------------------------------
+// CLocationManagerServer::StartGeoTaggingL
+// --------------------------------------------------------------------------
+//
+void CLocationManagerServer::StartGeoTaggingL( const RMessage2& aMessage )
+    {
+    LOG("CLocationManagerServer::StartGeoTaggingL ,begin");
+#ifdef LOC_REVERSEGEOCODE
+    if(iGeoTaggingMessage.IsNull() && iTagPendingMessage.IsNull())
+        {
+        iGeoTaggingMessage = RMessage2( aMessage );
+        // search for pending entry.
+        //Create the instance of geotagger class
+        if(!iLocationRecord->StartGeoTagging(EInteractive))
+            {
+            if(iGeoTaggingPendingReqObj == NULL)
+                {
+                iGeoTaggingPendingReqObj = CGeoTagger::NewL( this, NULL );
+                }
+    		iGeoTaggingPendingReqObj->CreateGeoTagsL((TConnectionOption)(aMessage.Int0()));
+    		}
+        }
+    else
+        {
+		LOG("Server busy\n");
+        aMessage.Complete(KErrServerBusy);
+        }
+#else
+    aMessage.Complete(KErrNotSupported);
+#endif //LOC_REVERSEGEOCODE
+    }
+
+
+// ----------------------------------------------------------------------------
+// CLocationManagerServer::GetCurrentRegisterNw()
+// ---------------------------------------------------------------------------- 
+RMobilePhone::TMobilePhoneNetworkInfoV2& CLocationManagerServer::GetCurrentRegisterNw()
+    {
+    LOG( "CLocationManagerServer::GetCurrentRegisterNw ,begin" );
+    return iLocationRecord->GetCurrentRegisteredNw();
+    }
+
+// ----------------------------------------------------------------------------
+// CLocationManagerServer::RetrieveHomeNetwork()
+// ----------------------------------------------------------------------------
+void CLocationManagerServer::RetrieveHomeNetwork()
+    {
+    LOG("CLocationManagerServer::RetrieveHomeNetwork ,begin");
+    if(iHomeNwInfoAvailableFlag)
+        {
+        RMobilePhone::TMobilePhoneNetworkInfoV1Pckg homeNetworkPckg( iHomeNetwork );
+        
+        TRequestStatus status( KErrNone );
+        
+        iPhone.GetHomeNetwork(status, homeNetworkPckg);
+        User::WaitForRequest( status );
+        if(status.Int() == KErrNone)
+            {
+            iHomeNwInfoAvailableFlag = ETrue;
+            }
+        }
+	LOG("CLocationManagerServer::RetrieveHomeNetwork ,end");
+    }
+
+// ----------------------------------------------------------------------------
+// CLocationManagerServer::GetHomeNetworkInfo()
+// ----------------------------------------------------------------------------
+const RMobilePhone::TMobilePhoneNetworkInfoV1& 
+        CLocationManagerServer::GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag)
+    {
+    LOG("CLocationManagerServer::RetrieveHomeNetwork ,begin");
+    if(!iHomeNwInfoAvailableFlag)
+        {
+        RetrieveHomeNetwork();
+        }
+    aHomeNwInfoAvailableFlag = iHomeNwInfoAvailableFlag;
+    return iHomeNetwork;
+    }
+
+
+// ----------------------------------------------------------------------------
+// CLocationManagerServer::IsRegisteredAtHomeNetwork()
+// ---------------------------------------------------------------------------- 
+TBool CLocationManagerServer::IsRegisteredAtHomeNetwork()
+    {
+    LOG( "CLocationManagerServer::IsRegisteredAtHomeNetwork" );
+    return (iNwRegistrationStatusHandler &&
+            (iNwRegistrationStatusHandler->GetNetworkRegistrationStatus() 
+                == RMobilePhone::ERegisteredOnHomeNetwork));
     }
 
 // End of file 

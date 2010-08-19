@@ -29,4 +29,10 @@ EXPORTS
 	?StopTrackLog@RTrackLog@@QAEXXZ @ 28 NONAME ; void RTrackLog::StopTrackLog(void)
 	?TrackLogName@RTrackLog@@QAEHAAVTDes16@@@Z @ 29 NONAME ; int RTrackLog::TrackLogName(class TDes16 &)
 	?LocationSnapshot@RLocationObjectManipulator@@QAEHK@Z @ 30 NONAME ; int RLocationObjectManipulator::LocationSnapshot(unsigned long)
+	?GeoTagStaus@RLocationGeoTagger@@QAEXAAVTRequestStatus@@AAW4TGeoTaggingSatus@@@Z @ 31 NONAME ; void RLocationGeoTagger::GeoTagStaus(class TRequestStatus &, enum TGeoTaggingSatus &)
+	?CancelGeoTaggingRequest@RLocationGeoTagger@@QAEXXZ @ 32 NONAME ; void RLocationGeoTagger::CancelGeoTaggingRequest(void)
+	?StartGeoTagging@RLocationGeoTagger@@QAEXAAVTRequestStatus@@W4TConnectionOption@@@Z @ 33 NONAME ; void RLocationGeoTagger::StartGeoTagging(class TRequestStatus &, enum TConnectionOption)
+	??1RLocationGeoTagger@@QAE@XZ @ 34 NONAME ; RLocationGeoTagger::~RLocationGeoTagger(void)
+	??0RLocationGeoTagger@@QAE@XZ @ 35 NONAME ; RLocationGeoTagger::RLocationGeoTagger(void)
+	?CancelTagPendingRequest@RLocationGeoTagger@@QAEXXZ @ 36 NONAME ; void RLocationGeoTagger::CancelTagPendingRequest(void)
 

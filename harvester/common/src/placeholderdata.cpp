@@ -50,6 +50,7 @@ void CPlaceholderData::ConstructL()
 CPlaceholderData::~CPlaceholderData()
 	{
 		delete iUri;
+		iUri = NULL;
 	}
 
 //==========================================================================
@@ -86,6 +87,7 @@ EXPORT_C TPtr16 CPlaceholderData::Uri()
 EXPORT_C void CPlaceholderData::SetUri( const TDesC& aUri )
 	{
 	delete iUri;
+	iUri = NULL;
 	iUri = aUri.Alloc();
 	}
 

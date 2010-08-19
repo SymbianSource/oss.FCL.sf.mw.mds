@@ -156,6 +156,7 @@ EXPORT_C TBool CHarvesterExifUtil::IsValidExifData(TPtr8 aPtr)
 		}
 	
 	delete reader;
+	reader = NULL;
 	
 	WRITELOG( "CHarvesterExifUtil::IsValidExifData end" );	
 	OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_ISVALIDEXIFDATA, "CHarvesterExifUtil::IsValidExifData end" );

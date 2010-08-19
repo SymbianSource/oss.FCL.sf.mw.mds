@@ -140,7 +140,7 @@ void CBlacklistSession::AddL( const RMessage2& aMessage )
 void CBlacklistSession::RemoveL( const RMessage2& aMessage ) 
     {
  	RBuf uri;
-    uri.Create( aMessage.GetDesLength( 1 ) );
+    User::LeaveIfError( uri.Create( aMessage.GetDesLength( 1 ) ) );
     CleanupClosePushL( uri );
     aMessage.ReadL( 1, uri );
 
@@ -162,7 +162,7 @@ void CBlacklistSession::RemoveL( const RMessage2& aMessage )
 void CBlacklistSession::RemoveFromDBL( const RMessage2& aMessage ) 
     {
  	RBuf uri;
-    uri.Create( aMessage.GetDesLength( 1 ) );
+ 	User::LeaveIfError( uri.Create( aMessage.GetDesLength( 1 ) ) );
     CleanupClosePushL( uri );
     aMessage.ReadL( 1, uri );
 

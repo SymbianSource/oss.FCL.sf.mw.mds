@@ -66,6 +66,7 @@ EXPORT_C void CPropertyWatcher::Delete()
     if ( me )
         {
         delete me; 
+        me = NULL;
         Dll::SetTls( NULL ); // Free TLS.
         }
     

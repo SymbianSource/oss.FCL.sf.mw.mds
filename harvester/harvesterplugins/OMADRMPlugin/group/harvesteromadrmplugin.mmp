@@ -47,6 +47,7 @@ MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY       euser.lib
 LIBRARY       efsrv.lib
+LIBRARY       imageconversion.lib
 LIBRARY       caf.lib
 LIBRARY	      cafutils.lib
 LIBRARY       harvesterplugininterface.lib

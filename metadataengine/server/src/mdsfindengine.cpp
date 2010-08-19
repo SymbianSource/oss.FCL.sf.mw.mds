@@ -133,7 +133,9 @@ void CMdSFindEngine::CreateResultSet(RMessage2 aMessage)
 CMdSFindEngine::~CMdSFindEngine()
     {
    	delete iSerializedCriteria;
+   	iSerializedCriteria = NULL;
    	delete iSequence;
+   	iSequence = NULL;
     }
 
 // ---------------------------------------------------------------------------

@@ -88,9 +88,16 @@ TInt CLocationManagerTestScripter::RunMethodL(
         ENTRY( "DeleteFile" , CLocationManagerTestScripter::DeleteFileL ),
         ENTRY( "GetStatus" , CLocationManagerTestScripter::GetStatusL ),
         ENTRY( "GetStatus2" , CLocationManagerTestScripter::GetStatus2L )
-        //ADD NEW ENTRY HERE
-        // [test cases entries] - Do not remove
 
+#ifdef LOC_REVERSEGEOCODE
+        ,ENTRY( "ConnectGeoTaggerL", CLocationManagerTestScripter::ConnectGeoTaggerL )
+        ,ENTRY( "CloseGeoTaggerL", CLocationManagerTestScripter::CloseGeoTaggerL )
+        ,ENTRY( "StartGeoTaggingL", CLocationManagerTestScripter::StartGeoTaggingL )
+        ,ENTRY( "TestGeoTagCompleteStatusL", CLocationManagerTestScripter::TestGeoTagCompleteStatusL )
+        ,ENTRY( "TestGeoTagPendingStatusL", CLocationManagerTestScripter::TestGeoTagPendingStatusL )
+        ,ENTRY( "TestGeoTagGoingOnStatusL", CLocationManagerTestScripter::TestGeoTagGoingOnStatusL )
+        ,ENTRY( "CancelGeoTaggingL", CLocationManagerTestScripter::CancelGeoTaggingL )
+#endif //LOC_REVERSEGEOCODE
         };
 
     const TInt count = sizeof( KFunctions ) / 

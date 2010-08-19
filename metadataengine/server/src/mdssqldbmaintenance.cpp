@@ -50,15 +50,153 @@ CMdSSqlDbMaintenance::~CMdSSqlDbMaintenance()
 
 TBool CMdSSqlDbMaintenance::ValidateL(  )
     {
+    //validate content of critical tables
     _LIT( KValidateTableExistence, "SELECT COUNT(*) FROM MdE_Preferences;" );
+    _LIT( KValidateObjectDef, "SELECT COUNT(*) FROM ObjectDef;" );
+    _LIT( KValidatePropertyDef, "SELECT COUNT(*) FROM PropertyDef;" );
+    _LIT( KValidateRelationDef, "SELECT COUNT(*) FROM RelationDef;" );
+    _LIT( KValidateCol2Prop, "SELECT COUNT(*) FROM Col2Prop;" );
 
-    RMdsStatement validationQuery;
-    CleanupClosePushL( validationQuery );
+    TInt test(KErrNone);
+    TUint32 count(0);
+    
     RRowData emptyRowData;
     CleanupClosePushL( emptyRowData );
+        
+    RMdsStatement validationQuery;
+    CleanupClosePushL( validationQuery );
+    
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
-	TRAPD( test, connection.ExecuteQueryL( KValidateTableExistence, validationQuery, emptyRowData ) );
-	CleanupStack::PopAndDestroy( 2, &validationQuery );
+    
+	TRAP( test, connection.ExecuteQueryL( KValidateTableExistence, validationQuery, emptyRowData ) );
+	if(test == KErrNone)
+        {
+        emptyRowData.AppendL( TColumn( count ) );
+        TRAP( test, connection.NextRowL(validationQuery, emptyRowData));
+        if(test == KErrNone)
+            {
+            emptyRowData.Column(0).Get( count );
+                    
+            if(count <= 0)
+                {
+                test = KErrCorrupt;
+                }
+            }
+        }
+	
+	CleanupStack::PopAndDestroy( &validationQuery );
+	emptyRowData.Reset();
+	
+	RMdsStatement objectDefQuery;
+	CleanupClosePushL( objectDefQuery );
+	
+	if( test == KErrNone )
+        {
+        TRAP( test, connection.ExecuteQueryL( KValidateObjectDef, objectDefQuery, emptyRowData ) );
+        
+        if(test == KErrNone)
+            {
+            emptyRowData.AppendL( TColumn( count ) );
+            TRAP( test, connection.NextRowL(objectDefQuery, emptyRowData));
+            if(test == KErrNone)
+                {
+                emptyRowData.Column(0).Get( count );
+                        
+                if(count <= 0)
+                    {
+                    test = KErrCorrupt;
+                    }
+                }
+            }
+        }
+    
+	CleanupStack::PopAndDestroy( &objectDefQuery );
+	emptyRowData.Reset();
+	
+	RMdsStatement propertyDefQuery;
+	CleanupClosePushL( propertyDefQuery );
+
+	if( test == KErrNone )
+	    {
+        TRAP( test, connection.ExecuteQueryL( KValidatePropertyDef, propertyDefQuery, emptyRowData ) );
+        if(test == KErrNone)
+            {
+            emptyRowData.AppendL( TColumn( count ) );
+            TRAP( test, connection.NextRowL(propertyDefQuery, emptyRowData));
+            if(test == KErrNone)
+                {
+                emptyRowData.Column(0).Get( count );
+                
+                if(count <= 0)
+                    {
+                    test = KErrCorrupt;
+                    }
+                }
+            }
+	    }
+	
+	CleanupStack::PopAndDestroy( &propertyDefQuery );
+	emptyRowData.Reset();
+	
+    RMdsStatement relationDefQuery;
+    CleanupClosePushL( relationDefQuery );
+	
+	if( test == KErrNone )
+	    {
+	    TRAP( test, connection.ExecuteQueryL( KValidateRelationDef, relationDefQuery, emptyRowData ) );
+	    if(test == KErrNone)
+	        {
+            emptyRowData.AppendL( TColumn( count ) );
+            TRAP( test, connection.NextRowL(relationDefQuery, emptyRowData));
+            
+            if(test == KErrNone)
+                {
+                emptyRowData.Column(0).Get( count );
+                
+                if(count <= 0)
+                    {
+                    test = KErrCorrupt;
+                    }
+                }
+            }
+	    }
+	
+	CleanupStack::PopAndDestroy( &relationDefQuery );
+	emptyRowData.Reset();
+    
+    RMdsStatement col2propQuery;
+    CleanupClosePushL( col2propQuery );
+    
+    if( test == KErrNone )
+        {
+        TRAP( test, connection.ExecuteQueryL( KValidateCol2Prop, col2propQuery, emptyRowData ) );
+        if(test == KErrNone)
+            {
+            emptyRowData.AppendL( TColumn( count ) );
+            TRAP( test, connection.NextRowL(col2propQuery, emptyRowData));
+            
+            if(test == KErrNone)
+                {
+                emptyRowData.Column(0).Get( count );
+                
+                if(count <= 0)
+                    
+                    {
+                    test = KErrCorrupt;
+                    }
+                }
+            }
+          }
+    CleanupStack::PopAndDestroy( &col2propQuery );
+    emptyRowData.Reset();
+     
+    CleanupStack::PopAndDestroy( &emptyRowData );
+    
+    if(test == KErrCorrupt )
+        {
+        User::Leave( test );
+        }
+    
     return ( test == KErrNone );
     }
 

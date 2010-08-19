@@ -89,12 +89,15 @@ CCalendarContextPlugin::~CCalendarContextPlugin() // destruct
 	{
 	WRITELOG( "CCalendarContextPlugin::~CCalendarContextPlugin -- ENTER" );
 	delete iCalInstanceView;
+	iCalInstanceView = NULL;
 	delete iCalSession;
+	iCalSession = NULL;
 	
 	if( iInitTimer )
 	    {
 	    iInitTimer->Cancel();
 	    delete iInitTimer;
+	    iInitTimer = NULL;
 	    }
 		
 	WRITELOG( "CCalendarContextPlugin::~CCalendarContextPlugin -- RETURN" );

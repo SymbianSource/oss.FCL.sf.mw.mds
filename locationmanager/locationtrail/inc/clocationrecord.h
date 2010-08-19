@@ -22,6 +22,11 @@
 #include <e32property.h>
 #include <lbs.h>
 
+
+#include <etel.h>
+#include <etelmm.h>
+#include <geotagobserver.h>
+
 #include "rlocationtrail.h"
 #include "locationdatatype.h"
 #include "cnetworkinfo.h"
@@ -36,6 +41,17 @@
 #include "mderelation.h"
 #include "mdequery.h"
 #include "locationremappingao.h"
+
+#ifdef LOC_GEOTAGGING_CELLID	
+#include "cgeoconverter.h"
+#endif
+
+#ifdef LOC_REVERSEGEOCODE
+#include <geotagger.h>
+#include "ctagcreator.h"
+#include "reversegeocode.h"
+class CReverseGeoCoderPlugin;
+#endif
 
 typedef RLocationTrail::TTrailState TLocTrailState;
 
@@ -55,11 +71,22 @@ public:
      * This method is used to notify about location trail state changes.
      */
     virtual void LocationTrailStateChange() = 0;
-    
+
+	/**
+     * This method is used to fetch the current location
+     * @param aSatelliteInfo  The satellite information
+     * @param aNetworkInfo  The network informatiom
+     * @param aError ErrCode if any
+     */    
     virtual void CurrentLocation( const TPositionSatelliteInfo& aSatelliteInfo, 
     							  const CTelephony::TNetworkInfoV1& aNetworkInfo,
                                   const TInt aError ) = 0;
-    
+
+
+	/**
+     * This method is used to notify about GPS signal quality changes.
+     * @param aSatelliteInfo  The satellite information
+     */
     virtual void GPSSignalQualityChanged( const TPositionSatelliteInfo& aSatelliteInfo )  = 0;
     
     /**
@@ -86,6 +113,21 @@ class TLocationTrailItem
         TLocTrailState  iTrailState; // Trail state for this item.
     };
     
+/**
+* Location snap shot item class.
+*/
+class TLocationSnapshotItem
+    {
+    public:
+        TLocationData   iLocationData; // Location info & network info
+        TItemId         iObjectId;     // current media object id.
+        TItemId         iLocationId;
+        TUint           iFlag;         //indicator for various scenarios
+#ifdef LOC_REVERSEGEOCODE
+        TItemId         iCountryTagId;
+        TItemId         iCityTagId;
+#endif		
+    };
 class MLocationAddObserver
 	{
 public:
@@ -107,14 +149,21 @@ class CLocationRecord : public CBase,
                         public MNetworkInfoObserver,
                         public MPositionInfoObserver,
                         public MMdEQueryObserver
+#ifdef LOC_GEOTAGGING_CELLID	
+                        ,public MGeoConverterObserver
+#endif						
+#ifdef LOC_REVERSEGEOCODE
+                        ,public MReverseGeocodeObserver
+#endif
     {
 public:  
     /**
      * 2-phased constructor.
+     * @param aGeoTaggerObserver The observer that is notified after geotagging
      * @since S60 3.1
      */
-    IMPORT_C static CLocationRecord* NewL();
-
+     IMPORT_C static CLocationRecord* NewL(MGeoTaggerObserver& aGeoTaggerObserver, RMobilePhone& aPhone);
+ 
     /**
      * C++ destructor.
      * @since S60 3.1
@@ -195,66 +244,178 @@ public:
     
     /**
      * Set observer (TrackLog) for notifying new locations in location trail
+     * @param aObserver, An observer for location changes
      */
     IMPORT_C void SetAddObserver( MLocationAddObserver* aObserver );    
-    
+
+
+	/**
+	* Update network information
+	*
+	*/
     static TInt UpdateNetworkInfo( TAny* aAny );
+
+	/*
+	* creates a location object from the given location data and objectId
+	* @param aLocationData the location data
+	* @param aObjectId the object Id
+	*/
     
     IMPORT_C void CreateLocationObjectL( const TLocationData& aLocationData,
     		const TUint& aObjectId );
-    
+
+
+	/**
+	* Handle the photos taken by phone camera.
+	* @param aObjectId Object id
+	*/
     IMPORT_C void LocationSnapshotL( const TUint& aObjectId );
-    
+
+	/**
+	* Creates a location object with given location data
+	* @param aLocationData The location data
+	* @return The locationId
+	*/
     TItemId DoCreateLocationL( const TLocationData& aLocationData );
-    
+
+	/**
+	* Creates a "contains" relation for the given ObjectId and LocationId and adds it to the iMdeSession
+	* @param aObjectId Object id
+	* @param aLocationId location id
+	* @return item id
+	*/	
     TItemId CreateRelationL( const TUint& aObjectId, const TUint& aLocationId );
-    
+	/**
+	* Sets the CMdESession for tagcreation
+	* @param aSession The CMdESession object
+	*/    
     IMPORT_C void SetMdeSession( CMdESession* aSession );
     
+	/**
+	* Sets the current location trail state to Stop
+	*/	
     IMPORT_C void SetStateToStopping();
     
+	/**
+	* returns the timevalue of the CMdEObject corresponding to a given ObjectId
+	* @param aObjectId  the objectId
+	* @return the timevalue associated with given object
+	*/	
     TTime GetMdeObjectTimeL( TItemId aObjectId );
-    
+
+	/**
+	* Checks if Remapping is needed
+	* @return Boolean to indicate if remapping is needed or not
+	*/	
     IMPORT_C TBool RemappingNeeded();
-    
+
+	
     IMPORT_C TBool IsLowBattery();
+
+    /**
+       * Checks if geotagging is in progress
+       * @return Boolean to indicate if geotagging is in progress
+       */  
+    IMPORT_C TBool TaggingInProgress();   
+
+
+    /**
+       * Initiates geotagging
+       * @param aConnectionOption connection option,silent or not
+       * @return Etrue if geotagging is started
+       */  
+    IMPORT_C TBool StartGeoTagging(const TConnectionOption aConnectionOption);
+
+    /** 
+       * Cancels the geotagging
+       */  
+    IMPORT_C void CancelGeoTagging();
 
 public: // from MNetworkInfoObserver.
     /**
      * 
+     * NetworkInfo
+     * This method is used for setting the network cell id to the 
      * @since S60 3.1
-     * @param 
-     * @return 
+     * @param  aNetworkInfo N/W info
+     * @param  aError       Error code
      */
     void NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInfo, TInt aError );
+
+    /**
+     * Get mobile phone object for network info object
+     * @return mobile phone object
+     */
+    RMobilePhone& GetMobilePhone4NwInfo();
     
 public: // from MPositionInfoObserver    
     /**
-     * 
+     * This method is used for setting the position info to the 
+     * location trail.
      * @since S60 3.1
-     * @param 
-     * @return  
+     * @param aPositionInfo the position information
+     * @param aError Captures the errcode if any
      */
     void Position( const TPositionInfo& aPositionInfo, const TInt aError );
     
     
 public: // From MMdEQueryObserver
 
+	/**
+	* Handle query new results
+	* @param aQuery Query object
+	* @param aFirstNewItemIndex new item index
+	* @param aNewItemCount item count
+	*/
 	void HandleQueryNewResults(CMdEQuery& aQuery, TInt aFirstNewItemIndex, 
 			TInt aNewItemCount);
-	
+
+
+	/*
+	* This method  is called when any of the location/image/tag query is completed
+	* @param aQuery The Query type
+	* @param aError	Indicates if the query was completed successfully or with any err
+	*
+	*/
 	void HandleQueryCompleted(CMdEQuery& aQuery, TInt aError);
+
+#ifdef LOC_GEOTAGGING_CELLID	
+public:     // MGeoConverterObserver
+    /**
+     * This method is used for notifying completion of geotagging
+     * @param aError error code
+     * @param aPosition position (lat/lon) for the correcponding n/w info
+     */
+     void ConversionCompletedL( const TInt aError, TLocality& aPosition );
+
+	/**
+	* This method is used to handle the conversion error
+	* @param aError the error code
+	*/
+	 void HandleConversionError(TInt aError);
 	
-private:    
+#endif	 
+public: 
+
+    /*
+    * Get registrer network country code
+    *
+    * @return current register n/w info
+    */
+    IMPORT_C RMobilePhone::TMobilePhoneNetworkInfoV2& GetCurrentRegisteredNw();
+	
+    
+private:   
     /**
      * Stores the location info into the array.
+     * @param aSatelliteInfo Satellite information
      */
-    void StoreLocation( /*const TPosition& aPosition, const TCourse& aCourse,*/ 
-    		const TPositionSatelliteInfo& aSatelliteInfo );
+    void StoreLocation( const TPositionSatelliteInfo& aSatelliteInfo );
     
     /**
      * Changes the current state. New state is published in P&S and
      * possible observer is notified.
+     * @param aState The location trail state that is to be set
      */    
     void SetCurrentState( TLocTrailState aState );
     
@@ -262,15 +423,18 @@ private:
      * Returns the requested location via callback method, if the location
      * is valid. Otherwise new location value is requested until the value
      * is succesful, or the time out limit has been reached.
+     * @param aSatelliteInfo The satelliteInfo object
+     * @param aError Indicates any error in handling the location request
      * 
      */
     void HandleLocationRequest( const TPositionSatelliteInfo& aSatelliteInfo /*TLocality& aPosition*/, 
                                 const TInt aError );
     /**
      * C++ constructor.
+     * @param aGeoTaggerObserver The observer that is to be notified when geotagging completes
      */  
-    CLocationRecord();
-    
+     CLocationRecord(MGeoTaggerObserver& aGeoTaggerObserver, RMobilePhone& aPhone);
+ 
     /**
      * 2nd phase constructor.
      */
@@ -282,12 +446,157 @@ private:
      * @param aValue, Read value
      */ 
     void ReadCenRepValueL(TInt aKey, TInt& aValue);
-    
+
+	/**
+	* Validates the lat lon values recieved
+	* @param aSatelliteInfo The satelliteInfo object
+	* @return ETrue if the lat=lon are valid
+	*/
     TBool CheckGPSFix( const TPositionSatelliteInfo& aSatelliteInfo );
-    
+
+
+	/**
+	* Starts the network info timer
+	*/
     void StartTimerL();
 
+
+	/**
+	* Fetches the location info from the db
+	*/
+	
+    void FindLocationFromDBL();
+
+
+	/**
+	* Find location entry
+	* @param aQuery       query type for the tag
+	* @param aLocationId  Location Id
+	*/
+    void FindAnyLocationMatchesL( CMdEQuery& aQuery, TUint& aLocationId );
+	
+    /**
+	* Remaps the location objects when GPS is available
+	* @param aGPSInfoAvailable Boolean value to indicate if GPS is available
+	*/
+    void RemapObjectsL( TBool aGPSInfoAvailable );
+
+    /**
+	* Check any location object already exists with same network info
+	*/	
+    void FindLocationWithSameNetInfoL();
+
+    /**
+	* Initialises the location object definitions
+	*/	
+    void InitialiseL();
+
+    /**
+	* handle network location related query on complete
+	* @param aQuery the query type
+	*/    
+    void HandleNetLocationQueryL( CMdEQuery& aQuery );
+
+
+    /**
+	* handle the location query  on location query complete
+	* @param aQuery the query type
+	*/	
+    void HandleLocationQueryL( CMdEQuery& aQuery );
+
+    /**
+	* Callback method on geotagging complete
+	*/	
+    void GeoTaggingCompleted();
+
+#ifdef LOC_REVERSEGEOCODE
+    /**
+     * Get any imagefor this location object
+     * @param aLocID, location object Id
+     */ 
+    void GetRelatedImageL( TItemId aLocID );
+    
+    /**
+     * Get tags for this image
+     * @param aImageID, image object Id
+     */  
+    void GetTagsL( TItemId aImageID );
+
+    /**
+	* handle the tag query on complete
+	* @param aQuery the query type
+	*/	
+    void HandleTagQueryL( CMdEQuery& aQuery );
+
+
+     // MReverseGeocodeObserver
+     //from reverse-geocode observer 
+     /*
+        * Call back method from reverse geo coder with address details like country, city..
+        * @param aErrorcode Indicates any error in Reverse geocoding
+        * aAddressInfo address info
+        */
+     void ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aAddressInfo );
+    
+    /*
+    * Get registrer network country code
+    *
+    * @return current register n/w info
+    */
+    RMobilePhone::TMobilePhoneNetworkInfoV2& GetCurrentRegisterNw();
+	
+    /*
+    * UE is registered to home network?
+    *
+    * @return ETrue if UE is registered at home network else EFalse
+    */
+    TBool IsRegisteredAtHomeNetwork();
+
+
+    /*
+    * Get home network country code
+    * @param aHomeNwInfoAvailableFlag ETrue if home n/w info available else EFalse
+    * @return user home n/w info
+    */
+    const RMobilePhone::TMobilePhoneNetworkInfoV1& 
+        GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag);
+
+	/**
+	* Find country & city tags id
+	* @param aQuery         query type for the tag
+	* @param aCountryTagId  country tag Id
+	* @param aCityTagId     city tag Id
+	*/    
+    void FindCountryAndCityTagL( CMdEQuery& aQuery, TItemId& aCountryTagId, TItemId& aCityTagId );
+
+#endif // LOC_REVERSEGEOCODE
+
+    /**
+	* Handle n/w related information on taken photograph
+	* 
+	*/	
+    void NetworkInfoSnapshotL();
+
+    /**
+	* Find location from DB within the non leaving method
+	*/	
+	void HandleFindLocationFromDB();
+
+    /**
+	* handle MDS query failure sceenario
+	*/	
+	void HandleQueryFailure();
+
+    
 private:
+    enum TRemapState
+        {
+        ERemapProgressNone = 0x00,
+        ERemapRevGeoCodeInProgress,
+        ERemapRevGeoCodePending,
+        ERemapNwGeoConverterInProgress,
+        ERemapNwGeoConverterPending
+        };
 	/**
 	 * A session to Metadata Engine for creating and manipulating location objects.
 	 */
@@ -309,7 +618,7 @@ private:
      * An array to collect location values.
      * Own.
      */
-    RArray<TLocationTrailItem> iTrail;
+    RPointerArray<TLocationTrailItem> iTrail;
 
     /**
      * P&S key property.
@@ -321,7 +630,7 @@ private:
      * Active class to get network information.
      * Own.
      */
-    CNetworkInfo* iNetworkInfo;
+    CNetworkInfo* iNetworkInfoChangeListener;
     
     /**
      * Active class to get position information.
@@ -357,14 +666,10 @@ private:
     TBool                  iRequestCurrentLoc;
     TBool                  iTrailStarted;
     
-    TUint				   iLastNumberOfSatellitesUsed;
-    TReal32				   iLastHDOP;
-    TReal32				   iLastVDOP;
     TBool				   iLastGPSFixState;
     
     TInt                   iLocationDelta;
     TLocationData          iLastLocation;
-    TItemId                iLastLocationId;
     
     TItemId iObjectId;               
     TLocationData iLocationData;
@@ -373,6 +678,83 @@ private:
      * This query object is used to find existing locations
      */
     CMdEObjectQuery* iLocationQuery;
+	
+
+    /** 
+     * Net location query
+     */
+    CMdEObjectQuery* iNetLocationQuery;
+    
+    
+    TRemapState iRemapState;
+    
+    
+    /**
+     * Database definitions.
+     */
+    CMdENamespaceDef* iNamespaceDef;  
+    CMdEObjectDef* iLocationObjectDef;
+    CMdEPropertyDef* iLatitudeDef;
+    CMdEPropertyDef* iLongitudeDef;
+    CMdEPropertyDef* iAltitudeDef;
+    
+    /**
+      * An array to collect downloaded object 
+      * and its location details.
+      */
+    RPointerArray<TLocationSnapshotItem> iMediaItems;
+        
+    TLocationSnapshotItem iLastMediaItem;
+        
+    TInt                 iMediaHandlingFlag;
+	RMobilePhone&	iPhone;	
+
+    /*
+    * Flag to track GPS data availability to update camera location icon.
+    */
+    TBool iGpsDataAvailableFlag;
+
+    MGeoTaggerObserver& iGeoTaggerObserver;
+
+#ifdef LOC_GEOTAGGING_CELLID	
+    /*
+       * Geo converter
+       */
+	CGeoConverter* iGeoConverter;
+    TBool iConvertRetry;
+#endif
+
+#ifdef LOC_REVERSEGEOCODE
+    
+    TConnectionOption    iConnectionOption;
+
+    /** 
+     * query object for getting an image/video object
+     */
+   	CMdERelationQuery* iImageQuery;
+   	/** 
+   	 * query object for getting country and city tags
+   	 */
+    CMdERelationQuery* iTagQuery;	
+    TLocationSnapshotItem iLastLocationItem;
+    RPointerArray<TLocationSnapshotItem> iLocationItems;
+    /** 
+     * to create/attach tags
+     */
+   	CTagCreator *iTagCreator;
+    /*
+     * Flag to track last reverse geocode failure sceenario
+     */
+	TBool iLastReverseGeocodeFails;
+
+    /*
+     * Reverse geo coder plugin object
+     */
+	CReverseGeoCoderPlugin* iRevGeocoderPlugin;
+    TUid iDtorKey;
+
+#endif
+	
     };
 
 #endif // C_CLOCATIONRECORD_H 

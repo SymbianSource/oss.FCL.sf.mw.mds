@@ -64,6 +64,7 @@ COnDemandAO::~COnDemandAO()
 	if( iMdEHarvesterSession )
 		{
 		delete iMdEHarvesterSession;
+		iMdEHarvesterSession = NULL;
 		}
 	// Delete instance variables if any
 	}
@@ -115,8 +116,14 @@ void COnDemandAO::RunL()
 							hd->SetEventType( EHarvesterEdit );
 							hd->SetObjectType( EFastHarvest );
 							queue.Remove( k );
-							queue.Insert( hd, 0 );
-							found = ETrue;
+
+							if(queue.Insert( hd, 0 ) != KErrNone)
+							    {
+                                delete hd;
+                                hd = NULL;
+							    }
+							
+                            found = ETrue;
 							}							
 						}
 					}

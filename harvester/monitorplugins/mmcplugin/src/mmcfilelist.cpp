@@ -94,7 +94,7 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 	
 	CleanupResetAndDestroyPushL( aEntryArray );
 	
-	CDesCArrayFlat* path = new(ELeave) CDesCArrayFlat( 10 );
+	CDesCArrayFlat* path = new(ELeave) CDesCArrayFlat( 30 );
 	CleanupStack::PushL( path );
 	TFileName firstPath;
 	firstPath.Copy( aDrivePath );

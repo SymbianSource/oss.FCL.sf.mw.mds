@@ -60,21 +60,26 @@ CMMCMonitorPlugin::~CMMCMonitorPlugin() // destruct
     	{
     	iMMCMonitor->StopMonitoring();
     	delete iMMCMonitor;
+    	iMMCMonitor = NULL;
     	}
     
 	if (iUsbMonitor)
     	{
     	iUsbMonitor->StopMonitoring();
     	delete iUsbMonitor;
+    	iUsbMonitor = NULL;
     	}
     
 	if (iMountTask)
     	{
     	delete iMountTask;
+    	iMountTask = NULL;
     	}
 	
 	delete iMmcScanner;
+	iMmcScanner = NULL;
 	delete iHddScanner;
+	iHddScanner = NULL;
 	
 	iFs.Close();
     }
@@ -219,6 +224,7 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
 
     TMountData* mountData = NULL;
     mountData = new TMountData;
+    
     if ( !mountData )
         {
         return;
@@ -248,7 +254,56 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EMounted" );
             mountData->iMountType = TMountData::EMount;
-            iMountTask->StartMount( *mountData );
+            
+            // If mass storage mounting was delayed in boot so that mount event
+            // occures in mmc monitor, update the mass storage media id in the
+            // db in case factory settings were reseted and mass storage formatted
+            TInt drive( -1 );
+            TInt internalMassStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+            if( internalMassStorageError == KErrNone )
+                {
+                TVolumeInfo internalMassStorageVolumeInfo;
+                internalMassStorageError = iFs.Volume( internalMassStorageVolumeInfo, drive );
+                if( internalMassStorageError == KErrNone )
+                    {
+                    const TUint32 massStorageMediaId( internalMassStorageVolumeInfo.iUniqueID );
+                    TUint32 mmcMediaId( 0 );
+                    TInt mmcError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive ) );
+                    if( mmcError == KErrNone )
+                        {
+                        TVolumeInfo mmcVolumeInfo;
+                        mmcError = iFs.Volume( mmcVolumeInfo, drive );
+                        if( mmcError == KErrNone )
+                            {
+                            mmcMediaId = mmcVolumeInfo.iUniqueID;
+                            }
+                        }
+                    
+                    // If removable storage is not found, assume internal mass storage was mounted
+                    if( mmcError )
+                        {
+                        if( massStorageMediaId != 0 && 
+                            massStorageMediaId == aMediaID )
+                            {
+                            iMdEClient->CheckMassStorageMediaId( massStorageMediaId );
+                            }                    
+                        }
+                    else if( massStorageMediaId != mmcMediaId && 
+                                massStorageMediaId != 0 && 
+                                massStorageMediaId == aMediaID )
+                        {
+                        iMdEClient->CheckMassStorageMediaId( massStorageMediaId );
+                        }          
+                    }
+                }
+            
+            TRAPD(err, iMountTask->StartMountL( *mountData ))
+			
+            if(err != KErrNone )
+                {
+                delete mountData;
+                mountData = NULL;
+                }
             }
         break;
         
@@ -262,7 +317,13 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             	{
 	            WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EDismounted" );
 	            mountData->iMountType = TMountData::EUnmount;
-	            iMountTask->StartUnmount( *mountData );
+	            TRAPD(err, iMountTask->StartUnmountL( *mountData ));
+	            
+	            if(err != KErrNone )
+	                {
+	                delete mountData;
+	                mountData = NULL;
+	                }
             	}
             else
                 {
@@ -276,7 +337,13 @@ void CMMCMonitorPlugin::MountEvent( TChar aDriveChar, TUint32 aMediaID, TMMCEven
             {
             WRITELOG( "CMMCMonitorPlugin::MountEvent with parameter EFormatted" );
             mountData->iMountType = TMountData::EFormat;
-            iMountTask->StartUnmount( *mountData );
+            TRAPD(err, iMountTask->StartUnmountL( *mountData ));
+			
+            if(err != KErrNone)
+                {
+                delete mountData;
+                mountData = NULL;
+                }
             }
         break;
         

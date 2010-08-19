@@ -339,6 +339,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             		  {
             			fileEventType = EMdsFileCreated;
             			delete iCreatedFiles[i];
+            			iCreatedFiles[i] = NULL;
             			iCreatedFiles.Remove( i );
             			
 						//Have to check whether file has been hidden          			
@@ -433,6 +434,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
                     if ( MdsUtils::Compare( iFileName, *(iModifiedFiles[i]) ) == 0 )
                       {
                         delete iModifiedFiles[i];
+                        iModifiedFiles[i] = NULL;
                         iModifiedFiles.Remove( i );
                         found = ETrue;
                         }
@@ -448,7 +450,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
                 return KErrNone;
                 }
             
-            fileEventType = EMdsFileModified;
+            fileEventType = EMdsFileAttribsChanged;
             }
             break;            
             

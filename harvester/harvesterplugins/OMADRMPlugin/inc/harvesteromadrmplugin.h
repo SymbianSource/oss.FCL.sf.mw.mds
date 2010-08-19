@@ -18,13 +18,17 @@
 #ifndef __CHARVESTEROMADRMPLUGIN_H__
 #define __CHARVESTEROMADRMPLUGIN_H__
 
+#include <mdeobject.h>
 #include <e32base.h>
 #include <apmstd.h>
-#include "harvesterplugin.h"
+#include <imageconversion.h>
+#include <harvesterplugin.h>
+#include <harvesterdata.h>
+
 
 // FORWARD DECLARATION
-class CMdEObjectDef;
-class CMdEObject;
+class CFileData;
+class CHarvestData;
 
 /**
 * A data transfer class for harvested drm metadata.
@@ -84,14 +88,20 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iAuthorPropertyDef;
 		CMdEPropertyDef* iGenrePropertyDef;
 		CMdEPropertyDef* iDefaultFolderPropertyDef;
+		CMdEPropertyDef* iWidthPropertyDef;
+		CMdEPropertyDef* iHeightPropertyDef;
 	
+		// Image property definitions
+		CMdEPropertyDef* iFrameCountPropertyDef;
+		CMdEPropertyDef* iBitsPerSamplePropertyDef;
 	private:
 		CHarvesterOmaDrmPluginPropertyDefs();
 	
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterOmaDrmPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
+        static CHarvesterOmaDrmPluginPropertyDefs* NewL();
+        void SetByObjectDefL( CMdEObjectDef& aObjectDef) ;
 	};
 
 class CHarvesterOMADRMPlugin : public CHarvesterPlugin
@@ -126,35 +136,62 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
 	
 	private:
 		/**
+        * Gathers data from file to meta data object.
+        *
+        * @param aMetadataObject  A reference to meta data object to gather the data.
+        * @param aDRMharvestData
+        * @param aFileData
+        * @param aHarvestData
+        */
+        TInt GatherDataL( CMdEObject& aMetadataObject, CDRMHarvestData& aDRMharvestData, 
+			CFileData& aFileData, CHarvestData& aHarvestData );
+	
+		
+		
+			/**
+			
 		* C++ constructor - not exported;
 		* implicitly called from NewL()
 		*
 		* @return an instance of CHarvesterOMADRMPlugin.
 		*/
-		CHarvesterOMADRMPlugin();
-		
+
 		/**
-		* 2nd phase construction, called by NewLC()
-		*/
-		void ConstructL();
-		
-		/**
-        * Gathers data from file to meta data object.
-        *
-        * @param aMetadataObject  A reference to meta data object to gather the data.
-        * @param aHarvestData  An object to store harvested video file data.
-        */
-        void GatherDataL( CMdEObject& aMetadataObject, CDRMHarvestData& aHarvestData );
-		
-        /**
          * Handle addition of new mde video objects.
          *
          * @param aMetadataObject  A reference to meta data object to gather the data.
-         * @param aHarvestData  An object containing harvested video file data.
+         * @param aDRMharvestData
+         * @param aFileData
+         * @param aHarvestData
          */
-        void HandleObjectPropertiesL( CHarvesterData& aHD, CDRMHarvestData& aVHD, TBool aIsAdd );
-
+        void HandleObjectPropertiesL( CHarvestData& aHarvestData, CDRMHarvestData& aDRMharvestData, CFileData& aFileData, 
+			CHarvesterData& aHarvesterData, TBool aIsAdd );
+		
+				// Default constructor
+		CHarvesterOMADRMPlugin();
+	/**
+	* 2nd phase construction, called by NewLC()
+		*/
+		void ConstructL();
+		
+	    void InitPropDefsL( CMdEObjectDef& aObjectDef );
+	      
+  protected:
+        /** 
+         * Handle to File server session.
+         */
+        RFs iFs;
+        
 	private:
+	     /**
+         *  image decoder
+         */        
+        
+
+		
+      
+
+
 		CHarvesterOmaDrmPluginPropertyDefs* iPropDefs;
 		
 		TInt iMaxTextLength;
@@ -167,6 +204,7 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
         
         HBufC* iPhoneSoundsPath;
         HBufC* iMmcSoundsPath;
+
 	};
 
 #endif // __CHarvesterOMADRMPlugin_H__

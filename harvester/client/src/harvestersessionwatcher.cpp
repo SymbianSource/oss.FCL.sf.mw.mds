@@ -38,6 +38,7 @@ CHarvesterSessionWatcher* CHarvesterSessionWatcher::NewL( MHarvesterSessionObser
 CHarvesterSessionWatcher::~CHarvesterSessionWatcher() // destruct
 	{   
     Cancel();
+    iObserver = NULL;
  	}
 
 // ---------------------------------------------------------------------------
@@ -105,7 +106,10 @@ void CHarvesterSessionWatcher::RunL()
           case ERunning:
               {
               // server terminated, notify clients
-              iObserver->HarvesterServerTerminated();
+              if( iObserver )
+                  {
+                  iObserver->HarvesterServerTerminated();
+                  }
               break;
               }
             

@@ -61,6 +61,7 @@ CMdSFindSqlClause* CMdSFindSqlClause::NewLC(CMdsSchema& aSchema)
 CMdSFindSqlClause::~CMdSFindSqlClause()
     {
     delete iQueryBuf;
+    iQueryBuf = NULL;
 
     iResultRow.Close();
     iVariables.Close();
@@ -76,6 +77,7 @@ CMdSFindSqlClause::~CMdSFindSqlClause()
 		iSourceObjectDefs->Close();
 
 		delete iSourceObjectDefs;
+		iSourceObjectDefs = NULL;
 		}
     }
 

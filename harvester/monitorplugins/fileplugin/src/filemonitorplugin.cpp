@@ -40,6 +40,7 @@ CFileMonitorPlugin* CFileMonitorPlugin::NewL()
 CFileMonitorPlugin::~CFileMonitorPlugin() 
 	{
 	delete iFileMonitor;
+	iFileMonitor = NULL;
 	}
 
 // ---------------------------------------------------------------------------
@@ -67,6 +68,7 @@ TBool CFileMonitorPlugin::StartMonitoring( MMonitorPluginObserver& aObserver,
 			TRAP( err, cenRepoUtil->AddIgnorePathsToFspL( KDrive, KMonitorPath ));
 			}
 		delete cenRepoUtil;
+		cenRepoUtil = NULL;
 		}
 	return success && err == KErrNone;
 	}

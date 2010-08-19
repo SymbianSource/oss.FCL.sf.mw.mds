@@ -19,8 +19,8 @@
 #include "mdeobject.h"
 #include "mdsutils.h"
 
-const TInt KResumeTime = 2000000;  //microseconds
-const TInt KTimeIncrease = 500000; //microseconds
+const TInt KResumeTime = 3000000;  //microseconds
+const TInt KTimeIncrease = 1000000; //microseconds
 const TInt KTimeLimit = 30000000;    //microseconds
 
 // ---------------------------------------------------------------------------
@@ -165,6 +165,7 @@ void CReHarvesterAO::AddItem( CHarvesterData* aItem )
             WRITELOG1("CReHarvesterAO::AddItem() - %S already exists in re-harvester queue", &aItem->Uri() );
 #endif
             delete aItem;
+            aItem = NULL;
             return;
             }
         }
@@ -173,11 +174,16 @@ void CReHarvesterAO::AddItem( CHarvesterData* aItem )
     if( mdeObject )
     	{
     	delete mdeObject;
+    	mdeObject = NULL;
     	aItem->SetMdeObject( NULL );
     	}
     
-    iItems.Append( aItem );
-    
+    if(iItems.Append( aItem ) != KErrNone )
+        {
+        delete aItem;
+        aItem = NULL;
+        }
+
     iDelay = KResumeTime;
     const TTimeIntervalMicroSeconds32 delay = TTimeIntervalMicroSeconds32( iDelay );
     
@@ -206,6 +212,7 @@ void CReHarvesterAO::CheckItem( CHarvesterData& aItem )
         // found matching item
 	    iItems.Remove( i );
 	    delete item;
+	    item = NULL;
         }
     
     if ( iItems.Count() == 0 )

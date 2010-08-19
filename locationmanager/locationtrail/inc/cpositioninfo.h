@@ -82,7 +82,12 @@ public:
      * @return None.
      */    
     void Stop();
-        
+    
+    /**
+     * Handle remap completed event
+     * @since S60 9.2
+     */    
+    void HandleRemapComplete();    
 protected:
     /**
      * Run error implementation in case of RunL leaving.
@@ -113,6 +118,12 @@ private:
     void RunL(); 
 
 private:
+    typedef enum
+        {
+        EPositionOptStateNone = 0x00,
+        EPositionOptStateGetLastKnownPosition,
+        EPositionOptStateNotifyUpdate
+        }TPositionOptState;
     /**
      * An observer interface to set current position to the location trail.
      * Not own.
@@ -137,7 +148,8 @@ private:
     
     TInt iUpdateInterval;
     
-    TBool iFirstInterval;
+    TPositionOptState iState;
+    TBool iConnectedPositionServer;
     };
 
 #endif // C_CPOSITIONINFO_H

@@ -74,6 +74,7 @@ CAudioMDParser* CAudioMDParser::NewL( const TBool aAlbumArt )
 CAudioMDParser::~CAudioMDParser()
     {
     delete iMetaDataUtility;
+    iMetaDataUtility = NULL;
     
     iMimeTypeMappings.Close();
     iWantedMetadataFields.Close();

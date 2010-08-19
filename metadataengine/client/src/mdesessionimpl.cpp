@@ -241,6 +241,7 @@ CMdESessionImpl::~CMdESessionImpl()
     iSessionObserver = NULL;
 
 	delete iSchemaBuffer;
+	iSchemaBuffer = NULL;
 
 	iNotifiers.ResetAndDestroy();
 	iNotifiers.Close();
@@ -254,8 +255,10 @@ CMdESessionImpl::~CMdESessionImpl()
 	iNamespaceDefs.Close();
 	
 	delete iSessionStartupAO;
+	iSessionStartupAO = NULL;
 		
 	delete iAsyncHandler;
+	iAsyncHandler = NULL;
 	}
 
 void CMdESessionImpl::ConstructL()
@@ -359,7 +362,8 @@ void CMdESessionImpl::CommitObjectsL(RPointerArray<CMdEObject>& aObjects)
     		{
     		User::Leave( KErrMdENotLocked );
     		}
-		items.Append( obj );
+    	
+    	items.AppendL( obj );
     	}
 
     UpdateItemsL(items);
@@ -536,6 +540,7 @@ void CMdESessionImpl::DoLoadSchemaL()
 		}
 
 	delete iSchemaBuffer;
+	iSchemaBuffer = NULL;
 
 	iSchemaBuffer = schemaBuffer;
 	
@@ -2694,6 +2699,7 @@ void CMdESessionImpl::NotifierInError( CMdENotifierAO* aNotifier )
     {
     const TInt index = iNotifiers.Find( aNotifier );
     delete aNotifier;
+    aNotifier = NULL;
     iNotifiers.Remove( index );
     }
 

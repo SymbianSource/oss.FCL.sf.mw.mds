@@ -109,6 +109,7 @@ EXPORT_C void CContextEngine::ReleaseInstance()
             {
             // destroy the singleton and free TLS
             delete data;
+            data = NULL;
             UserSvr::DllFreeTls( KContextEngineTLSKey );
             }
         }
@@ -132,6 +133,7 @@ EXPORT_C void CContextEngine::Destroy()
         {
         // destroy the singleton and free TLS
         delete data;
+        data = NULL;
         UserSvr::DllFreeTls( KContextEngineTLSKey );
         }
     }
@@ -144,6 +146,7 @@ CContextEngine::~CContextEngine()
     {
     WRITELOG( "CContextEngine::~CContextEngine" ); // DEBUG INFO
     delete iContextEngineAO;
+    iContextEngineAO = NULL;
 
     MdsUtils::CleanupPtrArray<CContextSnapshotItem>( &iSnapshotQueue );
     REComSession::FinalClose(); // we are done
@@ -279,6 +282,7 @@ void CContextEngine::QueueSnapshotItem( CContextSnapshotItem* aItem )
     if ( iSnapshotQueue.Append( aItem ) != KErrNone )
         {
         delete aItem;
+        aItem = NULL;
         return;
         }
 

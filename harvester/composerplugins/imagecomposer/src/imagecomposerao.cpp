@@ -71,16 +71,20 @@ CImageComposerAO::~CImageComposerAO() // destruct
     if ( iMdeObject )
         {
         delete iMdeObject;
+        iMdeObject = NULL;
         }
     if ( iExifUtil )
     	{
     	delete iExifUtil;
+    	iExifUtil = NULL;
     	}
 
     delete iRelationQuery;
+    iRelationQuery = NULL;
     iFs.Close();
     
     delete iMdEHarvesterSession;
+    iMdEHarvesterSession = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +114,7 @@ void CImageComposerAO::ConstructL() // second-phase constructor
     CActiveScheduler::Add( this );
     
     iExifUtil = CHarvesterExifUtil::NewL();
+    iFastModeEnabled = EFalse;
     User::LeaveIfError( iFs.Connect() );
     }
     
@@ -241,6 +246,10 @@ void CImageComposerAO::RunL()
             if( iItemQueue.Count() <= 0 )
             	{
                 iItemQueue.Compress();
+                if( iFastModeEnabled )
+                    {
+                    SetPriority( KHarvesterPriorityComposerPlugin );
+                    }
             	SetNextRequest( ERequestReady );
             	}
             else
@@ -250,6 +259,20 @@ void CImageComposerAO::RunL()
 	            
 	            if ( err == KErrNone )
 	                {    
+	                CMdEProperty* prop = NULL;
+	                CMdEPropertyDef& originPropDef = iMdeObject->Def().GetPropertyDefL( Object::KOriginProperty );
+	                iMdeObject->Property( originPropDef, prop );
+	                if( prop && prop->Uint8ValueL() == MdeConstants::Object::ECamera && !iFastModeEnabled )
+	                    {
+	                    iFastModeEnabled = ETrue;
+	                    SetPriority( KHarvesterPriorityMonitorPlugin );
+	                    }
+	                else if( iFastModeEnabled )
+	                    {
+	                    iFastModeEnabled = EFalse;
+	                    SetPriority( KHarvesterPriorityComposerPlugin );
+	                    }
+	                
 	                SetNextRequest( ERequestCompose );
 	                }
 	            // if object does not exists, find next
@@ -746,8 +769,13 @@ void CImageComposerAO::DoWriteExifL( CMdEObject* aMdEObject, CMdEObject* aLocati
 
     // Check whether the file is open
     TBool isOpen( EFalse );
-    iFs.IsFileOpen( uri, isOpen );
-    if ( isOpen )
+    const TInt openError = iFs.IsFileOpen( uri, isOpen );
+    if( openError != KErrNone )
+        {
+        WRITELOG( "CImageComposerAO::DoWriteExifL() - check for open file failed!" );
+        User::Leave( openError );
+        }
+    else if ( isOpen )
         {
         WRITELOG( "CImageComposerAO::DoWriteExifL() - file handle is open!" );
         User::Leave( KErrInUse );

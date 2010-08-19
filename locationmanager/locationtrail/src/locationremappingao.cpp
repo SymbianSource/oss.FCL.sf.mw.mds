@@ -24,6 +24,11 @@
 
 using namespace MdeConstants;
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::NewL()
+// --------------------------------------------------------------------------
+//
 CLocationRemappingAO* CLocationRemappingAO::NewL()
 	{
 	LOG( "CLocationRemappingAO::NewL" ); // DEBUG INFO
@@ -35,6 +40,10 @@ CLocationRemappingAO* CLocationRemappingAO::NewL()
 	return self;
 	}
 
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::ConstructL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::ConstructL()
 	{
 	LOG( "CLocationRemappingAO::ConstructL" ); // DEBUG INFO
@@ -49,6 +58,10 @@ void CLocationRemappingAO::ConstructL()
 		}
 	}
 
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::~CLocationRemappingAO()
+// --------------------------------------------------------------------------
+//
 CLocationRemappingAO::~CLocationRemappingAO()
 	{
 	LOG( "CLocationRemappingAO::~CLocationRemappingAO" ); // DEBUG INFO
@@ -59,6 +72,10 @@ CLocationRemappingAO::~CLocationRemappingAO()
 	iObjects.ResetAndDestroy();
 	}
 
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::CLocationRemappingAO()
+// --------------------------------------------------------------------------
+//
 CLocationRemappingAO::CLocationRemappingAO() : CActive( CActive::EPriorityStandard ),
 	iState ( EIdle ),
 	iContinue( EFalse ),
@@ -71,7 +88,10 @@ CLocationRemappingAO::CLocationRemappingAO() : CActive( CActive::EPriorityStanda
 	// No implementation required
 	}
 
-
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::InitialiseL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::InitialiseL(CMdESession* aMdEClient)
 	{
 	LOG( "CLocationRemappingAO::Initialise start" ); // DEBUG INFO
@@ -97,21 +117,41 @@ void CLocationRemappingAO::InitialiseL(CMdESession* aMdEClient)
 	LOG( "CLocationRemappingAO::Initialise end" );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::Append()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::Append( TRemapItem aItem )
 	{
 	iRemapItems.Append( aItem );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::ResetQueue()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::ResetQueue()
 	{
 	iRemapItems.Reset();
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::ItemsInQueue()
+// --------------------------------------------------------------------------
+//
 TBool CLocationRemappingAO::ItemsInQueue()
 	{
 	return iRemapItems.Count() > 0;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::CheckQueue()
+// --------------------------------------------------------------------------
+//
 TBool CLocationRemappingAO::CheckQueue()
 	{
 	LOG( "CLocationRemappingAO::CheckQueue - start" );
@@ -165,13 +205,21 @@ TBool CLocationRemappingAO::CheckQueue()
 	return create;
 	}
 
-
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::StopRemapping()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::StopRemapping()
 	{
 	LOG( "CLocationRemappingAO::StopRemapping" ); // DEBUG INFO
 	NextState(EIdle);
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::StartRemappingObjects()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::StartRemappingObjects( const TLocationData& aLocationData )
 	{
 	iLocationData = aLocationData;
@@ -185,6 +233,11 @@ void CLocationRemappingAO::StartRemappingObjects( const TLocationData& aLocation
 	NextState( ERemapObjects );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::NextState()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::NextState(TMappingState aState)
 	{
 	LOG1( "CLocationRemappingAO::NextState - state: %d", aState ); // DEBUG INFO
@@ -198,6 +251,11 @@ void CLocationRemappingAO::NextState(TMappingState aState)
 		}	
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::DoCancel()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::DoCancel()
 	{
 	LOG( "CLocationRemappingAO::DoCancel" ); // DEBUG INFO
@@ -205,6 +263,11 @@ void CLocationRemappingAO::DoCancel()
 	NextState(EIdle);
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::RunError()
+// --------------------------------------------------------------------------
+//
 TInt CLocationRemappingAO::RunError( TInt aError )
 	{
 	if (aError != KErrNone)
@@ -216,6 +279,11 @@ TInt CLocationRemappingAO::RunError( TInt aError )
 	return KErrNone;
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::RunL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::RunL()
 	{
 	LOG1( "CCameraTrailMonitorAO::RunL iStatus: %d", iStatus.Int() ); // DEBUG INFO
@@ -252,7 +320,10 @@ void CLocationRemappingAO::RunL()
 		}
 	}
 
-
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::RemapObjectsL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::RemapObjectsL()
 	{	
 	LOG( "CLocationRemappingAO::RemapObjects - start" ); // DEBUG INFO
@@ -314,12 +385,14 @@ void CLocationRemappingAO::RemapObjectsL()
 		relation = iMdEClient->GetRelationL( iRemapItems[i].iRelationId );
 		
 		if(relation)
-		    {   
+		    {
+		    CleanupStack::PushL(relation);
             TTime timestamp( 0 );
             timestamp.UniversalTime();
             relation->SetLastModifiedDate( timestamp );
     	
             iMdEClient->UpdateRelationL( *relation );
+		    CleanupStack::PopAndDestroy(relation);
 		    }
 		}
 	
@@ -331,6 +404,11 @@ void CLocationRemappingAO::RemapObjectsL()
 	LOG( "CLocationRemappingAO::RemapObjects - end" );
 	}
 
+
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::CommitObjectsL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::CommitObjectsL()
 	{
 	LOG( "CLocationRemappingAO::CommitObjects" ); // DEBUG INFO
@@ -360,7 +438,10 @@ void CLocationRemappingAO::ReadTimeFromCenRepL()
     LOG( "CLocationRemappingAO::ReadTimeFromCenRepL(), end" );   
 	}
 
-
+// --------------------------------------------------------------------------
+// CLocationRemappingAO::UpdateRelationsL()
+// --------------------------------------------------------------------------
+//
 void CLocationRemappingAO::UpdateRelationsL( TItemId aLocationId )
 	{ 
 	LOG("CLocationRemappingAO::UpdateRelationsL - start");
@@ -381,20 +462,46 @@ void CLocationRemappingAO::UpdateRelationsL( TItemId aLocationId )
 						iRemapItems[i].iObjectId, aLocationId, 0 );
 				iMdEClient->AddRelationL( *relationObject );
 				CleanupStack::PopAndDestroy( relationObject );
-				LOG("CLocationRemappingAO::UpdateRelationsL - new relation created");
+				LOG("new relation created");
 				}
 			else
 				{
 				CMdERelation* relationObject = iMdEClient->GetRelationL( iRemapItems[i].iRelationId );
+                CleanupStack::PushL(relationObject);
 				relationObject->SetRightObjectIdL( aLocationId );
 				iMdEClient->UpdateRelationL( *relationObject );
-				LOG("CLocationRemappingAO::UpdateRelationsL - old relation updated");
+                CleanupStack::PopAndDestroy(relationObject);
+				LOG("old relation updated");
 				}
 			iRemapItems.Remove( i );
 			}
 		}
 	LOG("CLocationRemappingAO::UpdateRelationsL - end");
 	}
+
+#ifdef LOC_REVERSEGEOCODE
+// --------------------------------------------------------------------------
+// CLocationRemapping::AttachGeoTagsL
+// --------------------------------------------------------------------------
+//
+void CLocationRemappingAO::AttachGeoTagsL( CTagCreator *aTagCreator,
+                                         const TItemId aCountryTagId, const TItemId aCityTagId )
+    { 
+    LOG("CLocationRemapping::AttachGeoTagsL - start");
+    
+    TInt count = iObjectIds.Count() - 1;
+    for( TInt i = count; i >= 0; i-- )
+        {
+        aTagCreator->AttachTagsL( iObjectIds[i], aCountryTagId, aCityTagId );
+        }
+    
+    iObjectIds.Reset();
+    
+    LOG("CLocationRemapping::AttachGeoTagsL - end");
+    }
+
+#endif //LOC_REVERSEGEOCODE
+
 
 // --------------------------------------------------------------------------
 // TRemapItem constructor
@@ -409,3 +516,4 @@ TRemapItem::TRemapItem() :
 	
 	}
 
+// End of file

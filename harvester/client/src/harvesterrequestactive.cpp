@@ -32,14 +32,11 @@ CHarvesterRequestActive::~CHarvesterRequestActive()
     if( IsActive() )
         {
         Cancel();
-        if( iObserver )
-            {
-            iObserver->HarvestingComplete( iUri, KErrCancel );
-            }    
-        iRequestCompleted = ETrue;
         }
     
+    iRequestCompleted = ETrue;
     delete iAlbumIds;
+    iAlbumIds = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -79,10 +76,16 @@ CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient,
 //
 void CHarvesterRequestActive::RunL()
     {
+    if( iStatus.Int() == KErrCancel )
+        {
+        return;
+        }           
+    
     if( iStatus.Int() && iObserver )
         {
         iObserver->HarvestingComplete( iUri, iStatus.Int() );
         }       
+    
     iRequestCompleted = ETrue;
     if( iRequestQueue )
         {
@@ -104,7 +107,8 @@ TInt CHarvesterRequestActive::RunError( TInt aError )
     if( iObserver )
         {
         iObserver->HarvestingComplete( iUri, aError );
-        }    
+        }
+    
     iRequestCompleted = ETrue;
     return KErrNone;
     }
@@ -116,6 +120,7 @@ TInt CHarvesterRequestActive::RunError( TInt aError )
 void CHarvesterRequestActive::DoCancel()
     {
     iCancelled = ETrue;
+	iObserver = NULL;
     }
 
 // ---------------------------------------------------------------------------

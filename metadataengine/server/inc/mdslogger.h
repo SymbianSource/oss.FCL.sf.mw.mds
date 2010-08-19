@@ -159,7 +159,7 @@ class CMdSLogger : public CBase
     #define __DEFINE_LOGGER             class CMdSLogger* gLogger;
     #define __USES_LOGGER               extern CMdSLogger* gLogger;
     #define __INIT_LOGGER               gLogger = CMdSLogger::NewInstanceL();
-    #define __DESTROY_LOGGER            {if(gLogger){delete gLogger;gLogger=NULL;}}
+    #define __DESTROY_LOGGER            {if(gLogger){delete gLogger; gLogger=NULL;}}
 	#define __LOGLB(CATEGORY,A)         {if (gLogger->IsActive(CATEGORY)) { gLogger->LogLit( _L(A) ); }}
 	#define __LOG(CATEGORY,A)           {if (gLogger->IsActive(CATEGORY)) { gLogger->LogLit( A ); }}
 #ifdef MDE_FILE_LOGGING
@@ -177,7 +177,7 @@ class CMdSLogger : public CBase
 	    	{__LOG( ELogQuery, INFO); \
 	        CMdsClauseBuffer* queryText = gLogger->DescribeFullL(BUFFER,ROWDATA); \
 	        if ( queryText ) { __LOG( ELogQuery, queryText->ConstBufferL() ); \
-	        delete queryText;} }
+	        delete queryText; queryText = NULL;} }
 	#else //LOG_QUERY
 	    #define __LOGQUERY_16(INFO, BUFFER, ROWDATA)
 	#endif //LOG_QUERY

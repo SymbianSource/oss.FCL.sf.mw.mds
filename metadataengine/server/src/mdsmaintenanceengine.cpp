@@ -16,8 +16,6 @@
 */
 
 // INCLUDE FILES
-#include <driveinfo.h>
-
 #include "mdsmaintenanceengine.h"
 #include "mdslogger.h"
 #include "mdsmanipulationengine.h"
@@ -79,6 +77,7 @@ void CMdSMaintenanceEngine::ConstructL()
 CMdSMaintenanceEngine::~CMdSMaintenanceEngine()
     {
     delete iMaintenance;
+    iMaintenance = NULL;
     }
 
 // ------------------------------------------------
@@ -117,7 +116,17 @@ void CMdSMaintenanceEngine::DeleteDatabase()
 void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsSchema& aSchema )
     {
     __LOG1( ELogAlways, "Trying to validate MDS DB, error expected if not created(first boot): %d", 0 );
-    if ( !(iMaintenance->ValidateL( ) ) )
+	
+    TBool isValid(EFalse);
+    TRAPD(err, isValid = iMaintenance->ValidateL( ));
+    
+    if(err == KErrCorrupt)
+        {
+        DeleteDatabase();
+        User::Leave( err );
+        }
+    
+    else if ( !isValid )
         {
         // Pump up priority to load the MDS DB up as fast as possible to
         // enable client side session connections
@@ -272,31 +281,6 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     User::LeaveIfError( fs.Volume( volumeInfo, EDriveC ) );
     MMdsPreferences::InsertL( KCMediaIdKey, MMdsPreferences::EPreferenceValueSet,
     		(TUint32) volumeInfo.iUniqueID );
-
-    TInt drive( -1 );
-    TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
-    if( massStorageError == KErrNone )
-        {
-        TVolumeInfo massStorageVolumeInfo;
-        massStorageError = fs.Volume( massStorageVolumeInfo, drive );
-        if( massStorageError == KErrNone )
-            {
-            const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
-            massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
-            if( massStorageError == KErrNone )
-                {
-                massStorageError = fs.Volume( massStorageVolumeInfo, drive );
-                // Update mass storage media id if the mass storage is not memory card
-                if( massStorageError == KErrNone &&
-                    massStorageVolumeInfo.iUniqueID != massStorageMediaId &&
-                    massStorageMediaId != 0 )
-                    {
-                    MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
-                            (TUint32) massStorageMediaId );
-                    }        
-                }
-            }
-        }
     
     CleanupStack::PopAndDestroy( &fs );
 	}

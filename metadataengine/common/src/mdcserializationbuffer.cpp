@@ -163,6 +163,7 @@ EXPORT_C CMdCSerializationBuffer* CMdCSerializationBuffer::NewL( const CMdCSeria
 CMdCSerializationBuffer::~CMdCSerializationBuffer()
 	{
 	delete iHeapBuffer;
+	iHeapBuffer = NULL;
 	}
 
 EXPORT_C TPtr8 CMdCSerializationBuffer::Buffer() const

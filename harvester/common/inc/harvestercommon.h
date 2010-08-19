@@ -98,6 +98,7 @@ _LIT( KExludedMediaArtPath, ".mediaartlocal");
 
 const TInt KOriginIgnored = 255;
 const TInt KOriginFastHarvest = 254;
+const TInt KOriginIgnoreAttribsChanged = 253;
 
 const CActive::TPriority KHarvesterPriorityContextEngine = CActive::EPriorityUserInput;
 const CActive::TPriority KHarvesterPriorityMonitorPlugin = CActive::EPriorityUserInput;
@@ -106,6 +107,9 @@ const CActive::TPriority KHarvesterPriorityHarvestingPlugin = CActive::EPriority
 
 // Between Standard and UserInput to allow components to react to important events correctly
 const TInt KHarvesterCustomImportantPriority = 5;
+// Higher than MonitorPlugin priority but lower than High to ensure server can answer to all
+// connection requests as fast as possible
+const TInt KHarvesterServerSessionPriority = 11;
 
 #endif
 

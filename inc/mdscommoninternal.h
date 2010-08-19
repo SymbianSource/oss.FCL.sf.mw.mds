@@ -50,7 +50,7 @@ const TInt KMaxUint64ValueLength = 20;
 
 const TInt KMaxTitleFieldLength = 255;
 
-const TInt KTriggerDbMaintenanceTreasholdValue( 2500 );
+const TInt KTriggerDbMaintenanceTreasholdValue( 3000 );
 
 _LIT( KMdSServerName,"!MdSServer" ); // Server name
 _LIT( KMdSServerProcessString,"!MdSServer*" ); 

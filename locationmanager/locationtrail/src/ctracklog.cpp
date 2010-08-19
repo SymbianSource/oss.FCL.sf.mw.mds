@@ -68,6 +68,7 @@ CTrackLog::CTrackLog() :
 EXPORT_C CTrackLog::~CTrackLog()
 	{
 	delete iGpxConverter;
+	iGpxConverter = NULL;
 	iFs.Close();
 	}
 
@@ -201,6 +202,7 @@ void CTrackLog::LocationAdded( const TLocationTrailItem& aTrailItem,
 				if ( err == KErrNone )
 					{
 					delete lastCoords;
+					lastCoords = NULL;
 					lastCoords = new TCoordinate( aTrailItem.iLocationData.iPosition );
 					iBoundaries->distance += distance;
 					}
@@ -220,6 +222,8 @@ void CTrackLog::WriteBufferToFileL()
 
 	RFile64 file;
 	RFileWriteStream writer;
+	
+	CleanupClosePushL( writer );
 	
 	TInt err;
 	err = file.Open( iFs, iTmpFileName, EFileRead );
@@ -246,8 +250,6 @@ void CTrackLog::WriteBufferToFileL()
 			}
 		writer.Sink()->SeekL( MStreamBuf::EWrite, TStreamPos( endpos ));
 		}
-	
-	CleanupClosePushL( writer );
 	
 	TInt count = iTrackLogItemArray.Count();
 	
@@ -306,7 +308,9 @@ EXPORT_C void CTrackLog::StartRecoveryL()
 			}
 		}
 	delete filename;
+	filename = NULL;
 	delete files;
+	files = NULL;
 	}
 
 void CTrackLog::ReadCenRepValueL(TInt aKey, TInt& aValue)

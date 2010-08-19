@@ -97,19 +97,16 @@ void CHarvesterClientAO::SetObserver( MHarvestObserver* aObserver )
 // RemoveObserver
 // ---------------------------------------------------------------------------
 //	
-void CHarvesterClientAO::RemoveObserver( MHarvestObserver* aObserver )
+void CHarvesterClientAO::RemoveObserver( MHarvestObserver* /*aObserver*/ )
 	{
 	WRITELOG( "CHarvesterClientAO::RemoveObserver()" );
-	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_REMOVEOBSERVER, "CHarvesterClientAO::RemoveObserver" );
-	
-	if ( aObserver == iObserver )
-		{
-		if ( iObserver )
-			{
-			WRITELOG( "CHarvesterClientAO::RemoveObserver() - deleting observer" );
-			iObserver = NULL;
-			}
-		}
+    if ( iObserver )
+        {
+        WRITELOG( "CHarvesterClientAO::RemoveObserver() - deleting observer" );
+        iObserver = NULL;
+        }
+    
+    Cancel();
 	}
 
 // ---------------------------------------------------------------------------
@@ -120,7 +117,7 @@ void CHarvesterClientAO::DoCancel()
 	{
 	WRITELOG( "CHarvesterClientAO::DoCancel()" );
 	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_DOCANCEL, "CHarvesterClientAO::DoCancel" );
-	
+	iHarvesterClient.UnregisterHarvestComplete();
 	}
 	
 // ---------------------------------------------------------------------------
@@ -129,7 +126,7 @@ void CHarvesterClientAO::DoCancel()
 //
 void CHarvesterClientAO::Active()
 	{	
-	if (!IsActive())
+	if ( iObserver && !IsActive())
 		{
 		iHarvesterClient.RegisterHarvestComplete(iURI, iStatus);
 		SetActive();
@@ -144,7 +141,6 @@ void CHarvesterClientAO::RunL()
 	{
 	WRITELOG( "CHarvesterClientAO::RunL()" );
 	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_RUNL, "CHarvesterClientAO::RunL" );
-	
 
 	const TInt status = iStatus.Int();
 	
@@ -161,7 +157,7 @@ void CHarvesterClientAO::RunL()
 		}
 	
 	// if the request was not canceled or server is not terminated, Activating AO again
-	if ( status != KErrCancel && status != KErrServerTerminated )
+	if ( status != KErrCancel && status != KErrServerTerminated && iObserver )
 		{
 		Active();
 		}

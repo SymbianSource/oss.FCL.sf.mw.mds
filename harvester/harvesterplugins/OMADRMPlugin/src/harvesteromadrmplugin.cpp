@@ -20,6 +20,7 @@
 #include <pathinfo.h>
 
 #include "mdsutils.h"
+#include "harvesterexifutil.h"
 #include "harvesteromadrmplugin.h"
 #include "harvesterlog.h"
 #include "harvestercommon.h"
@@ -33,6 +34,9 @@
 #include <mdetextproperty.h>
 #include <mdenamespacedef.h>
 #include <mdeconstants.h>
+#include <imageconversion.h>
+
+using namespace MdeConstants;
 
 _LIT(KImage, "Image");
 _LIT(KVideo, "Video");
@@ -44,11 +48,24 @@ _LIT( KRingingToneMime, "application/vnd.nokia.ringing-tone" );
 
 _LIT(KInUse, "InUse");
 
-CHarvesterOmaDrmPluginPropertyDefs::CHarvesterOmaDrmPluginPropertyDefs() : CBase()
+CHarvesterOmaDrmPluginPropertyDefs::CHarvesterOmaDrmPluginPropertyDefs() : CBase(),
+    iCreationDatePropertyDef( NULL )
 	{
 	}
 
-void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
+void CHarvesterOmaDrmPluginPropertyDefs::ConstructL( CMdEObjectDef& aObjectDef )
+    {
+    SetByObjectDefL( aObjectDef );
+    }
+
+CHarvesterOmaDrmPluginPropertyDefs* CHarvesterOmaDrmPluginPropertyDefs::NewL()
+    {
+    CHarvesterOmaDrmPluginPropertyDefs* self = 
+        new (ELeave) CHarvesterOmaDrmPluginPropertyDefs();
+    return self;
+    }
+
+void CHarvesterOmaDrmPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef )
 	{
 	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 	
@@ -65,17 +82,16 @@ void CHarvesterOmaDrmPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
 	iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDescriptionProperty );
 	iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KAuthorProperty );
-	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
-	}
 
-CHarvesterOmaDrmPluginPropertyDefs* CHarvesterOmaDrmPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
-	{
-	CHarvesterOmaDrmPluginPropertyDefs* self = 
-		new (ELeave) CHarvesterOmaDrmPluginPropertyDefs();
-	CleanupStack::PushL( self );
-	self->ConstructL( aObjectDef );
-	CleanupStack::Pop( self );
-	return self;
+	// Media property definitions
+	iWidthPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KWidthProperty );
+	iHeightPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KHeightProperty );
+
+	// Image property definitions
+	CMdEObjectDef& imageDef = nsDef.GetObjectDefL( MdeConstants::Image::KImageObject );
+	iBitsPerSamplePropertyDef = &imageDef.GetPropertyDefL( MdeConstants::Image::KBitsPerSampleProperty );
+	iFrameCountPropertyDef = &imageDef.GetPropertyDefL( MdeConstants::Image::KFrameCountProperty );
+	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
 	}
 
 /**
@@ -108,16 +124,25 @@ CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()
 	{
 	WRITELOG("CHarvesterOMADRMPlugin::~CHarvesterOMADRMPlugin()");
 	
+	iFs.Close();
+
+	delete iPropDefs;
+    iPropDefs = NULL;
+
     delete iPhoneImagesPath;
+    iPhoneImagesPath = NULL;
     delete iMmcImagesPath;
+    iMmcImagesPath = NULL;
     
     delete iPhoneVideosPath;
+    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
+    iMmcVideosPath = NULL;
     
     delete iPhoneSoundsPath;
+    iPhoneSoundsPath = NULL;
     delete iMmcSoundsPath;
-	
-	delete iPropDefs;
+    iMmcSoundsPath = NULL;
 	}
 
 /**
@@ -127,7 +152,11 @@ void CHarvesterOMADRMPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterOMADRMPlugin::ConstructL()" );
     SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );	
+    
+    User::LeaveIfError( iFs.Connect() );
 	
+    iPropDefs = CHarvesterOmaDrmPluginPropertyDefs::NewL();
+    
 	TFileName phoneRoot = PathInfo::PhoneMemoryRootPath();
 	TFileName mmcRoot = PathInfo::MemoryCardRootPath();
 	
@@ -162,25 +191,33 @@ void CHarvesterOMADRMPlugin::ConstructL()
     iMmcSoundsPath = mmcSoundPath.Right( mmcSoundPath.Length() - 1 ).AllocL();
 	}
 
-void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHD )
+void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHarvesterData )
 	{
-    CMdEObject& mdeObject = aHD->MdeObject();
-    CDRMHarvestData* fileData = CDRMHarvestData::NewL();
+	WRITELOG( "CHarvesterImagePlugin::HarvestL()" );
+    CMdEObject& mdeObject = aHarvesterData->MdeObject();
+	CDRMHarvestData* drmHarvestData = CDRMHarvestData::NewL();
+	CleanupStack::PushL( drmHarvestData );
+	
+    CFileData* fileData = CFileData::NewL();
     CleanupStack::PushL( fileData );
 
-    TRAPD( error, GatherDataL( mdeObject, *fileData ) );
-    if ( error == KErrNone || error == KErrCompletion )
-    	{
-        TBool isNewObject( mdeObject.Id() == 0 );
+    CHarvestData* harvestData = CHarvestData::NewL();
+    CleanupStack::PushL( harvestData );
         
-        if ( isNewObject || mdeObject.Placeholder() )
+    TInt errorCode( KErrNone );
+    
+    TRAPD( error, errorCode = GatherDataL( mdeObject, *drmHarvestData, *fileData, *harvestData ) );
+    
+    if ( error == KErrNone && (errorCode == KErrNone || errorCode == KErrCompletion ) ) // ok, something got harvested
+        {
+        if ( mdeObject.Id() == 0 || mdeObject.Placeholder() ) // is a new object or placeholder
             {
-            TRAP( error, HandleObjectPropertiesL( *aHD, *fileData, ETrue ) );
+            TRAP_IGNORE( HandleObjectPropertiesL( *harvestData,  *drmHarvestData, *fileData, *aHarvesterData, ETrue ) );
             mdeObject.SetPlaceholder( EFalse );
             }
-        else
+        else   // not a new object
             {
-            TRAP( error, HandleObjectPropertiesL( *aHD, *fileData, EFalse ) );
+            TRAP_IGNORE( HandleObjectPropertiesL( *harvestData, *drmHarvestData, *fileData, *aHarvesterData, EFalse ) );
             }
 
         if ( error != KErrNone )
@@ -190,21 +227,21 @@ void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHD )
     	}
     else	
         {
-        WRITELOG1( "CHarvesterOMADRMPlugin::HarvestL() - TRAP error: %d", error );
+        WRITELOG1( "CHarvesterOMADRMPlugin::HarvestL() - TRAP error: %d, errorCode %d", error );
         TInt convertedError = KErrNone;
         MdsUtils::ConvertTrapError( error, convertedError );
-        aHD->SetErrorCode( convertedError );
+        aHarvesterData->SetErrorCode( convertedError );
         }
 
-    CleanupStack::PopAndDestroy( fileData );
+    CleanupStack::PopAndDestroy( 3, drmHarvestData );
 	}
 
 // ---------------------------------------------------------------------------
 // GatherDataL
 // ---------------------------------------------------------------------------
 //
-void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
-		CDRMHarvestData& aVHD )
+TInt CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject, CDRMHarvestData& aDRMharvestData, 
+        CFileData& aFileData, CHarvestData& /*aHarvestData*/ )
     {
     WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL" );
     
@@ -214,8 +251,8 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
     const TDesC& uri = aMetadataObject.Uri();
     User::LeaveIfError( iFs.Entry( uri, *entry ) );
     
-    aVHD.iModified = entry->iModified;
-    aVHD.iFileSize = (TUint)entry->iSize;
+    aDRMharvestData.iModified = entry->iModified;
+    aDRMharvestData.iFileSize = (TUint)entry->iSize;
     CleanupStack::PopAndDestroy( entry );
     
     ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );   
@@ -232,106 +269,126 @@ void CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject,
 
     User::LeaveIfError( data->GetStringAttributeSet(attrSet) );
     
-    TInt err = attrSet.GetValue( ContentAccess::EDescription, aVHD.iDescription );
+    TInt err = attrSet.GetValue( ContentAccess::EDescription, aDRMharvestData.iDescription );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting description failed %d", err );
         }
         
-    if ( aVHD.iDescription.Length() <= 0 )
+    if ( aDRMharvestData.iDescription.Length() <= 0 )
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no description" );
         }
     
-    err = attrSet.GetValue( ContentAccess::EMimeType, aVHD.iMimetype );
+    err = attrSet.GetValue( ContentAccess::EMimeType, aDRMharvestData.iMimetype );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting mimetype failed %d", err );
         }
         
-    if ( aVHD.iMimetype.Length() <= 0 )
+    if ( aDRMharvestData.iMimetype.Length() <= 0 )
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no mimetype" );
         }
     
-    err = attrSet.GetValue( ContentAccess::ETitle, aVHD.iTitle );
+    err = attrSet.GetValue( ContentAccess::ETitle, aDRMharvestData.iTitle );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting title failed %d", err );
         }
         
-    if ( aVHD.iTitle.Length() <= 0 )
+    if ( aDRMharvestData.iTitle.Length() <= 0 )
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no title" );
         }
     
-    err = attrSet.GetValue( ContentAccess::EAuthor, aVHD.iAuthor );
+    err = attrSet.GetValue( ContentAccess::EAuthor, aDRMharvestData.iAuthor );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting author failed %d", err );
         }
         
-    if ( aVHD.iAuthor.Length() <= 0 )
+    if ( aDRMharvestData.iAuthor.Length() <= 0 )
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no author" );
         }
 
-    err = attrSet.GetValue( ContentAccess::EGenre, aVHD.iGenre );
+    err = attrSet.GetValue( ContentAccess::EGenre, aDRMharvestData.iGenre );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting genre failed %d", err );
         }
         
-    if ( aVHD.iGenre.Length() <= 0 )
+    if ( aDRMharvestData.iGenre.Length() <= 0 )
         {
         WRITELOG( "CHarvesterOMADRMPlugin::GatherDataL - no genre" );
         }
     
-    err = content->GetAttribute( ContentAccess::EIsProtected, aVHD.iDrmProtected );
+    err = content->GetAttribute( ContentAccess::EIsProtected, aDRMharvestData.iDrmProtected );
     if ( err != KErrNone)
         {
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting protection info failed %d", err );
         }
-        
-    CleanupStack::PopAndDestroy( 3 ); // content, data, attrSet
+      
+    CImageDecoder* decoder = NULL;
+
+    TRAP( err, decoder = CImageDecoder::FileNewL( iFs, uri, ContentAccess::EPeek, 
+            ( CImageDecoder::TOptions )( CImageDecoder::EPreferFastDecode )));
+
+    CleanupStack::PushL( decoder );
+    
+    if(decoder && !err)
+        {
+        WRITELOG( "CHarvesterImagePlugin::GatherData() - Image decoder has opened the file." );        
+        // Get image width, frame count, height and bits per pixel from image decoder.
+        const TFrameInfo info = decoder->FrameInfo( 0 );
+        const TSize imageSize = info.iOverallSizeInPixels;
+        const TInt framecount = decoder->FrameCount();
+        aFileData.iFrameCount = framecount;
+        aFileData.iImageWidth = imageSize.iWidth;
+        aFileData.iImageHeight = imageSize.iHeight;
+        aFileData.iBitsPerPixel = info.iBitsPerPixel;
+        }
+    else
+        {
+        WRITELOG1( "CHarvesterImagePlugin::GatherData() - ERROR: decoder %d", err );
+        }
+
+    CleanupStack::PopAndDestroy( 4 ); // content, data, attrSet, imagedecoder
+    return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
 // HandleObjectPropertiesL
 // ---------------------------------------------------------------------------
 //
-void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
-		CHarvesterData& aHD,
-		CDRMHarvestData& aVHD,
-		TBool aIsAdd )
+void CHarvesterOMADRMPlugin::HandleObjectPropertiesL( CHarvestData& /*aHarvestData*/, CDRMHarvestData& aDRMharvestData, CFileData& aFileData, 
+        CHarvesterData& aHarvesterData, TBool aIsAdd )
     {
     WRITELOG("CHarvesterOMADRMPlugin - HandleNewObject ");
-    CMdEObject& mdeObject = aHD.MdeObject();
+    CMdEObject& mdeObject = aHarvesterData.MdeObject();
 
-    if( !iPropDefs )
-    	{
-    	CMdEObjectDef& objectDef = mdeObject.Def();
-    	iPropDefs = CHarvesterOmaDrmPluginPropertyDefs::NewL( objectDef );
-    	// Prefetch max text lengt for validity checking
-    	iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
-    	}
+    InitPropDefsL( mdeObject.Def() );
     
     TTimeIntervalSeconds timeOffset = User::UTCOffset();
+    
+    TPtrC objectDefName( mdeObject.Def().Name());
     
     if( ! mdeObject.Placeholder() )
     	{
     	// Creation date
-    	TTime localTime = aVHD.iModified + timeOffset;
+    	TTime localTime = aDRMharvestData.iModified + timeOffset;
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     			*iPropDefs->iCreationDatePropertyDef, &localTime, aIsAdd );
     	// Last modified date
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iLastModifiedDatePropertyDef, &aVHD.iModified, aIsAdd );
+    			*iPropDefs->iLastModifiedDatePropertyDef, &aDRMharvestData.iModified, aIsAdd );
     	// File size
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iSizePropertyDef, &aVHD.iFileSize, aIsAdd );
+    			*iPropDefs->iSizePropertyDef, &aDRMharvestData.iFileSize, aIsAdd );
 
-    	TPtrC objectDefName( mdeObject.Def().Name() );
+    	TPtrC objectDefName( mdeObject.Def().Name());
+    	
         if( objectDefName == MdeConstants::Image::KImageObject )
             {
             const TDesC& uri = mdeObject.Uri();
@@ -382,7 +439,7 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
     	}
         
     // Item Type
-    if(aVHD.iMimetype.Length() > 0)
+    if(aDRMharvestData.iMimetype.Length() > 0)
         {
         TBool isAdd( EFalse );
         CMdEProperty* prop = NULL;
@@ -392,36 +449,59 @@ void CHarvesterOMADRMPlugin::HandleObjectPropertiesL(
             isAdd = ETrue;
             }
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-                *iPropDefs->iItemTypePropertyDef, &aVHD.iMimetype, isAdd );
+                *iPropDefs->iItemTypePropertyDef, &aDRMharvestData.iMimetype, isAdd );
         }
     
     // DRM protection
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    		*iPropDefs->iDrmPropertyDef, &aVHD.iDrmProtected, aIsAdd );
+    		*iPropDefs->iDrmPropertyDef, &aDRMharvestData.iDrmProtected, aIsAdd );
     
     // Title (is set from URI by default)
-    if( aVHD.iTitle.Length() > 0 && aVHD.iTitle.Length() < KMaxTitleFieldLength )
+    if( aDRMharvestData.iTitle.Length() > 0 && aDRMharvestData.iTitle.Length() < KMaxTitleFieldLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iTitlePropertyDef, &aVHD.iTitle, EFalse );
+    			*iPropDefs->iTitlePropertyDef, &aDRMharvestData.iTitle, EFalse );
     	}
     // Description
-    if( aVHD.iDescription.Length() > 0 && aVHD.iDescription.Length() < iMaxTextLength )
+    if( aDRMharvestData.iDescription.Length() > 0 && aDRMharvestData.iDescription.Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iDescriptionPropertyDef, &aVHD.iDescription, aIsAdd );
+    			*iPropDefs->iDescriptionPropertyDef, &aDRMharvestData.iDescription, aIsAdd );
     	}   
     // Author
-    if( aVHD.iAuthor.Length() > 0 && aVHD.iAuthor.Length() < iMaxTextLength )
+    if( aDRMharvestData.iAuthor.Length() > 0 && aDRMharvestData.iAuthor.Length() < iMaxTextLength )
     	{
     	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-    			*iPropDefs->iAuthorPropertyDef, &aVHD.iAuthor, aIsAdd );
+    			*iPropDefs->iAuthorPropertyDef, &aDRMharvestData.iAuthor, aIsAdd );
     	}
     // Genre
-    if( aVHD.iGenre.Length() > 0 && aVHD.iGenre.Length() < iMaxTextLength )
+    if( aDRMharvestData.iGenre.Length() > 0 && aDRMharvestData.iGenre.Length() < iMaxTextLength )
         {
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
-                *iPropDefs->iGenrePropertyDef, &aVHD.iGenre, aIsAdd );
+                *iPropDefs->iGenrePropertyDef, &aDRMharvestData.iGenre, aIsAdd );
+        }
+    
+    if( objectDefName == MdeConstants::Image::KImageObject )
+        {
+      // Image - Bits per Sample
+        if (aFileData.iBitsPerPixel != 0)
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iBitsPerSamplePropertyDef, &aFileData.iBitsPerPixel, aIsAdd );
+            }
+    
+        // Image - Framecount
+        CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iFrameCountPropertyDef, &aFileData.iFrameCount, aIsAdd );
+        
+        // MediaObject - Width
+        if (aFileData.iImageWidth != 0)
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iWidthPropertyDef, &aFileData.iImageWidth, aIsAdd );
+            }
+        
+        if (aFileData.iImageHeight != 0)
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iHeightPropertyDef, &aFileData.iImageHeight, aIsAdd );
+            } 
         }
     }
 
@@ -439,6 +519,7 @@ void CHarvesterOMADRMPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType
 		{
 		err = content->GetStringAttribute( ContentAccess::EMimeType, mime );
 		delete content;
+		content = NULL;
 		}
 
 #ifdef _DEBUG
@@ -559,6 +640,17 @@ void CHarvesterOMADRMPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
         {
         err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
         delete content;
+        content = NULL;
+        }
+    }
+
+void CHarvesterOMADRMPlugin::InitPropDefsL( CMdEObjectDef& aObjectDef )
+    {
+    if( !iPropDefs->iCreationDatePropertyDef )
+        {
+        iPropDefs->SetByObjectDefL( aObjectDef );
+        // Prefetch max text lengt for validity checking
+        iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
         }
     }
 
