@@ -50,7 +50,8 @@ enum TMdsFileEventType
 	EMdsFileDeleted,
 	EMdsDriveFormatted,
 	EMdsFileUnknown,
-	EMdsDirRenamed
+	EMdsDirRenamed,
+	EMdsFileAttribsChanged
 	};
 
 typedef TPckgBuf<TMdsFSPStatus> TMdsFSPStatusPckg;

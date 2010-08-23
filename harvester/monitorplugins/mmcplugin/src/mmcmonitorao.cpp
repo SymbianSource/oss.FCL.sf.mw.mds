@@ -124,6 +124,8 @@ void CMMCMonitorAO::RunL()
 		return;
 		}
 
+	StartNotify();
+	
 	iPreviousDriveList.Zero();
 	iPreviousDriveList.Copy( iDriveList );
 
@@ -138,8 +140,6 @@ void CMMCMonitorAO::RunL()
 #ifdef _DEBUG
 	PrintAllLists();
 #endif
-
-	StartNotify();
 	}
 
 #ifdef _DEBUG
@@ -161,7 +161,7 @@ void CMMCMonitorAO::DoCancel()
 	iFs.NotifyChangeCancel( iStatus );
 	}
 
-CMMCMonitorAO::CMMCMonitorAO() : CActive( KHarvesterPriorityMonitorPlugin ),
+CMMCMonitorAO::CMMCMonitorAO() : CActive( KHarvesterServerHighPriority ),
     iObserver( NULL )
 	{
 	}
@@ -283,7 +283,7 @@ void CMMCMonitorAO::CompareDriveLists()
 			{
 			if ( iMediaIdList[i] != mediaId )
 				{
-				WRITELOG3( "CMMCMonitorAO::CompareDriveLists media changed %d, old=%d, new=%d", i, iMediaIdList[i], mediaId ); // DEBUG INFO
+				WRITELOG3( "CMMCMonitorAO::CompareDriveLists media changed %d, old=%u, new=%u", i, iMediaIdList[i], mediaId ); // DEBUG INFO
 				// skip mount events if mediaId is 0
 				if ( iMediaIdList[i] != 0 )
 					{

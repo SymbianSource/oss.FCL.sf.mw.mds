@@ -61,6 +61,9 @@ NONSHARABLE_CLASS( CHarvesterPluginFactory ) : public CBase
 		  
 	    TBool iHarvesting;
 		CHarvesterEventManager* iHarvesterEventManager;
+		
+		HBufC* iLastConfirmedContainerExt;
+		HBufC* iLastConfirmedSupportedExt;
 	};
 
 #endif

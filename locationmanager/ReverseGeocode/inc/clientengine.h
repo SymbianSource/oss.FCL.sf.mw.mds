@@ -179,8 +179,12 @@ NONSHARABLE_CLASS( CClientEngine ): public CActive,
 	* @return ETrue if silent connection is allowed
 	*/
     TBool SilentConnectionAllowed();
-    
+
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
     private:
+#endif    
     /*
      * Perform the second phase construction of a CClientEngine object.
      */
@@ -208,7 +212,11 @@ NONSHARABLE_CLASS( CClientEngine ): public CActive,
      */
     void SetupConnectionL( const TConnectionOption aOption );
 
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
     private:
+#endif  
     //From MHTTPSessionEventCallback
     /*
      * Called by framework to notify about transaction events.
@@ -231,7 +239,12 @@ NONSHARABLE_CLASS( CClientEngine ): public CActive,
      */
     TInt MHFRunError( TInt aError, RHTTPTransaction aTransaction, const THTTPEvent& aEvent );
 
+    
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
     private:
+#endif 
     // from MMobilityProtocolResp
     void PreferredCarrierAvailable( TAccessPointInfo aOldAPInfo,
                                     TAccessPointInfo aNewAPInfo,
@@ -246,7 +259,11 @@ NONSHARABLE_CLASS( CClientEngine ): public CActive,
     TBool IsWlanOnly(const TMobileRoamingStatus& aRoamingStatus,
                 const TCmGenConnSettings& aGenConnSettings) const;
     
-private: // from CActive
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
 
 	/**
 	  * RunL
@@ -267,14 +284,22 @@ private: // from CActive
 	  */	
     TInt RunError(TInt aError);
 
-private:
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
 
 	/**
 	  * Submits a HTTP transaction
 	  */
     void DoHTTPGetL();
-   
-private:
+    
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
   // declare members
     RSocketServ                 iSocketServ;
     RConnection                 iConnection;

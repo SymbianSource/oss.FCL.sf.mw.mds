@@ -17,7 +17,6 @@
 
 
 #include "harvesterclientao.h"
-#include "harvesternotificationqueue.h"
 #include "harvestercommon.h"
 #include "harvesterlog.h"
 #include "mdsutils.h"
@@ -31,13 +30,12 @@
 // NewL
 // ---------------------------------------------------------------------------
 //
-CHarvesterClientAO* CHarvesterClientAO::NewL( RHarvesterClient& aHarvesterClient, 
-        CHarvesterNotificationQueue* aNotificationQueue )
+CHarvesterClientAO* CHarvesterClientAO::NewL( RHarvesterClient& aHarvesterClient )
 	{
     WRITELOG( "CHarvesterClientAO::NewL()" );
     OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_NEWL, "CHarvesterClientAO::NewL" );
     
-	CHarvesterClientAO* self = new (ELeave) CHarvesterClientAO( aHarvesterClient, aNotificationQueue );
+	CHarvesterClientAO* self = new (ELeave) CHarvesterClientAO( aHarvesterClient );
 	CleanupStack::PushL( self );
 	self->ConstructL();
 	CleanupStack::Pop( self );
@@ -53,10 +51,7 @@ CHarvesterClientAO::~CHarvesterClientAO() // destruct
     OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::~CHarvesterClientAO" );
     
     WRITELOG( "CHarvesterClientAO::~CHarvesterClientAO()" );
-    Cancel();
-    
-    delete iURI;
-    iURI = NULL;
+    CancelRequest();
  	}
 
 // ---------------------------------------------------------------------------
@@ -64,14 +59,11 @@ CHarvesterClientAO::~CHarvesterClientAO() // destruct
 // First-phase C++ constructor
 // ---------------------------------------------------------------------------
 //
-CHarvesterClientAO::CHarvesterClientAO( RHarvesterClient& aHarvesterClient, 
-        CHarvesterNotificationQueue* aNotificationQueue )
-    : CActive( CActive::EPriorityStandard ), 
+CHarvesterClientAO::CHarvesterClientAO( RHarvesterClient& aHarvesterClient )
+    : CActive( CActive::EPriorityUserInput ), 
     iObserver( NULL ),
     iHarvesterClient( aHarvesterClient ),
-    iNotificationQueue( aNotificationQueue ),
-    iURI( NULL ),
-    iRequestComplete( EFalse )
+    iCancelled( EFalse )
   	{
     OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::CHarvesterClientAO" );
     
@@ -103,6 +95,23 @@ void CHarvesterClientAO::SetObserver( MHarvestObserver* aObserver )
 	}
 
 // ---------------------------------------------------------------------------
+// RemoveObserver
+// ---------------------------------------------------------------------------
+//	
+void CHarvesterClientAO::RemoveObserver( MHarvestObserver* /*aObserver*/ )
+	{
+	WRITELOG( "CHarvesterClientAO::RemoveObserver()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_REMOVEOBSERVER, "CHarvesterClientAO::RemoveObserver" );
+    if ( iObserver )
+        {
+        WRITELOG( "CHarvesterClientAO::RemoveObserver() - deleting observer" );
+        iObserver = NULL;
+        }
+    
+    CancelRequest();
+	}
+
+// ---------------------------------------------------------------------------
 // DoCancel
 // ---------------------------------------------------------------------------
 //
@@ -110,33 +119,24 @@ void CHarvesterClientAO::DoCancel()
 	{
 	WRITELOG( "CHarvesterClientAO::DoCancel()" );
 	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_DOCANCEL, "CHarvesterClientAO::DoCancel" );
-	iRequestComplete = ETrue;
+	iHarvesterClient.UnregisterHarvestComplete();
+	WRITELOG( "CHarvesterClientAO::DoCancel() - end" );
 	}
 	
 // ---------------------------------------------------------------------------
 // Active
 // ---------------------------------------------------------------------------
 //
-void CHarvesterClientAO::Active( TDesC& aUri )
+void CHarvesterClientAO::Active()
 	{	
-    WRITELOG( "CHarvesterClientAO::Active()");
-    if( iObserver && !IsActive() )
-        {
-        delete iURI;
-        iURI = NULL;
-        iURI = aUri.Alloc();
-        if( iURI )
-            {
-            TPtr16 uri( iURI->Des() );
-            iHarvesterClient.RegisterHarvestComplete( uri, iStatus );
-            SetActive();            
-            }
-        else if( iObserver )
-            {
-            iObserver->HarvestingComplete( aUri, KErrCompletion );
-            iRequestComplete = ETrue;
-            }
-        }
+    WRITELOG( "CHarvesterClientAO::Active" );
+	if ( iObserver && !IsActive())
+		{
+	    WRITELOG( "CHarvesterClientAO::Active - calling RegisterHarvestComplete" );
+		iHarvesterClient.RegisterHarvestComplete(iURI, iStatus);
+		iCancelled = EFalse;
+		SetActive();
+		}
 	}
 
 // ---------------------------------------------------------------------------
@@ -148,8 +148,6 @@ void CHarvesterClientAO::RunL()
 	WRITELOG( "CHarvesterClientAO::RunL()" );
 	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_RUNL, "CHarvesterClientAO::RunL" );
 
-	iNotificationQueue->Cleanup( EFalse );
-	
 	const TInt status = iStatus.Int();
 	
     if ( status < KErrNone )
@@ -158,16 +156,19 @@ void CHarvesterClientAO::RunL()
         }
 
 	// Callback to client process
-	if ( iObserver && iURI )
+	if ( iObserver )
 		{
-		WRITELOG( "CHarvesterClientAO::RunL() - Request complete - calling callback" );
-		TPtrC16 uri( iURI->Des() );
-		iObserver->HarvestingComplete( uri, status );
+		WRITELOG( "CHarvesterClientAO::RunL() - ECompleteRequest - calling callback" );
+		iObserver->HarvestingComplete( iURI, status );
 		}
 	
-    delete iURI;
-    iURI = NULL;
-	iRequestComplete = ETrue;
+	// if the request was not canceled or server is not terminated, Activating AO again
+	if ( status != KErrCancel && status != KErrServerTerminated && iObserver && !iCancelled )
+		{
+	    WRITELOG( "CHarvesterClientAO::RunL() - not cancelled or terminated, calling Active" );
+		Active();
+		}
+	WRITELOG( "CHarvesterClientAO::RunL() - end" );
 	}
 	
 // ---------------------------------------------------------------------------
@@ -182,18 +183,26 @@ TInt CHarvesterClientAO::RunError( TInt )
     {
     WRITELOG1( "CHarvesterClientAO::RunError(), errorcode: %d", aError );
     
-    iNotificationQueue->Cleanup( EFalse );
-    iRequestComplete = ETrue;
-    
     return KErrNone;
     }
 
 // ---------------------------------------------------------------------------
-// RequestComplete
+// Active
 // ---------------------------------------------------------------------------
-//  
-TBool CHarvesterClientAO::RequestComplete()
-    {
-    return iRequestComplete;
+//
+void CHarvesterClientAO::CancelRequest()
+    {   
+    WRITELOG( "CHarvesterClientAO::CancelRequest" );
+    if( !iCancelled )
+        {
+        WRITELOG( "CHarvesterClientAO::CancelRequest - not cancelled, calling Cancel" );
+        iCancelled = ETrue;
+        Cancel();
+        }
+    if( !IsActive() )
+        {
+        WRITELOG( "CHarvesterClientAO::CancelRequest - setting priority to High" );
+        SetPriority( CActive::EPriorityHigh );
+        }
     }
 

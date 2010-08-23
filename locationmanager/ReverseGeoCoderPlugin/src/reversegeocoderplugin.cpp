@@ -84,6 +84,7 @@ CReverseGeoCoderPlugin::~CReverseGeoCoderPlugin()
     {
     LOG( "CReverseGeoCoderPlugin::~CReverseGeoCoderPlugin,begin" );
     delete iRevGeocoder;
+    iRevGeocoder = NULL;    
     iObserver = NULL;
     LOG( "CReverseGeoCoderPlugin::~CReverseGeoCoderPlugin,end" );
     }

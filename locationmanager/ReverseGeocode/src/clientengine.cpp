@@ -87,6 +87,8 @@ CClientEngine::~CClientEngine()
         iMobility->Cancel();
         }
     delete iMobility;
+    iMobility = NULL;
+    
     if(iConnectionSetupDone)
         {
         iSession.Close();
@@ -94,6 +96,7 @@ CClientEngine::~CClientEngine()
         iSocketServ.Close();
         }
     delete iUri;
+    iUri = NULL;
    
 	iCmManager.Close();
 

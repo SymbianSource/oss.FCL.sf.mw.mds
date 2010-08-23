@@ -450,7 +450,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
                 return KErrNone;
                 }
             
-            fileEventType = EMdsFileModified;
+            fileEventType = EMdsFileAttribsChanged;
             }
             break;            
             

@@ -19,7 +19,6 @@
 
 #include "harvesterrequestactive.h"
 #include "harvesterrequestqueue.h"
-#include "harvesterlog.h"
 
 // ======== MEMBER FUNCTIONS ========
 
@@ -33,9 +32,9 @@ CHarvesterRequestActive::~CHarvesterRequestActive()
     if( IsActive() )
         {
         Cancel();
-        iRequestCompleted = ETrue;
         }
     
+    iRequestCompleted = ETrue;
     delete iAlbumIds;
     iAlbumIds = NULL;
     }
@@ -46,12 +45,12 @@ CHarvesterRequestActive::~CHarvesterRequestActive()
 // --------------------------------------------------------------------------- 
 //
 CHarvesterRequestActive* CHarvesterRequestActive::NewL(
-        RHarvesterClient& aClient,
+        RHarvesterClient& aClient, MHarvestObserver* aObserver,
         TInt aService, const TDesC& aUri, 
         HBufC8* aAlbumIds, TBool aAddLocation,
         CHarvesterRequestQueue* aQueue )
     {
-    CHarvesterRequestActive* self = new( ELeave )CHarvesterRequestActive( aClient,
+    CHarvesterRequestActive* self = new( ELeave )CHarvesterRequestActive( aClient, aObserver,
             aService, aUri, aAlbumIds, aAddLocation, aQueue );
     return self;
     }
@@ -61,10 +60,10 @@ CHarvesterRequestActive* CHarvesterRequestActive::NewL(
 // C++ default constructor can NOT contain any code, that might leave.
 // ---------------------------------------------------------------------------
 //
-CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient, 
-    TInt aService, const TDesC& aUri, 
+CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient,
+    MHarvestObserver* aObserver, TInt aService, const TDesC& aUri, 
     HBufC8* aAlbumIds, TBool aAddLocation, CHarvesterRequestQueue* aQueue )
-    : CActive( CActive::EPriorityStandard ), iClient( aClient ), 
+    : CActive( CActive::EPriorityStandard ), iClient( aClient ), iObserver( aObserver ), 
     iService( aService ), iUri( aUri ), iAlbumIds( aAlbumIds ), iAddLocation( aAddLocation ),
     iRequestQueue( aQueue ), iLocation( EFalse ), iCancelled( EFalse )
     {
@@ -77,6 +76,16 @@ CHarvesterRequestActive::CHarvesterRequestActive( RHarvesterClient& aClient,
 //
 void CHarvesterRequestActive::RunL()
     {
+    if( iStatus.Int() == KErrCancel )
+        {
+        return;
+        }           
+    
+    if( iStatus.Int() && iObserver )
+        {
+        iObserver->HarvestingComplete( iUri, iStatus.Int() );
+        }       
+    
     iRequestCompleted = ETrue;
     if( iRequestQueue )
         {
@@ -95,6 +104,11 @@ TInt CHarvesterRequestActive::RunError( TInt aError )
         return KErrNone;
         }
     
+    if( iObserver )
+        {
+        iObserver->HarvestingComplete( iUri, aError );
+        }
+    
     iRequestCompleted = ETrue;
     return KErrNone;
     }
@@ -106,6 +120,7 @@ TInt CHarvesterRequestActive::RunError( TInt aError )
 void CHarvesterRequestActive::DoCancel()
     {
     iCancelled = ETrue;
+	iObserver = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -122,7 +137,7 @@ void CHarvesterRequestActive::Start()
     
     if( !iCancelled )
         {
-        iClient.HarvestFile( iService, iPersistentArgs, iStatus, iUri );
+        iClient.HarvestFile( iService, iPersistentArgs, iStatus );
         SetActive();
         }
     }
@@ -133,7 +148,7 @@ void CHarvesterRequestActive::Start()
 //
 void CHarvesterRequestActive::ForceHarvest()
     {
-    WRITELOG( "CHarvesterRequestActive::ForceHarvest()");
+    iObserver = NULL;
     
     TPckg<TBool> location( iAddLocation );
     iLocation.Set( location );

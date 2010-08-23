@@ -46,7 +46,6 @@ SOURCE            harvestersessionwatcher.cpp
 SOURCE		      harvestereventobserverao.cpp 
 SOURCE            harvesterrequestactive.cpp
 SOURCE            harvesterrequestqueue.cpp
-SOURCE            harvesternotificationqueue.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 

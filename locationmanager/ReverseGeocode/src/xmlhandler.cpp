@@ -68,7 +68,9 @@ CXmlHandler::~CXmlHandler()
     {
     LOG("CXmlHandler::~CXmlHandler");
     delete iParser;
+    iParser = NULL;
     delete iBuffer;
+    iBuffer = NULL;
     }
 
 // --------------------------------------------------------------------------

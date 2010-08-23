@@ -136,7 +136,7 @@ void CMMCUsbAO::RunL()
             TFileName* fn = new (ELeave) TFileName( driveChar );
             _LIT( KIndicator, ":" );
             fn->Append( KIndicator );
-            WRITELOG1( "CMMCUsbAO::RunL - drive letter: %S", fn );
+            WRITELOG1( "CMMCUsbAO::RunL - drive letter: %S", &(*fn) );
             PrintDriveStatus( driveStatus );
             delete fn;
             fn = NULL;

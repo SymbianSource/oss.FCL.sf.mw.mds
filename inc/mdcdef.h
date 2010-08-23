@@ -25,7 +25,7 @@
 NONSHARABLE_CLASS(TMdCDef) : protected TMdCSerializationType
 	{
 	protected:
-		TMdCDef(TMdCStructTypes aType) : TMdCSerializationType( aType )
+		TMdCDef(TMdCStructTypes aType) : TMdCSerializationType( aType ), iDefId( 0 )
 			{
 			}
 		

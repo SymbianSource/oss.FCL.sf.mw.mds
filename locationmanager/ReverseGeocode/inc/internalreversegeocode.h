@@ -73,7 +73,11 @@ public:
     */    
     void HandleTimedoutEvent(TInt aErrorCode);
     
-protected:
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    protected:
+#endif 
    
    /**
     * Second phase construction
@@ -130,7 +134,11 @@ protected:
     const RMobilePhone::TMobilePhoneNetworkInfoV1& 
         GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag);
 
-private:
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
 
     /**
      * Starts the timer
@@ -142,7 +150,11 @@ private:
      */	
     void CloseConnection();
 
-private:
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
     CXmlHandler *iXmlHandler;
     CClientEngine *iClientEngine;
     CInternalAddressInfo *iAddressInfo;

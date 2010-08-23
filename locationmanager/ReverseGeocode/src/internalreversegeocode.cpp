@@ -194,9 +194,14 @@ CInternalReverseGeocode::~CInternalReverseGeocode()
         iTimer = NULL;
         }
     delete iXMLBuf;
+    iXMLBuf = NULL;
     delete iXmlHandler;
+    iXmlHandler = NULL;
     delete iClientEngine;
+    iClientEngine = NULL;
     delete iAddressInfo;
+    iAddressInfo = NULL;
+    
     LOG( "CInternalReverseGeocode::~CInternalReverseGeocode,end" );  
     }
 

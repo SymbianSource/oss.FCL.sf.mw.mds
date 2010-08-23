@@ -117,9 +117,11 @@ void CInternalGeoTagger::ConstructL()
 	   TRAP_IGNORE(
         iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
            REComSession::CreateImplementationL(KReverseGeoCodeUid, iDtorKey));)
-
-        iRevGeocoderPlugin->AddObserverL(*this); 
-
+           	
+        if( iRevGeocoderPlugin )
+			{
+            iRevGeocoderPlugin->AddObserverL(*this); 
+			}
 
 #endif //LOC_REVERSEGEOCODE
 
@@ -145,18 +147,21 @@ CInternalGeoTagger::~CInternalGeoTagger()
 		iRelationQuery->RemoveObserver(*this);
 		iRelationQuery->Cancel();
 		delete iRelationQuery;
+		iRelationQuery = NULL;
 		}
 	if(iLocationQuery)
 		{
 		iLocationQuery->RemoveObserver(*this);
 		iLocationQuery->Cancel();
 		delete iLocationQuery;
+		iLocationQuery = NULL;
 		}
 	if(iTagQuery)
 		{
 		iTagQuery->RemoveObserver(*this);
 		iTagQuery->Cancel();
 		delete iTagQuery;
+		iTagQuery = NULL;
 		}	
 #ifdef LOC_REVERSEGEOCODE
     delete iTagCreator;
@@ -168,7 +173,9 @@ CInternalGeoTagger::~CInternalGeoTagger()
     if(iMdeSessionOwnFlag)
         {
     	delete iMdeSession;
+    	iMdeSession = NULL; 
         delete iASW;
+        iASW = NULL;
         }
     LOG("CInternalGeoTagger::~CInternalGeoTagger ,end");
     }

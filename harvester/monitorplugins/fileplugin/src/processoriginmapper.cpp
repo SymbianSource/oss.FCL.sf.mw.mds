@@ -227,7 +227,7 @@ TInt CProcessOriginMapper::ReadFileL( const TDesC& aFile )
 //
 TInt CProcessOriginMapper::ReadFileL()
     {
-    WRITELOG( "CProcessOriginMapper::ReadFileL - reading default file..." );
+    WRITELOG( "CProcessOriginMapper::ReadFileL - reading default file" );
     iDefaultFileRead = ETrue;
     const TInt count = ReadFileL( KDefaultMappingFile );
     iDefaultFileRead = EFalse;

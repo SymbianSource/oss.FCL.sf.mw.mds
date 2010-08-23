@@ -59,9 +59,13 @@ EXPORT_C CGeoConverter::~CGeoConverter()
     LOG("CGeoConverter::~CGeoConverter, begin");
 #ifdef LOC_GEOTAGGING_CELLID    
     delete iGsmCellInfo;
+    iGsmCellInfo = NULL;    
     delete iWcdmaCellInfo;
+    iWcdmaCellInfo = NULL;
     delete iLocInfo;
+    iLocInfo = NULL;
     delete iLocConverter;
+    iLocConverter = NULL;
 #endif    
     LOG("CGeoConverter::~CGeoConverter, end");
     }

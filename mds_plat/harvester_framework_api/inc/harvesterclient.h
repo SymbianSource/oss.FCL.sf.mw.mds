@@ -32,7 +32,6 @@ class CHarvesterEventObserverAO;
 class MHarvesterEventObserver;
 class CHarvesterRequestActive;
 class CHarvesterRequestQueue;
-class CHarvesterNotificationQueue;
 class MHarvesterSessionObserver;
 class CHarvesterSessionWatcher;
 
@@ -337,9 +336,8 @@ NONSHARABLE_CLASS( RHarvesterClient ) : public RSessionBase
          * @param aService  Service request which to execute on server side
          * @param aArgs     Parameters for harvesting
          * @param aStatus   Status of the asunchronous call
-		 * @param aUri      Uri of the file to be harvested
          */ 
-        void HarvestFile( TInt& aService, TIpcArgs& aArgs, TRequestStatus& aStatus, TDesC& aUri );
+        void HarvestFile( TInt& aService, TIpcArgs& aArgs, TRequestStatus& aStatus  );
 
         /**
          * Restricted method for doing fast harvesting. These files
@@ -362,6 +360,11 @@ NONSHARABLE_CLASS( RHarvesterClient ) : public RSessionBase
          * Private method for version.
          */      
         TVersion Version() const;
+
+        /**
+         * Harvester client active object.
+         */    
+        CHarvesterClientAO* iHarvesterClientAO;
         
         /** 
          * Pointer to Harvester event observer active object.
@@ -372,11 +375,6 @@ NONSHARABLE_CLASS( RHarvesterClient ) : public RSessionBase
          * Request queue processor.
          */
         CHarvesterRequestQueue* iRequestQueue;
-
-        /**
-         * Notification queue processor.
-         */
-        CHarvesterNotificationQueue* iNotificationQueue;
         
         /**
          * Harvester session observer AO.

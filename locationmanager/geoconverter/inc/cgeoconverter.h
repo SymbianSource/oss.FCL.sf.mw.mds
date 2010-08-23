@@ -63,12 +63,21 @@ public:
     IMPORT_C virtual ~CGeoConverter();
     
     IMPORT_C void ConvertL( const CTelephony::TNetworkInfoV1& aNetworkInfo );
-        
+
+#ifdef GEOCONVERTER_UNIT_TESTCASE
+    public:
+#else
 protected:
+#endif
     // From MLbsLocationInfoConverterObserver
     void OnConversionComplete( TInt aStatusCode );
     
-private:
+#ifdef GEOCONVERTER_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif    
+
     /**
      * C++ constructor.
      */
@@ -78,7 +87,12 @@ private:
      */
     void ConstructL();    
     
-private:
+#ifdef GEOCONVERTER_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif    
+
     MGeoConverterObserver& iObserver;
 #ifdef LOC_GEOTAGGING_CELLID    
     CLbsLocationInfoConverter*  iLocConverter;

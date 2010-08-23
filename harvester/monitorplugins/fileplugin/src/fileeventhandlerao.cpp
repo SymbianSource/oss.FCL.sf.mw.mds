@@ -300,6 +300,14 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
             WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored camera origin for %S", &status.iFileName );
             return;
             }
+        
+        if( (origin == KOriginIgnoreAttribsChanged ||
+             origin == MdeConstants::Object::ECamera ) &&
+            aEvent.iFileEventType == EMdsFileAttribsChanged )
+            {
+            WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - ignored attribs changed event for %S", &status.iFileName );
+            return;        
+            }
         }
 
     // ignore created file event if extension is not supported by any harverter plugin
@@ -338,6 +346,7 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
         break;
         
         case EMdsFileModified:
+        case EMdsFileAttribsChanged:
             {
             WRITELOG1( "CFileEventHandlerAO::HandleNotificationL - EmdsFileModified: %S", &status.iFileName );
             ModifyL( status.iFileName, origin, fastHarvest );

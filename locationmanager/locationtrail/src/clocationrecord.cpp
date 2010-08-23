@@ -138,8 +138,10 @@ void CLocationRecord::ConstructL()
 
     iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
           REComSession::CreateImplementationL(KReverseGeoCodeUid,iDtorKey));
-
-     iRevGeocoderPlugin->AddObserverL(*this);
+     if( iRevGeocoderPlugin )
+	 	{
+     	iRevGeocoderPlugin->AddObserverL(*this);
+	 	}
 
 
  
@@ -217,6 +219,7 @@ EXPORT_C CLocationRecord::~CLocationRecord()
 		{
 		iRemapper->StopRemapping();
 		delete iRemapper;
+		iRemapper = NULL;
 		}
     if(iLocationQuery)
 		{
@@ -506,7 +509,7 @@ void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
     
     if ( !iTrailStarted || iState == RLocationTrail::ETrailStopped)
         {
-    	LOG("trail not started/stopped");
+    	LOG("CLocationRecord::Position(), trail not started/stopped");
         iPositionInfo->Stop();
         return;
         }
@@ -530,24 +533,24 @@ void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
         case KPositionQualityLoss: 
             {
             // Location is stored, even if it may not be valid.
-            LOG("Partial update");
+            LOG("CLocationRecord::Position(), Partial update");
             if ( iState != RLocationTrail::EWaitingGPSData && 
             	 iState != RLocationTrail::ETrailStopping ) 
                 {
                 SetCurrentState( RLocationTrail::EWaitingGPSData );
-            	LOG("Trail waiting for gps");
+            	LOG("CLocationRecord::Position(), Trail waiting for gps");
                 }
             break;
             }
         case KErrNone:
             {
-            LOG("Good GPS coordinates");
+            LOG("CLocationRecord::Position(), Good GPS coordinates");
             iGpsDataAvailableFlag = ETrue;
             if ( iState != RLocationTrail::ETrailStarted ) 
                 {
                 if ( iRemapper )
                 	{
-                	LOG("Start remapping");
+                	LOG("CLocationRecord::Position(), Start remapping");
                		iRemapper->StartRemappingObjects( iNewItem.iLocationData );
 
                     if( iObserver->WaitForPositioningStopTimeout() && !RemappingNeeded() )                                
@@ -568,7 +571,7 @@ void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
             }
         default:
             {
-            LOG1("Searching GPS, aError %d", aError );
+            LOG1("CLocationRecord::Position(), Searching GPS, aError %d", aError );
             if ( iState != RLocationTrail::ESearchingGPS &&
                	 iState != RLocationTrail::ETrailStopping ) 
                 {
@@ -579,12 +582,12 @@ void CLocationRecord::Position( const TPositionInfo& aPositionInfo,
             }      
         }
     TBool fixState = CheckGPSFix( positionSatelliteInfo );
-    LOG1( "fixState %d", fixState );
-    LOG1( "iLastGPSFixState %d", iLastGPSFixState );
+    LOG1( "CLocationRecord::Position(), fixState %d", fixState );
+    LOG1( "CLocationRecord::Position(), iLastGPSFixState %d", iLastGPSFixState );
     
     if ( iObserver && iLastGPSFixState != fixState )
     	{
-    	LOG("Quality changed");
+    	LOG("CLocationRecord::Position(), Quality changed");
     	iObserver->GPSSignalQualityChanged( positionSatelliteInfo );
     	}
     
@@ -965,7 +968,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
             {
             // no n/w info... put it into remap.
             // remove the last appended element.
-            LOG("No network info (offline mode + no GPS fix), keep for remapping");
+            LOG("CLocationRecord::LocationSnapshotL(), No network info (offline mode + no GPS fix), keep for remapping");
 			TRemapItem remapItem;
 			remapItem.iObjectId = aObjectId;
 			remapItem.iTime = timestamp;
@@ -974,7 +977,12 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 			TLocationSnapshotItem* firstPtr = iMediaItems[iMediaItems.Count() - 1];
 			iMediaItems.Remove(iMediaItems.Count() - 1);
 			iMediaItems.Compress();
-			delete firstPtr;
+            if( firstPtr == newItem)
+                {                
+                newItem = NULL;
+                }           
+            delete firstPtr;            
+            firstPtr = NULL;
             }   
         else
             {
@@ -985,6 +993,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 	else if ( Math::IsNaN( locationData.iPosition.Latitude() ) && 
 			Math::IsNaN( locationData.iPosition.Longitude() ))
 		{
+        LOG("CLocationRecord::LocationSnapshotL(), coordinates empty with or without cellular info")
 	    // coordinates empty, with or without cellular info
 
 		if ( net->iCellId == 0 && 
@@ -992,7 +1001,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 				net->iCountryCode.Length() == 0 &&
 				net->iNetworkId.Length() == 0 )
 			{
-            LOG("No network info (offline mode + no GPS fix), keep for remapping");
+            LOG("CLocationRecord::LocationSnapshotL(), No network info (offline mode + no GPS fix), keep for remapping");
 			TRemapItem remapItem;
 			remapItem.iObjectId = aObjectId;
 			remapItem.iTime = timestamp;
@@ -1001,7 +1010,12 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 			TLocationSnapshotItem* firstPtr = iMediaItems[iMediaItems.Count() - 1];
 			iMediaItems.Remove(iMediaItems.Count() - 1);
 			iMediaItems.Compress();
-			delete firstPtr;
+            if( firstPtr == newItem)
+                {                
+                newItem = NULL;
+                }           
+            delete firstPtr;            
+            firstPtr = NULL;
 			}
 		// check match for last created locationobject
 #ifdef LOC_REVERSEGEOCODE
@@ -1011,6 +1025,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
         else if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0)
 #endif //LOC_REVERSEGEOCODE
 			{
+            LOG("CLocationRecord::LocationSnapshotL(), last created locationobject match" );
 			TLocationData lastLocationData = iLastMediaItem.iLocationData;
 			CTelephony::TNetworkInfoV1* lastnet = &lastLocationData.iNetworkInfo;
 
@@ -1035,11 +1050,16 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 				TLocationSnapshotItem* firstPtr = iMediaItems[iMediaItems.Count() - 1];
 				iMediaItems.Remove(iMediaItems.Count() - 1);
 				iMediaItems.Compress();
-				delete firstPtr;
+	            if( firstPtr == newItem)
+	                {                
+	                newItem = NULL;
+	                }           
+	            delete firstPtr;            
+	            firstPtr = NULL;
 				}
 			}
 		
-		if ( !previousMatch )
+        if (  newItem && !previousMatch )
 		    {
 			// go for n/w based
             newItem->iFlag |= KNetQueryBit;
@@ -1050,6 +1070,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 	else if ( lastLocationId != 0 && 
         ((iLastMediaItem.iFlag & KSnapMediaFile) > 0))
 		{
+        LOG("CLocationRecord::LocationSnapshotL(), valid coordinates found");
         TLocationData lastLocationData = iLastMediaItem.iLocationData;
 		CTelephony::TNetworkInfoV1* lastnet = &lastLocationData.iNetworkInfo;
 		
@@ -1075,7 +1096,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 				
 				if ( distance < iLocationDelta )
 					{
-					LOG("location close to the previous one");
+					LOG("CLocationRecord::LocationSnapshotL(), location close to the previous one");
 					previousMatch = ETrue;
 					CreateRelationL( aObjectId, lastLocationId );
 					
@@ -1088,9 +1109,14 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
                         TLocationSnapshotItem* firstPtr = iMediaItems[iMediaItems.Count() - 1];
                         iMediaItems.Remove(iMediaItems.Count() - 1);
                         iMediaItems.Compress();
-                        delete firstPtr;
+                        if( firstPtr == newItem)
+                            {                
+                            newItem = NULL;
+                            }           
+                        delete firstPtr;            
+                        firstPtr = NULL;
 					    }
-					else 
+					else if (newItem)
 					    {
 					    // country tag not found.. go for reverse geocoding..
 					    newItem->iLocationId = lastLocationId;
@@ -1114,7 +1140,12 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
                     TLocationSnapshotItem* firstPtr = iMediaItems[iMediaItems.Count() - 1];
                     iMediaItems.Remove(iMediaItems.Count() - 1);
                     iMediaItems.Compress();
-                    delete firstPtr;
+                    if( firstPtr == newItem)
+                        {                
+                        newItem = NULL;
+                        }           
+                    delete firstPtr;            
+                    firstPtr = NULL;
 
 #endif //LOC_REVERSEGEOCODE
 					}
@@ -1190,7 +1221,7 @@ void CLocationRecord::FindLocationFromDBL()
 	     || (iMediaItems.Count() <= 0))
         {
 		// query is in progress or queue is empty
-		LOG1( "query is in progress or queue is empty. Count - %d", iMediaItems.Count() );
+		LOG1( "CLocationRecord::FindLocationFromDBL(), Count - %d", iMediaItems.Count() );
         return;
         }
      if ( (iMediaItems[0]->iFlag & KNetQueryBit) > 0 )
@@ -1233,10 +1264,10 @@ void CLocationRecord::FindLocationFromDBL()
      CMdELogicCondition& cond = iLocationQuery->Conditions();
      cond.SetOperator( ELogicConditionOperatorAnd );
             
-     LOG1( "latitude: %f", latitude);
-     LOG1( "latdelta: %f", latDelta);
-     LOG1( "longitude: %f", longitude);
-     LOG1( "londelta: %f", lonDelta);
+     LOG1( "CLocationRecord::FindLocationFromDBL(), latitude: %f", latitude);
+     LOG1( "CLocationRecord::FindLocationFromDBL(), latdelta: %f", latDelta);
+     LOG1( "CLocationRecord::FindLocationFromDBL(), longitude: %f", longitude);
+     LOG1( "CLocationRecord::FindLocationFromDBL(), londelta: %f", lonDelta);
             
      cond.AddPropertyConditionL( *iLatitudeDef, 
                     TMdERealBetween( latitude - latDelta, latitude + latDelta ));
@@ -1326,14 +1357,14 @@ TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
 	locationObject->AddTextPropertyL( itemTypeDef, Location::KLocationItemType );
 	locationObject->AddInt16PropertyL( offSetDef, timeOffset.Int() / 60 );
 	
-	LOG1( "Location created with stamp: %Ld", timestamp.Int64() );
+	LOG1( "CLocationRecord::DoCreateLocationL(), Location created with stamp: %Ld", timestamp.Int64() );
 	
 	// location related properties
 	if ( !Math::IsNaN( aLocationData.iPosition.Latitude() ) && 
 		 !Math::IsNaN( aLocationData.iPosition.Longitude() ))
 		{
-        LOG1("Lan - %f", aLocationData.iPosition.Latitude());
-        LOG1("Lon - %f", aLocationData.iPosition.Longitude());
+        LOG1("CLocationRecord::DoCreateLocationL(), Lan - %f", aLocationData.iPosition.Latitude());
+        LOG1("CLocationRecord::DoCreateLocationL(), Lon - %f", aLocationData.iPosition.Longitude());
 		locationObject->AddReal64PropertyL( *iLatitudeDef, aLocationData.iPosition.Latitude() );
 		locationObject->AddReal64PropertyL( *iLongitudeDef, aLocationData.iPosition.Longitude() );
 
@@ -1358,29 +1389,44 @@ TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
 	// network related properties
 	if ( aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
 		{
-		LOG1("Cell id - %d", aLocationData.iNetworkInfo.iCellId);
+		LOG1("CLocationRecord::DoCreateLocationL(), Cell id - %d", aLocationData.iNetworkInfo.iCellId);
 		locationObject->AddUint32PropertyL( cellIdDef, aLocationData.iNetworkInfo.iCellId );
 		}
 	if ( aLocationData.iNetworkInfo.iAreaKnown && 
         aLocationData.iNetworkInfo.iLocationAreaCode != 0 &&
 		aLocationData.iNetworkInfo.iAccess != CTelephony::ENetworkAccessUnknown )
 		{
-		LOG1("Areacode - %d", aLocationData.iNetworkInfo.iLocationAreaCode);
+		LOG1("CLocationRecord::DoCreateLocationL(), Areacode - %d", aLocationData.iNetworkInfo.iLocationAreaCode);
 		locationObject->AddUint32PropertyL( locationCodeDef, 
 				aLocationData.iNetworkInfo.iLocationAreaCode );
 		}
 #ifdef _DEBUG
-    TLex lexer( aLocationData.iNetworkInfo.iCountryCode );
-    TUint countryCode = 0;
-    
-    User::LeaveIfError( lexer.Val( countryCode, EDecimal) );
-    LOG1("Country code - %d", countryCode);
+	
+    if ( aLocationData.iNetworkInfo.iCountryCode.Length() > 0 )
+        {
+        TLex lexer( aLocationData.iNetworkInfo.iCountryCode );
+        TUint countryCode = 0;    
+        TRAP_IGNORE(lexer.Val( countryCode, EDecimal));        
+        LOG1("CLocationRecord::DoCreateLocationL(), Country code - %d", countryCode);
+        }
+    else
+        {
+        LOG("CLocationRecord::DoCreateLocationL(), No Country code");
+        }
     
     //Set mobile network code
-    lexer = aLocationData.iNetworkInfo.iNetworkId;
-    TUint networkCode = 0;
-    User::LeaveIfError( lexer.Val( networkCode, EDecimal) );
-    LOG1("Network id - %d", networkCode);
+    if ( aLocationData.iNetworkInfo.iNetworkId.Length() > 0 )
+        {
+        TLex lexer = aLocationData.iNetworkInfo.iNetworkId;
+        TUint networkCode = 0;
+        TRAP_IGNORE(lexer.Val( networkCode, EDecimal));
+        LOG1("CLocationRecord::DoCreateLocationL(), Network id - %d", networkCode); 
+        }
+    else
+        {
+        LOG("CLocationRecord::DoCreateLocationL(), No network code");
+        }
+
 #endif
 	if ( aLocationData.iNetworkInfo.iCountryCode.Length() > 0 )
 		{
@@ -1395,7 +1441,7 @@ TItemId CLocationRecord::DoCreateLocationL( const TLocationData& aLocationData )
 	        
 	// Add the location object to the database.
 	locationObjectId = iMdeSession->AddObjectL( *locationObject );
-    LOG1("Location id - %d", locationObjectId);
+    LOG1("CLocationRecord::DoCreateLocationL(), Location id - %d", locationObjectId);
 	CleanupStack::PopAndDestroy( locationObject );
     LOG( "CLocationRecord::DoCreateLocationL(), end" );
 
@@ -2194,6 +2240,11 @@ TTime CLocationRecord::GetMdeObjectTimeL( TItemId aObjectId )
     CMdEProperty* property = NULL;
     
     object = iMdeSession->GetObjectL( aObjectId );
+    if( !object )
+        {
+        User::Leave( KErrNotFound );
+        }
+    
     CleanupStack::PushL( object );
     object->Property( timeDef, property, 0 );
     if ( !property )
@@ -2203,7 +2254,10 @@ TTime CLocationRecord::GetMdeObjectTimeL( TItemId aObjectId )
     
     const TTime timeValue( property->TimeValueL() );
     CleanupStack::PopAndDestroy( object );
+    
+    LOG( "CLocationRecord::GetMdeObjectTimeL(), end" );
     return timeValue;
+        
     }
 
 

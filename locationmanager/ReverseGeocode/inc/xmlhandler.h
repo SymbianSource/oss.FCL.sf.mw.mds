@@ -99,7 +99,12 @@ NONSHARABLE_CLASS( CXmlHandler ) : public MContentHandler
 
     void StartParsingL(  HBufC8 *aBuf  );
     
-    private: // Constructors
+
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
 
 	/**
 	* @param aObserver The observer class to be notified after xml parsing is done
@@ -113,7 +118,12 @@ NONSHARABLE_CLASS( CXmlHandler ) : public MContentHandler
 	*/	
     void ConstructL();
     
-    private: 
+
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
+    private:
+#endif 
     // from MContentHandler
 
 	/**
@@ -201,8 +211,12 @@ NONSHARABLE_CLASS( CXmlHandler ) : public MContentHandler
 	* @param aUid  the uid identifying the required interface
 	*/    
     TAny *GetExtendedInterface( const TInt32 aUid );
-    
+
+#ifdef REVERSEGEOCODE_UNIT_TESTCASE
+    public:
+#else    
     private: // Private data
+#endif     
 
     MXmlHandlerObserver& iObserver;
     CParser*             iParser;

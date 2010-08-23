@@ -58,7 +58,7 @@ public:
      * @return New CHarvesterRequestActive object.
      */
     static CHarvesterRequestActive* NewL( 
-            RHarvesterClient& aClient,
+            RHarvesterClient& aClient, MHarvestObserver* aObserver,
             TInt aService, const TDesC& aUri, 
             HBufC8* aAlbumIds, TBool aAddLocation,
             CHarvesterRequestQueue* aQueue );
@@ -103,7 +103,7 @@ private:
      * @return New CHarvesterRequestActive object.
      */
     CHarvesterRequestActive( RHarvesterClient& aClient,
-            TInt aService, const TDesC& aUri, 
+            MHarvestObserver* aObserver, TInt aService, const TDesC& aUri, 
             HBufC8* aAlbumIds, TBool aAddLocation,
             CHarvesterRequestQueue* aQueue );
 
@@ -141,6 +141,11 @@ private:
      */
     RHarvesterClient iClient;
 
+    /**
+     * Observer to receive notifications about completed operations. Not owned.
+     */
+    MHarvestObserver* iObserver;
+    
     TInt iService;
     
     /**
