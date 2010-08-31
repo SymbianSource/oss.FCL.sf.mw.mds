@@ -160,6 +160,11 @@ public:
 	 * @param aBlacklist  Reference to blacklisting component.
 	 */
 	IMPORT_C virtual void SetBlacklist( CHarvesterBlacklist& aBlacklist );
+	
+    /** 
+	 * Method to stop harvester plugin if needed.
+	 */
+	IMPORT_C virtual void StopHarvest();
 
 protected:
     
@@ -265,6 +270,7 @@ private:
 	CMdEPropertyDef* iTitlePropertyDef;
 	
     TBool iHarvesting;
+    TBool iPaused;
 	
     };
 

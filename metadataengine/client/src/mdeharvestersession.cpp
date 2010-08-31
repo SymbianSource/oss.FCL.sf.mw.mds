@@ -138,8 +138,10 @@ EXPORT_C void CMdEHarvesterSession::SetFilesToPresentL(TUint32 aMediaId,
 	WRITELOG( "CMdEHarvesterSession::SetFilesToPresentL -- Start" );
 	if( aUris.Count() != aFileInfos.Count() )
 		{
+#ifdef _DEBUG
 		WRITELOG2( "CMdEHarvesterSession::SetFilesToPresentL -- Leave (%d, %d)", 
 				aUris.Count(), aFileInfos.Count() );
+#endif
 		User::Leave( KErrArgument );
 		}
 

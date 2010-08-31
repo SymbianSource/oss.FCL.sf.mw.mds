@@ -14,7 +14,8 @@
 * Description:  Build information file
 *
 */
-#include "../inc/locplatsupport.mmh"
+
+#include "../data/bld.inf"
 
 #ifdef _LOC_GEOTAGGING_CELLID
 #include "../geoconverter/group/bld.inf"
@@ -35,9 +36,6 @@ PRJ_PLATFORMS
     DEFAULT
 
 PRJ_EXPORTS
-../data/200071BE.txt /epoc32/data/z/private/10202BE9/200071BE.txt
-../data/200071BE.txt /epoc32/WINSCW/C/private/10202BE9/200071BE.txt
-../sis/locationmanager_stub.sis  /epoc32/data/z/system/install/locationmanager_stub.sis
 
 PRJ_MMPFILES
 

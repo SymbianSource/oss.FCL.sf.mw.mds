@@ -114,6 +114,25 @@ void CMMCMountTaskAO::StartMountL( TMountData& aMountData )
 	{
 	WRITELOG("CMMCMountTaskAO::StartMount");
 	
+	// Remove pending mount request for the same drive
+	// if for example USB cable is pluged and unpluged
+	// several times in a row
+	for( TInt i = iMountDataQueue.Count() - 1; i >=0; i-- )
+	    {
+	    WRITELOG( "CMMCMountTaskAO::StartUnmountL - checking for pending mount notifications" );
+	    TMountData* tempData = iMountDataQueue[i];
+	    if( tempData->iMediaID == aMountData.iMediaID &&
+	        tempData->iMountType == TMountData::EMount &&
+	        aMountData.iMountType == TMountData::EMount &&
+	        tempData->iDrivePath == aMountData.iDrivePath )
+	        {
+	        WRITELOG( "CMMCMountTaskAO::StartUnmountL - removing obsolite mount notifications" );
+	        iMountDataQueue.Remove(i);
+	        delete tempData;
+	        tempData = NULL;
+	        }
+	    }
+
 	User::LeaveIfError( iMountDataQueue.Append( &aMountData ));
 	
 	if ( iNextRequest == ERequestIdle )
@@ -135,7 +154,26 @@ void CMMCMountTaskAO::StartUnmountL(TMountData& aMountData)
 			Deinitialize();
 			}
 		}
-		
+
+    // Remove pending unmount request for the same drive
+    // if for example USB cable is pluged and unpluged
+    // several times in a row
+    for( TInt i = iMountDataQueue.Count() - 1; i >=0; i-- )
+        {
+        WRITELOG( "CMMCMountTaskAO::StartUnmountL - checking for pending unmount notifications" );
+        TMountData* tempData = iMountDataQueue[i];
+        if( tempData->iMediaID == aMountData.iMediaID &&
+            tempData->iMountType == TMountData::EUnmount &&
+            aMountData.iMountType == TMountData::EUnmount &&
+            tempData->iDrivePath == aMountData.iDrivePath )
+            {
+            WRITELOG( "CMMCMountTaskAO::StartUnmountL - removing obsolite unmount notifications" );
+            iMountDataQueue.Remove(i);
+            delete tempData;
+            tempData = NULL;
+            }
+        }
+	
 	User::LeaveIfError( iMountDataQueue.Append( &aMountData ));
 		
 	SetNextRequest( ERequestStartTask );
@@ -181,7 +219,7 @@ void CMMCMountTaskAO::RunL()
 
 				WRITELOG1( "iMountData.iMountType: %d", iMountData->iMountType );
 				WRITELOG1( "iMountData.iDrivePath: %S", &iMountData->iDrivePath );
-				WRITELOG1( "iMountData.iMediaID: %d", iMountData->iMediaID );
+				WRITELOG1( "iMountData.iMediaID: %u", iMountData->iMediaID );
 
 				if ( iMountData->iMountType == TMountData::EMount )
 					{
@@ -393,6 +431,7 @@ TInt CMMCMountTaskAO::RunError( TInt )
 	{
 	WRITELOG1( "CMMCMountTaskAO::RunError with error code: %d", aError );
 	Deinitialize();
+	SetNextRequest( ERequestStartTask );
 	return KErrNone;
 	}
 
@@ -415,7 +454,7 @@ void CMMCMountTaskAO::SetNextRequest( TRequest aRequest )
 
 void CMMCMountTaskAO::SetNotPresentToMDE()
 	{
-	WRITELOG1("CMMCMountTaskAO::SetNotPresentToMDE - MediaID %d", iMountData->iMediaID);
+	WRITELOG1("CMMCMountTaskAO::SetNotPresentToMDE - MediaID %u", iMountData->iMediaID);
 	if ( iMountData->iMediaID )
 		{
 		iMdeSession->SetFilesToNotPresent( iMountData->iMediaID );
@@ -538,7 +577,7 @@ void CMMCMountTaskAO::Deinitialize()
 		}
 	}
 
-TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
+TUint32 CMMCMountTaskAO::GetInternalDriveMediaId( TBool& aPresent )
 	{
     WRITELOG( "CMMCMountTaskAO::GetInternalDriveMediaId" );
 	    
@@ -581,10 +620,15 @@ TUint32 CMMCMountTaskAO::GetInternalDriveMediaId()
 	        	// check if disk is internal
 	        	TUint driveStatus;
 	        	const TInt err = DriveInfo::GetDriveStatus( iFs, i, driveStatus );
-	        	if ( (err == KErrNone ) && ( driveStatus & DriveInfo::EDriveInternal ) )
+	        	if ( ( err == KErrNone ) && 
+	        	     ( driveStatus & DriveInfo::EDriveInternal ))
 	        		{
 	        		// get media id
 	        		hdMediaId = FSUtil::MediaID( iFs, i );
+	        		if( driveStatus & DriveInfo::EDrivePresent )
+	        		    {
+	        		    aPresent = ETrue;
+	        		    }
 	        		break;
 	        		}
 	        	}

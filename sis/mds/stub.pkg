@@ -17,7 +17,7 @@
 &EN
 
 ; Header
-#{"Metadata System"}, (0x200009F5), 9, 20, 26, TYPE=SA
+#{"Metadata System"}, (0x200009F5), 10, 10, 13, TYPE=SA
 
 ; Localised Vendor name
 %{"Nokia"}

@@ -51,7 +51,7 @@ CHarvesterClientAO::~CHarvesterClientAO() // destruct
     OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::~CHarvesterClientAO" );
     
     WRITELOG( "CHarvesterClientAO::~CHarvesterClientAO()" );
-    Cancel();
+    CancelRequest();
  	}
 
 // ---------------------------------------------------------------------------
@@ -60,9 +60,10 @@ CHarvesterClientAO::~CHarvesterClientAO() // destruct
 // ---------------------------------------------------------------------------
 //
 CHarvesterClientAO::CHarvesterClientAO( RHarvesterClient& aHarvesterClient )
-    : CActive( CActive::EPriorityStandard ), 
+    : CActive( CActive::EPriorityUserInput ), 
     iObserver( NULL ),
-    iHarvesterClient( aHarvesterClient )
+    iHarvesterClient( aHarvesterClient ),
+    iCancelled( EFalse )
   	{
     OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERCLIENTAO_CHARVESTERCLIENTAO, "CHarvesterClientAO::CHarvesterClientAO" );
     
@@ -100,13 +101,14 @@ void CHarvesterClientAO::SetObserver( MHarvestObserver* aObserver )
 void CHarvesterClientAO::RemoveObserver( MHarvestObserver* /*aObserver*/ )
 	{
 	WRITELOG( "CHarvesterClientAO::RemoveObserver()" );
+	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_REMOVEOBSERVER, "CHarvesterClientAO::RemoveObserver" );
     if ( iObserver )
         {
         WRITELOG( "CHarvesterClientAO::RemoveObserver() - deleting observer" );
         iObserver = NULL;
         }
     
-    Cancel();
+    CancelRequest();
 	}
 
 // ---------------------------------------------------------------------------
@@ -118,6 +120,7 @@ void CHarvesterClientAO::DoCancel()
 	WRITELOG( "CHarvesterClientAO::DoCancel()" );
 	OstTrace0( TRACE_NORMAL, CHARVESTERCLIENTAO_DOCANCEL, "CHarvesterClientAO::DoCancel" );
 	iHarvesterClient.UnregisterHarvestComplete();
+	WRITELOG( "CHarvesterClientAO::DoCancel() - end" );
 	}
 	
 // ---------------------------------------------------------------------------
@@ -126,9 +129,12 @@ void CHarvesterClientAO::DoCancel()
 //
 void CHarvesterClientAO::Active()
 	{	
+    WRITELOG( "CHarvesterClientAO::Active" );
 	if ( iObserver && !IsActive())
 		{
+	    WRITELOG( "CHarvesterClientAO::Active - calling RegisterHarvestComplete" );
 		iHarvesterClient.RegisterHarvestComplete(iURI, iStatus);
+		iCancelled = EFalse;
 		SetActive();
 		}
 	}
@@ -157,10 +163,12 @@ void CHarvesterClientAO::RunL()
 		}
 	
 	// if the request was not canceled or server is not terminated, Activating AO again
-	if ( status != KErrCancel && status != KErrServerTerminated && iObserver )
+	if ( status != KErrCancel && status != KErrServerTerminated && iObserver && !iCancelled )
 		{
+	    WRITELOG( "CHarvesterClientAO::RunL() - not cancelled or terminated, calling Active" );
 		Active();
 		}
+	WRITELOG( "CHarvesterClientAO::RunL() - end" );
 	}
 	
 // ---------------------------------------------------------------------------
@@ -177,3 +185,24 @@ TInt CHarvesterClientAO::RunError( TInt )
     
     return KErrNone;
     }
+
+// ---------------------------------------------------------------------------
+// Active
+// ---------------------------------------------------------------------------
+//
+void CHarvesterClientAO::CancelRequest()
+    {   
+    WRITELOG( "CHarvesterClientAO::CancelRequest" );
+    if( !iCancelled )
+        {
+        WRITELOG( "CHarvesterClientAO::CancelRequest - not cancelled, calling Cancel" );
+        iCancelled = ETrue;
+        Cancel();
+        }
+    if( !IsActive() )
+        {
+        WRITELOG( "CHarvesterClientAO::CancelRequest - setting priority to High" );
+        SetPriority( CActive::EPriorityHigh );
+        }
+    }
+

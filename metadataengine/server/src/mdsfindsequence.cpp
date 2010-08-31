@@ -15,6 +15,7 @@
 */
 
 #include <badesca.h>
+#include <mdequery.h>
 
 #include "mdsfindsequence.h"
 
@@ -72,7 +73,7 @@ CMdSFindSequence::CMdSFindSequence(
     , iObserver( &aObserver )
     , iUserLevel( EUserLevelNone )
     {
-	iNotifyCount = KMaxTUint32;
+	iNotifyCount = KMdEQueryDefaultMaxCount;
 
     iFindOperation = NULL;
     }

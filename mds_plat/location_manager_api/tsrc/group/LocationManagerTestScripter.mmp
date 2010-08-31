@@ -27,7 +27,7 @@ UID             0x1000008D 0x101FB3E3
 CAPABILITY      ALL -TCB
 VENDORID        VID_DEFAULT
 
-DEFFILE         LocationManagerTestScripter.DEF
+DEFFILE         LocationManagerTestScripter.def
 
 #ifdef _LOC_REVERSEGEOCODE
 MACRO LOC_REVERSEGEOCODE

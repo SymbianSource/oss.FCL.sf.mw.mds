@@ -27,7 +27,7 @@
 /*
 * Define this flag when platform supports reverse geotagging.
 */
-#define _LOC_REVERSEGEOCODE
+//#define _LOC_REVERSEGEOCODE
 
 
 #endif // __LOCPLATSUPPORT_MMH__
