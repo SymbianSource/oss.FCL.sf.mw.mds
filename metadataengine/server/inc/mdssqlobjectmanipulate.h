@@ -523,15 +523,6 @@ class CMdSSqlObjectManipulate: public CBase
 	    * Deletes BaseObject.
 	    */	   	    
         TBool DoGarbageCollectionL();    
-
-#ifdef MDS_PLAYLIST_HARVESTING_ENABLED
-    private:
-        
-        /**
-        * Deletes BaseObject.
-        */          
-        TInt CleanPlaylistsL();
-#endif
         
 	private: // Member data
 		struct TLockBuffer

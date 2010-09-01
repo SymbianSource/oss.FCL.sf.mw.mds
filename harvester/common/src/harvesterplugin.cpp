@@ -65,8 +65,7 @@ EXPORT_C CHarvesterPlugin::CHarvesterPlugin() :
     iDtor_ID_Key( KNullUid ),
     iOriginPropertyDef( NULL ),
     iTitlePropertyDef( NULL ),
-    iHarvesting( EFalse ),
-    iPaused( EFalse )
+    iHarvesting( EFalse )
 	{
 	}
 
@@ -110,7 +109,6 @@ EXPORT_C void CHarvesterPlugin::StartHarvest()
 	{
 	if( iState == EHarvesterIdle )
 		{
-		iPaused = EFalse;
 		SetNextRequest( EHarvesterGathering );
 		}
 	}
@@ -156,7 +154,6 @@ EXPORT_C void CHarvesterPlugin::RunL()
                 }
             else
             	{
-                WRITELOG( "CHarvesterPlugin::RunL EHarvesterGathering - items in queue" );
                 if ( !iHarvesting )
                     {
                     TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( ETrue ) );
@@ -247,28 +244,12 @@ EXPORT_C  TInt CHarvesterPlugin::RunError( TInt /*aError*/ )
 	}
 
 // ---------------------------------------------------------------------------
-// StartHarvest
-// ---------------------------------------------------------------------------
-//
-EXPORT_C void CHarvesterPlugin::StopHarvest()
-    {
-    Cancel();
-    iState = EHarvesterIdle;
-    if( iHarvesting )
-        {
-        TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( EFalse ) );
-        iHarvesting = EFalse;     
-        }
-    iPaused = ETrue;
-    }
-
-// ---------------------------------------------------------------------------
 // SetNextRequest
 // ---------------------------------------------------------------------------
 //
 void CHarvesterPlugin::SetNextRequest( THarvesterState aState )
     {
-    if ( !IsActive() && !iPaused )
+    if ( ! IsActive() )
         {
         iState = aState;
         SetActive();

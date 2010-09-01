@@ -275,7 +275,7 @@ void CImageComposerAO::RunL()
 	                
 	                SetNextRequest( ERequestCompose );
 	                }
-	            // if object does not exists, or data is not modified, find next
+	            // if object does not exists, find next
 	            else if ( err == KErrNotFound || err == KErrAbort )
 	                 {
 	                 if ( err == KErrAbort && mdeObjectId != KNoId )
@@ -423,7 +423,6 @@ void CImageComposerAO::GetObjectFromMdeL(TItemId& aMdEObjectId)
 	
 	    	if( error != KErrNone || entry.iModified == time )
 	    		{
-	    	    WRITELOG( "CImageComposerAO::GetObjectFromMdeL() - image data has not been modified - abort" );
 	    		User::Leave( KErrAbort );
 	    		}
 	    	}

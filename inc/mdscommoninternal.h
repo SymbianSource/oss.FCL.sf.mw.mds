@@ -45,9 +45,6 @@ const TUint32 KBaseObjectBasicValueColumnOffset = 8;
 
 const TItemId KSystemFavouritesAlbumId = 1;
 
-_LIT( KSystemFavouritesAlbumUri, "defaultalbum_favourites" );
-_LIT( KSystemCapturedAlbumUri, "defaultalbum_captured" );
-
 const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
 
@@ -72,7 +69,7 @@ const TUint KMdSServBuildVersionNumber=0;
 
 const TUint32 KNokiaVendorId = 52487775;
 
-const TInt64 KDiskFullThreshold = 1024*70; // 70 kB, SQLite default maximum journal size
+const TInt64 KDiskFullThreshold = 1024*50; // 50 kB
 
 // P&S stuff
 static _LIT_SECURITY_POLICY_PASS(KAllowAllPolicy);

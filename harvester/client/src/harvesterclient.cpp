@@ -183,23 +183,20 @@ EXPORT_C void RHarvesterClient::Close()
     
     delete iSessionWatcher;
     iSessionWatcher = NULL;
-    
-    WRITELOG( "RHarvesterClient::Close() - cancelling pending harvesting requests" );
+
     if( iRequestQueue && iRequestQueue->RequestsPending() )
         {
         iRequestQueue->Cancel();
         }
     
-    WRITELOG( "RHarvesterClient::Close() - removing harvester client observer" );
+    // cancels Harvest Complete request if it exist at server
     if( iObserver )
         {
         RemoveObserver( iObserver );
         }
-    UnregisterHarvestComplete();
     
     WRITELOG( "RHarvesterClient::Close() - UnregisterHarvest done" );
     
-    WRITELOG( "RHarvesterClient::Close() - forcing remaining harvesting requests" );
     if( iRequestQueue && iRequestQueue->RequestsPending() )
         {
         WRITELOG( "RHarvesterClient::Close() - Pending harvesting requests detected -> ForceHarvest" );
@@ -214,7 +211,6 @@ EXPORT_C void RHarvesterClient::Close()
     delete iHEO;
     iHEO = NULL;
     
-    WRITELOG( "RHarvesterClient::Close() - deleting harvester client AO" );
     delete iHarvesterClientAO;
     iHarvesterClientAO = NULL;
     
@@ -254,7 +250,6 @@ EXPORT_C void RHarvesterClient::RemoveObserver( MHarvestObserver* aObserver )
 		
 	    if ( iHarvesterClientAO )
 	        {
-	        WRITELOG( "RHarvesterClient::RemoveObserver() - calling iHarvesterClientAO->RemoveObserver" );
 	        iHarvesterClientAO->RemoveObserver( aObserver );
 	        }
 		

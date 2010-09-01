@@ -24,10 +24,6 @@
 #include "../RTPPlugin/group/bld.inf"
 #include "../AudioPlugin/group/bld.inf"
 
-#ifdef MDS_PLAYLIST_HARVESTING_ENABLED
-#include "../AudioPlaylistPlugin/group/bld.inf"
-#endif
-
 PRJ_PLATFORMS
     DEFAULT
 

@@ -170,7 +170,13 @@ void CReHarvesterAO::AddItem( CHarvesterData* aItem )
             }
         }
     
-    aItem->SetMdeObject( NULL );
+    CMdEObject* mdeObject = &aItem->MdeObject();
+    if( mdeObject )
+    	{
+    	delete mdeObject;
+    	mdeObject = NULL;
+    	aItem->SetMdeObject( NULL );
+    	}
     
     if(iItems.Append( aItem ) != KErrNone )
         {

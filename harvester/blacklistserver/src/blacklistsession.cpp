@@ -118,7 +118,7 @@ void CBlacklistSession::AddL( const RMessage2& aMessage )
     aMessage.ReadL( 0, mediaIdPckg );
  
  	RBuf uri;
- 	User::LeaveIfError( uri.Create( aMessage.GetDesLength( 1 ) ) );
+    uri.Create( aMessage.GetDesLength( 1 ) );
     CleanupClosePushL( uri );
     aMessage.ReadL( 1, uri );
    	

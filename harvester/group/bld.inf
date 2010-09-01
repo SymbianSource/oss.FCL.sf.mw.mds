@@ -25,16 +25,27 @@
 #include "../server/group/bld.inf"
 #include "../client/group/bld.inf"
 
-#include "../data/bld.inf"
 
 PRJ_PLATFORMS
     DEFAULT
 
 PRJ_EXPORTS
+../data/blacklist_backup_registration.xml	/epoc32/winscw/c/private/200009F5/backup_registration.xml
+../data/blacklist_backup_registration.xml   /epoc32/data/z/private/200009F5/backup_registration.xml
+../data/default_origin_mappings.db    /epoc32/winscw/c/private/200009F5/mappings.db
+../data/default_origin_mappings.db    /epoc32/data/z/private/200009F5/mappings.db
+../conf/harvester.confml        MW_LAYER_CONFML(harvester.confml)
+../conf/harvester_200009FE.crml MW_LAYER_CRML(harvester_200009FE.crml)
+
+../sis/blacklistserver/blacklistserver_stub.sis  /epoc32/data/z/system/install/blacklistserver_stub.sis
+../sis/composerplugins/composerplugins_stub.sis  /epoc32/data/z/system/install/composerplugins_stub.sis
+../sis/harvester/harvester_stub.sis  /epoc32/data/z/system/install/harvester_stub.sis
+../sis/harvesterplugins/harvesterplugins_stub.sis  /epoc32/data/z/system/install/harvesterplugins_stub.sis
+../sis/monitorplugins/monitorplugins_stub.sis  /epoc32/data/z/system/install/monitorplugins_stub.sis
 
 PRJ_MMPFILES
 
 PRJ_TESTMMPFILES
 
-PRJ_TESTEXPORTS
 
+PRJ_TESTEXPORTS

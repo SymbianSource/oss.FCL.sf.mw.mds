@@ -193,7 +193,7 @@ void CHarvesterOMADRMPlugin::ConstructL()
 
 void CHarvesterOMADRMPlugin::HarvestL( CHarvesterData* aHarvesterData )
 	{
-	WRITELOG( "CHarvesterOMADRMPlugin::HarvestL()" );
+	WRITELOG( "CHarvesterImagePlugin::HarvestL()" );
     CMdEObject& mdeObject = aHarvesterData->MdeObject();
 	CDRMHarvestData* drmHarvestData = CDRMHarvestData::NewL();
 	CleanupStack::PushL( drmHarvestData );
@@ -330,36 +330,31 @@ TInt CHarvesterOMADRMPlugin::GatherDataL( CMdEObject& aMetadataObject, CDRMHarve
         WRITELOG1( "CHarvesterOMADRMPlugin::GatherDataL - ERROR: getting protection info failed %d", err );
         }
       
-    if( aMetadataObject.Def().Name() == MdeConstants::Image::KImageObject )
-        {
-        CImageDecoder* decoder = NULL;
+    CImageDecoder* decoder = NULL;
 
-        TRAP( err, decoder = CImageDecoder::FileNewL( iFs, uri, ContentAccess::EPeek, 
-                ( CImageDecoder::TOptions )( CImageDecoder::EPreferFastDecode )));
+    TRAP( err, decoder = CImageDecoder::FileNewL( iFs, uri, ContentAccess::EPeek, 
+            ( CImageDecoder::TOptions )( CImageDecoder::EPreferFastDecode )));
 
-        CleanupStack::PushL( decoder );
+    CleanupStack::PushL( decoder );
     
-        if(decoder && !err)
-            {
-            WRITELOG( "CHarvesterImagePlugin::GatherData() - Image decoder has opened the file." );        
-            // Get image width, frame count, height and bits per pixel from image decoder.
-            const TFrameInfo info = decoder->FrameInfo( 0 );
-            const TSize imageSize = info.iOverallSizeInPixels;
-            const TInt framecount = decoder->FrameCount();
-            aFileData.iFrameCount = framecount;
-            aFileData.iImageWidth = imageSize.iWidth;
-            aFileData.iImageHeight = imageSize.iHeight;
-            aFileData.iBitsPerPixel = info.iBitsPerPixel;
-            }
-        else
-            {
-            WRITELOG1( "CHarvesterImagePlugin::GatherData() - ERROR: decoder %d", err );
-            }    
-        CleanupStack::PopAndDestroy( decoder );
+    if(decoder && !err)
+        {
+        WRITELOG( "CHarvesterImagePlugin::GatherData() - Image decoder has opened the file." );        
+        // Get image width, frame count, height and bits per pixel from image decoder.
+        const TFrameInfo info = decoder->FrameInfo( 0 );
+        const TSize imageSize = info.iOverallSizeInPixels;
+        const TInt framecount = decoder->FrameCount();
+        aFileData.iFrameCount = framecount;
+        aFileData.iImageWidth = imageSize.iWidth;
+        aFileData.iImageHeight = imageSize.iHeight;
+        aFileData.iBitsPerPixel = info.iBitsPerPixel;
+        }
+    else
+        {
+        WRITELOG1( "CHarvesterImagePlugin::GatherData() - ERROR: decoder %d", err );
         }
 
-
-    CleanupStack::PopAndDestroy( 3 ); // content, data, attrSet
+    CleanupStack::PopAndDestroy( 4 ); // content, data, attrSet, imagedecoder
     return KErrNone;
     }
 

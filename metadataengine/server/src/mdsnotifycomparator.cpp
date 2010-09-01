@@ -1180,7 +1180,7 @@ TBool CMdSNotifyComparator::MatchRelationIdsL(
 		{
 		aSerializedCondition.PositionL( aRelationCondition.iRelationIds.iPtr.iOffset );
 
-		for (TUint i = 0; i < aRelationCondition.iRelationIds.iPtr.iCount; ++i)
+		for (TInt i = 0; i < aRelationCondition.iRelationIds.iPtr.iCount; ++i)
 			{
 			TItemId relationId;
 			aSerializedCondition.ReceiveL( relationId );

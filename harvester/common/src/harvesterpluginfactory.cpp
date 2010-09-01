@@ -68,12 +68,6 @@ CHarvesterPluginFactory::~CHarvesterPluginFactory()
 	{
 	WRITELOG( "CHarvesterPluginFactory::~CHarvesterPluginFactory()" );
 	
-	delete iLastConfirmedContainerExt;
-	iLastConfirmedContainerExt = NULL;
-	
-	delete iLastConfirmedSupportedExt;
-	iLastConfirmedSupportedExt = NULL;
-	
     if (iHarvesterEventManager)
         {
         iHarvesterEventManager->ReleaseInstance();
@@ -336,13 +330,6 @@ EXPORT_C TBool CHarvesterPluginFactory::IsSupportedFileExtension( const TDesC& a
 	TPtrC extPtr;
 	if( MdsUtils::GetExt( aFileName, extPtr ) )
 		{
-        if( iLastConfirmedSupportedExt &&
-            extPtr.CompareF( iLastConfirmedSupportedExt->Des() ) == 0 )
-            {
-            // Extension has previously been confirmed to be 
-            // supported file extension, no need to ask from plugins
-            return ETrue;
-            }
 		TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
 		TInt extCount = 0;
 		for ( TInt i = pluginInfoCount; --i >= 0; )
@@ -356,9 +343,6 @@ EXPORT_C TBool CHarvesterPluginFactory::IsSupportedFileExtension( const TDesC& a
 				TInt result = MdsUtils::Compare( *ext, extPtr );
 				if ( result == 0 )
 					{
-                    delete iLastConfirmedSupportedExt;
-                    iLastConfirmedSupportedExt = NULL;
-                    iLastConfirmedSupportedExt = extPtr.Alloc();				    
 					return ETrue;
 					}
 				}
@@ -374,14 +358,6 @@ EXPORT_C TBool CHarvesterPluginFactory::IsContainerFileL( const TDesC& aURI )
 	
 	if( MdsUtils::GetExt( aURI, extPtr ) )
 		{
-	    if( iLastConfirmedContainerExt &&
-	        extPtr.CompareF( iLastConfirmedContainerExt->Des() ) == 0 )
-	        {
-	        // Extension has previously been confirmed to be 
-	        // container file extension, no need to ask from plugins
-	        return ETrue;
-	        }
-	
 		RPointerArray<CHarvesterPluginInfo> supportedPlugins;
 		CleanupClosePushL( supportedPlugins );
 		GetSupportedPluginsL( supportedPlugins, extPtr );
@@ -391,9 +367,6 @@ EXPORT_C TBool CHarvesterPluginFactory::IsContainerFileL( const TDesC& aURI )
 			if( info->iObjectTypes.Count() >  1 )
 				{
 				isContainerFile = ETrue;
-				delete iLastConfirmedContainerExt;
-				iLastConfirmedContainerExt = NULL;
-				iLastConfirmedContainerExt = extPtr.Alloc();
 				break;
 				}
 			}
@@ -422,7 +395,6 @@ void CHarvesterPluginFactory::SetPluginInfo( CHarvesterData* aHD )
 
 EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarted )
     {
-    WRITELOG( "CHarvesterPluginFactory::SendHarvestingStatusEventL" );
     const TInt pluginInfoCount = iHarvesterPluginInfoArray.Count();
     TBool itemsLeft( EFalse );
     TBool allPluginsOnIdle( ETrue );
@@ -446,7 +418,6 @@ EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarte
     
     if( !iHarvesting && itemsLeft && aStarted )
         {
-        WRITELOG( "CHarvesterPluginFactory::SendHarvestingStatusEventL - overall started" );
         iHarvesting = ETrue;
         iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateStarted );
         // This next line is for caching the harvester started event for observers registering
@@ -456,7 +427,6 @@ EXPORT_C void CHarvesterPluginFactory::SendHarvestingStatusEventL( TBool aStarte
         }
     else if( iHarvesting && (!itemsLeft || allPluginsOnIdle) && !aStarted )
         {
-        WRITELOG( "CHarvesterPluginFactory::SendHarvestingStatusEventL - overall finished" );
         iHarvesting = EFalse;                       
         iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateFinished );
         iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeOverall, KCacheItemCountForEventCaching );
@@ -470,7 +440,7 @@ EXPORT_C void CHarvesterPluginFactory::PauseHarvester( TBool aPaused )
         {
         if( iHarvesterPluginInfoArray[i]->iPlugin && aPaused )
             {
-            iHarvesterPluginInfoArray[i]->iPlugin->StopHarvest();
+            iHarvesterPluginInfoArray[i]->iPlugin->Cancel();
             }
         else if( iHarvesterPluginInfoArray[i]->iPlugin )
             {
@@ -511,8 +481,6 @@ EXPORT_C void CHarvesterPluginFactory::GetObjectDefL( CHarvesterData* aHD, TDes&
                 info->iPlugin->SetBlacklist( *iBlacklist );
                 }
             info->iPlugin->GetObjectType( aHD->Uri(), aObjectDef );
-            // It is possible for unmount to occure while we are waiting
-            // for GetObjectType to return, thus check aHD for validity
             if( aHD && aObjectDef.Length() > 0 )
                 {
                 aHD->SetHarvesterPluginInfo( info );

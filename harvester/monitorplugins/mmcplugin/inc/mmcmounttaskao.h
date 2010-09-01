@@ -53,9 +53,9 @@ class CMMCMountTaskAO : public CActive
 		void SetHarvesterPluginFactory( CHarvesterPluginFactory* aPluginFactory );
 		
 		/**
-		 * Returns internal hard drive's media id if the device has one.
+		 * Returns internal hard drive's media id if the device has one. 0 if not or drive is not present
 		 */
-		TUint32 GetInternalDriveMediaId( TBool& aPresent );
+		TUint32 GetInternalDriveMediaId();
 		
         void SetCachingStatus( TBool aCachingStatus );
         

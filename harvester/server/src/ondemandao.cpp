@@ -72,7 +72,7 @@ COnDemandAO::~COnDemandAO()
 void COnDemandAO::DoCancel()
 	{
 	WRITELOG("COnDemandAO::DoCancel");
-	iMdEHarvesterSession->CancelHarvestingPrioritizationObserver();
+	iMdEHarvesterSession->CancelHarvestingPrioritizationObserver ();
 	}
 
 void COnDemandAO::StartL()
@@ -80,7 +80,7 @@ void COnDemandAO::StartL()
 	WRITELOG("COnDemandAO::StartL");
 	// Cancel any request, just to be sure
 	Cancel ();
-	iMdEHarvesterSession->SetHarvestingPrioritizationChunkL( 16384 );
+	iMdEHarvesterSession->SetHarvestingPrioritizationChunkL ( 16384 );
 	WaitHarvestingRequest ();
 	}
 

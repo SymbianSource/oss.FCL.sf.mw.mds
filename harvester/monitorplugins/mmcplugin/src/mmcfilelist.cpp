@@ -104,7 +104,7 @@ void CMmcFileList::BuildFileListL( RFs& aFs, const TDesC& aDrivePath,
 	TUint32 mediaId( 0 );
 	iMediaIdUtil->GetMediaId( aDrivePath, mediaId );
 	
-	WRITELOG1( "CMmcFileList::BuildFileListL - mediaId: %u", mediaId );
+	WRITELOG1( "CMmcFileList::BuildFileListL - mediaId: %d", mediaId );
 	
     CDir* directory = NULL;
     TFileName name; 
@@ -294,6 +294,7 @@ void CMmcFileList::HandleFileEntryL( CMdEHarvesterSession& aMdeSession,
 		aEntryArray.Compress();
 		}
 	
+	WRITELOG( "CMmcFileList::HandleFileEntryL -- cleanupstack" );
 	CleanupStack::PopAndDestroy( &results );
 	CleanupStack::PopAndDestroy( &fileInfos );
 	CleanupStack::PopAndDestroy( &uris );
