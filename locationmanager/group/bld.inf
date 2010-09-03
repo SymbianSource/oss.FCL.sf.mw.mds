@@ -23,8 +23,6 @@
 
 #ifdef _LOC_REVERSEGEOCODE
 #include "../tagcreator/group/bld.inf"
-#include "../ReverseGeocode/group/bld.inf"
-#include "../ReverseGeoCoderPlugin/group/bld.inf"
 #endif
 
 #include "../geotagger/group/bld.inf"

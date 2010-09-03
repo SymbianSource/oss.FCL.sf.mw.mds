@@ -38,8 +38,7 @@
 
 #ifdef LOC_REVERSEGEOCODE
 #include "ctagcreator.h"
-#include "reversegeocode.h"
-class CReverseGeoCoderPlugin;
+#include <reversegeocoderplugin.h>
 #endif
 
 
@@ -298,7 +297,6 @@ private:
 #ifdef LOC_REVERSEGEOCODE
         CTagCreator* iTagCreator;
         CReverseGeoCoderPlugin* iRevGeocoderPlugin;
-        TUid iDtorKey;
 #endif //LOC_REVERSEGEOCODE
     };
 

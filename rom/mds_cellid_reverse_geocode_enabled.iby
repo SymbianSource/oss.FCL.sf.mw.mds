@@ -82,11 +82,6 @@ file=ABI_DIR\BUILD_DIR\mdswatchdog.exe	PROGRAMS_DIR\mdswatchdog.exe
 REM locationtrail
 file=ABI_DIR\BUILD_DIR\locationtrail.dll		    SHARED_LIB_DIR\locationtrail.dll
 
-REM ReverseGeocode
-file=ABI_DIR\BUILD_DIR\ReverseGeocode.dll		    SHARED_LIB_DIR\ReverseGeocode.dll
-
-REM Reverse geocoder plugin
-ECOM_PLUGIN(ReverseGeoCoderPlugin.dll,reversegeocoderplugin.rsc)
 
 REM tagcreator
 file=ABI_DIR\BUILD_DIR\tagcreator.dll		    SHARED_LIB_DIR\tagcreator.dll

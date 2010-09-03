@@ -987,7 +987,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
 
 #ifdef _DEBUG
     dStop.UniversalTime();
-    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
+    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL end %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
 #endif  
     
     WRITELOG( "CHarvesterVideoPlugin - Start adding data to object" );

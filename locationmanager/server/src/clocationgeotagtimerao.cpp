@@ -15,13 +15,9 @@
 *
 */
 
+#include <hwrmpowerstatesdkpskeys.h>
 #include "clocationgeotagtimerao.h"
-#include <aknappui.h>
-#include <aknnotewrappers.h>
-#include <avkon.hrh>
 #include "locationmanagerdebug.h"
-
-
 
 //Time at which the geotagging should be triggered( 3.00 AM )
 const TInt GEOTAGGING_TIME_IN_HOURS = 3;
@@ -36,7 +32,7 @@ const TInt HOUR_VALUE_IN_SECONDS = 3600;
 //
 CLocationGeoTagTimerAO::CLocationGeoTagTimerAO(CMdESession& aMdeSession,
         MGeoTaggerObserver& aObserver):
-            CTimer(EPriorityStandard ),
+            CTimer( EPriorityLow ),
             iGeoTagger(NULL),
             iMdeSession(aMdeSession),
             iObserver(aObserver)
@@ -151,6 +147,14 @@ void CLocationGeoTagTimerAO::RunL( )
         {
         case KErrNone:
             {
+            // If battery is low, skip geotagging in the background
+            // to save power especially if there is a lot of images
+            // to be handled
+            if( IsLowBattery() )
+                {
+                StartTimer();
+                break;
+                }
             //Trigger the reverse geocoding and start the timer again
             //Create the instance of geotagger class
             if(iGeoTagger != NULL)
@@ -220,6 +224,27 @@ const RMobilePhone::TMobilePhoneNetworkInfoV1&
     {
     LOG( "CLocationGeoTagTimerAO::GetHomeNetworkInfo" );
     return iObserver.GetHomeNetworkInfo(aHomeNwInfoAvailableFlag);
+    }
+
+// ----------------------------------------------------------------------------
+// CLocationGeoTagTimerAO::IsLowBattery()
+// ----------------------------------------------------------------------------
+TBool CLocationGeoTagTimerAO::IsLowBattery()
+    {
+    LOG("CLocationGeoTagTimerAO::IsLowBattery()");
+    RProperty batteryProperty;
+    TInt batteryStatus;
+
+    TInt error = batteryProperty.Get(KPSUidHWRMPowerState, KHWRMBatteryStatus, batteryStatus);
+    LOG1("CLocationGeoTagTimerAO::IsLowBattery() - battery status %d", batteryStatus );
+    if( error != KErrNone || batteryStatus == EBatteryStatusOk )
+        {
+        return EFalse;
+        }
+    else
+        {
+        return ETrue;
+        }
     }
 
 // End of file

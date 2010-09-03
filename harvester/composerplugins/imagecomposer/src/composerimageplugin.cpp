@@ -88,11 +88,15 @@ void CComposerImagePlugin::SetObservers()
     {
     WRITELOG( "CComposerImagePlugin::SetObservers()" );
 
+#ifdef _DEBUG
     TRAPD( err, SetObserversL() );
     if ( err != KErrNone )
         {
         WRITELOG1( "CComposerImagePlugin::SetObservers Error: %d", err );
         }
+#else
+    TRAP_IGNORE( SetObserversL() );    
+#endif
     }
 
 // ---------------------------------------------------------------------------

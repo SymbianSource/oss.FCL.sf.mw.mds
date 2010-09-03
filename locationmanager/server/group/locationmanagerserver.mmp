@@ -44,7 +44,6 @@ USERINCLUDE     ../../locationtrail/inc
 #ifdef _LOC_REVERSEGEOCODE
 MACRO LOC_REVERSEGEOCODE
 USERINCLUDE     ../../tagcreator/inc
-USERINCLUDE     ../../ReverseGeocode/inc 
 #endif
 
 #ifdef     _LOC_GEOTAGGING_CELLID

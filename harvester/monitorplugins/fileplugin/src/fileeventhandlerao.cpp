@@ -310,6 +310,13 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
             }
         }
 
+    // If internal origin value is used for evaluation, set it default value
+    if( origin == KOriginIgnoreAttribsChanged ||
+        origin == KOriginFastHarvest )
+        {
+        origin = MdeConstants::Object::EOther;
+        }
+    
     // ignore created file event if extension is not supported by any harverter plugin
     if( EMdsFileCreated == status.iFileEventType && 
     		status.iFileName.Length() > 0 )

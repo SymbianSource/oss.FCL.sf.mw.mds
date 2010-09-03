@@ -64,9 +64,7 @@ CMessageMonitorPlugin::~CMessageMonitorPlugin()
 	{
 	WRITELOG("ENTER ~CMessageMonitorPlugin");
     delete iMsvSession;
-    iMsvSession = NULL;
     delete iMessageScannerAO;
-    iMessageScannerAO = NULL;
 	WRITELOG("END ~CMessageMonitorPlugin");	
 	}
 

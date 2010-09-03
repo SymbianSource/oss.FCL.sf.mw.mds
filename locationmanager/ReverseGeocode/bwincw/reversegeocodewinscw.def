@@ -1,3 +1,0 @@
-EXPORTS
-	?NewL@CReverseGeocode@@SAPAV1@AAVMReverseGeocodeObserver@@@Z @ 1 NONAME ; class CReverseGeocode * CReverseGeocode::NewL(class MReverseGeocodeObserver &)
-

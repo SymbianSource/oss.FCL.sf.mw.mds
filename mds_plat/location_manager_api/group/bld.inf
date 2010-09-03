@@ -32,6 +32,8 @@ PRJ_EXPORTS
 ../inc/geotagobserver.h MW_LAYER_PLATFORM_EXPORT_PATH(geotagobserver.h)
 ../inc/rlocationgeotagger.h MW_LAYER_PLATFORM_EXPORT_PATH(rlocationgeotagger.h)
 ../inc/geotagger.h MW_LAYER_PLATFORM_EXPORT_PATH(geotagger.h)
+../inc/reversegeocoderplugin.h MW_LAYER_PLATFORM_EXPORT_PATH(reversegeocoderplugin.h)
+../inc/reversegeocoderplugin.inl MW_LAYER_PLATFORM_EXPORT_PATH(reversegeocoderplugin.inl)
 
 PRJ_MMPFILES
 
