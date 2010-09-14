@@ -339,7 +339,7 @@ void CHarvesterVideoPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType 
     if ( error != KErrNone )
         {
         WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - File open error: %d", error );
-        if( error == KErrInUse )
+        if( error == KErrInUse || KErrLocked )
             {
 #ifdef _DEBUG
             TPtrC fileName( aUri.Mid(2) );
@@ -627,6 +627,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         TRAP( error, helixMetadata->OpenFileL( file ) );        
 
         // No need for the file handle anymore so closing it
+        WRITELOG( "CHarvesterVideoPlugin - Parsing done, file handle can be closed" );   
         file.Close();
         
         if ( error == KErrNone )
@@ -981,7 +982,7 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             }
 #endif
         }
-    WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
+    WRITELOG( "CHarvesterVideoPlugin - Closing file, if still open" );        
     CleanupStack::PopAndDestroy( &file );        
 
 #ifdef _DEBUG
@@ -1247,6 +1248,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
     CleanupStack::PushL( helixMetadata );
     
 	TRAPD( err, helixMetadata->OpenFileL( aFile ) );
+	aFile.Close();
 
 	if( err == KErrNone )
 		{
@@ -1273,10 +1275,10 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	
 		const TInt mimeCount = mimes.Count();
 		
-		// at least one MIME type must be found
+		// Set to Video, regardless how badly file is corrupted
 		if( mimeCount == 0 )
 			{
-			User::Leave( KErrNotFound );
+		    aType.Copy( KVideo );
 			}
 	
 		for( TInt i = 0; i < mimeCount; i++ )
@@ -1336,8 +1338,7 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
     if( blackListError == KErrNone )
         {
         RemoveFileFromBlackList( tempName, mediaId );
-        }
-    
+        }  
 	}
 
 TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, const TUint32& aMediaId )

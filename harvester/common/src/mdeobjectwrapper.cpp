@@ -157,7 +157,7 @@ EXPORT_C void CMdeObjectWrapper::HandleObjectPropertyL(CMdEObject& aMdeObject, C
 				case EPropertyReal32:
 					{
 					TReal32* value = static_cast<TReal32*>( aData );
-					WRITELOG2("CMdeObjectWrapper::HandleObjectPropertyL - Edit property: %S with value %d", &aPropertyDef.Name(), *value );
+					WRITELOG2("CMdeObjectWrapper::HandleObjectPropertyL - Edit property: %S with value %f", &aPropertyDef.Name(), *value );
 					property->SetReal32ValueL( *value );
 					}
 				break;
@@ -173,9 +173,7 @@ EXPORT_C void CMdeObjectWrapper::HandleObjectPropertyL(CMdEObject& aMdeObject, C
 				case EPropertyTime:
 					{
 					TTime* value = static_cast<TTime*>( aData );
-#ifdef _DEBUG
-					WRITELOG2("CMdeObjectWrapper::HandleObjectPropertyL - Edit property: %S with value %d", &aPropertyDef.Name(), value->Int64() );
-#endif
+					WRITELOG2("CMdeObjectWrapper::HandleObjectPropertyL - Edit property: %S with value %u", &aPropertyDef.Name(), value->Int64() );
 					property->SetTimeValueL( *value );
 					}
 				break;

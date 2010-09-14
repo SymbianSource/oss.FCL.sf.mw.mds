@@ -108,6 +108,14 @@ void CMmcScannerAO::RunL()
 		{
 		case( EUninitialized ):
 			{
+		    WRITELOG("CMmcScannerAO::RunL - Starting processing");
+		    if( iMediaId == 0 )
+		        {
+		        WRITELOG("CMmcScannerAO::RunL - MediaId == 0 -> end");
+                SetState( EDone );
+                break;		    
+		        }
+		    
 			WRITELOG("CMmcScannerAO::RunL - Setting files to not present");
 			iMdEClient->SetFilesToNotPresent( iMediaId, ETrue );
 			SetState( EReadFiles );

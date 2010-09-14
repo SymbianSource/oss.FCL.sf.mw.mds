@@ -144,7 +144,7 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
     WRITELOG( "CHarvesterQueue::Append()" );
     TInt err( KErrNone );
 
-    if ( iBlacklist )
+    if ( iBlacklist && aItem->Origin() != MdeConstants::Object::ECamera )
         {
         TUint32 mediaId( 0 );
 		err = iMediaIdUtil->GetMediaId( aItem->Uri(), mediaId );

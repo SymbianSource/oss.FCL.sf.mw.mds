@@ -22,18 +22,13 @@
 
 //Maximum length for the response buffer size
 const int KMaxResponseLength = 2048;
-//Authentication token for the Maps server
-//This authentication in specific to our photo-tagging feature
-_LIT8( KAuthenticationToken, "eb0ae60051e27d3cfcae94e7b47e9eff" );
-//Static RefererURL which shows that request has been made from this app
-_LIT8( KRefererURL, "s60_app_photos" );
 
 //Language option for the REST request
 _LIT8( KDefaultLanguage, "eng" );
 
 
 //Format of the HTTP request for the reverse geocode
-_LIT8( KRequestFormat, "http://loc.mobile.maps.svc.ovi.com/geocoder/rgc/1.0?token=%S&referer=%S&n=10&lat=%f&long=%f&lg=%S&output=xml" );
+_LIT8( KRequestFormat, "http://loc.mobile.maps.svc.ovi.com/geocoder/rgc/1.0?n=10&lat=%f&long=%f&lg=%S&output=xml" );
 
 
 // http://www.loc.gov/marc/languages/
@@ -216,15 +211,11 @@ void CInternalReverseGeocode::GetAddressByCoordinateL( TLocality aLocality,
     LOG("CInternalReverseGeocode::GetAddressByCoordinateL ,begin");
     TReal64 latitude = aLocality.Latitude();
     TReal64 longitude = aLocality.Longitude();
-        
-    iAuthCode.Copy( KAuthenticationToken );
-    iRefURL.Copy( KRefererURL );
-        
 
     GetLanguageForTheRequest( iLang );
         
     //Form the request URI
-    iQueryString.Format( KRequestFormat, &iAuthCode, &iRefURL, latitude, longitude, &iLang );
+    iQueryString.Format( KRequestFormat, latitude, longitude, &iLang );
     TInt err = KErrNone;
     TRAP(err, iClientEngine->IssueHTTPGetL( iQueryString, aOption ));
         

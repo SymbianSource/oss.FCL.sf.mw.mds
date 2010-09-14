@@ -120,7 +120,7 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
     TBool isValid(EFalse);
     TRAPD(err, isValid = iMaintenance->ValidateL( ));
     
-    if(err == KErrCorrupt)
+    if( err == KErrCorrupt )
         {
         DeleteDatabase();
         User::Leave( err );
@@ -174,11 +174,6 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 				User::Leave( schemaError );
 				}
 			}
-
-		if ( FailedImports() != 0 )
-  			{
-	       	User::Leave( KErrBadName );
-       		}
 		
 		// try to read default import file from C drive
        	TRAPD( err, ImportMetadataL( aManipulate, aSchema, KMdsDefaultImportFile ) );
@@ -188,6 +183,13 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
        		// and ignore errors
        		TRAP_IGNORE( ImportMetadataL( aManipulate, aSchema, KMdsDefaultRomImportFile ) );
        		}
+
+#ifdef _DEBUG
+        if ( FailedImports() != 0 )
+            {
+            User::Leave( KErrBadName );
+            }
+#endif
        	
        	__LOG1( ELogAlways, "MDS DB tables created %d", 0 );
 
@@ -206,6 +208,12 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 			DeleteDatabase();
 			User::Leave( err );
         	}
+        
+        if( !iMaintenance->CheckForCorruptionL() )
+            {
+            DeleteDatabase();
+            User::Leave( KErrCorrupt );
+            }
         }
     __LOG1( ELogAlways, "CMdSMaintenanceEngine::InstallL complete: %d", 0 );
     }

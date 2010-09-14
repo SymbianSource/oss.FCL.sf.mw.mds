@@ -852,11 +852,11 @@ void CMdSManipulationEngine::SetFilesToPresentL(TUint32 aMediaId, TUint32 aFileC
 
 #ifdef _DEBUG    	
     	const TInt64 time = fileInfo.iModifiedTime;
-        RDebug::Print( _L("CMdSManipulationEngine::SetFilesToPresentL: (%d) iSize %u, iModified %Ld, uri %S"),
+        RDebug::Print( _L("CMdSManipulationEngine::SetFilesToPresentL: (%d) uri %S, iSize %u, iModified %Ld"),
         		i,
+        		&uri,
         		fileInfo.iSize,
-        		time,
-        		&uri);
+        		time );
 #endif
 
     	TFilePresentStates placeHolder;

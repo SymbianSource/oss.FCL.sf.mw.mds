@@ -162,10 +162,8 @@ public:
     MReverseGeocodeObserver& iObserver;
     CConnectionTimerHandler*      iTimer;
 	
-	// Optimize the buffer len..??
+
     TBuf8<KMaxFileName> iQueryString;
-    TBuf8<KMaxFileName> iAuthCode;
-    TBuf8<KMaxFileName> iRefURL;
     TBuf8<KMaxFileName> iLang;
     TBool iStartTimerFlag;
 };
