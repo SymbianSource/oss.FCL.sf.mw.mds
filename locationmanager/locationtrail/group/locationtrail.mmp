@@ -41,8 +41,6 @@ USERINCLUDE     ../../../inc
 #ifdef _LOC_REVERSEGEOCODE
 MACRO LOC_REVERSEGEOCODE
 USERINCLUDE     ../../tagcreator/inc
-USERINCLUDE     ../../ReverseGeocode/inc
-USERINCLUDE	../../ReverseGeoCoderPlugin/inc
 #endif
 
 #ifdef     _LOC_GEOTAGGING_CELLID
@@ -81,7 +79,6 @@ LIBRARY        geotagger.lib
 LIBRARY        libc.lib
 
 #ifdef _LOC_REVERSEGEOCODE
-LIBRARY        reversegeocode.lib 
 LIBRARY        tagcreator.lib 
 #endif
 

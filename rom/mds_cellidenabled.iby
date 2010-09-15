@@ -113,9 +113,4 @@ data=ZSYSTEM\install\metadataengine_stub.sis	system\install\metadataengine_stub.
 data=ZSYSTEM\install\mds_stub.sis	system\install\mds_stub.sis
 data=ZSYSTEM\install\mdswatchdog_stub.sis	system\install\mdswatchdog_stub.sis
 
-data=ZSYSTEM\install\locationmanagerclient_stub.sis       system\install\locationmanagerclient_stub.sis
-data=ZSYSTEM\install\locationtrail_stub.sis       system\install\locationtrail_stub.sis
-data=ZSYSTEM\install\locationmanagerserver_stub.sis       system\install\locationmanagerserver_stub.sis
-data=ZSYSTEM\install\geotagger_stub.sis       system\install\geotagger_stub.sis
-data=ZSYSTEM\install\geoconverter_stub.sis       system\install\geoconverter_stub.sis
 #endif //__METADATA_IBY__

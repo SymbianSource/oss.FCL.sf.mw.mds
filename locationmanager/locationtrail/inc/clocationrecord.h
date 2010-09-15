@@ -49,8 +49,7 @@
 #ifdef LOC_REVERSEGEOCODE
 #include <geotagger.h>
 #include "ctagcreator.h"
-#include "reversegeocode.h"
-class CReverseGeoCoderPlugin;
+#include <reversegeocoderplugin.h>
 #endif
 
 typedef RLocationTrail::TTrailState TLocTrailState;
@@ -750,8 +749,7 @@ private:
     /*
      * Reverse geo coder plugin object
      */
-	CReverseGeoCoderPlugin* iRevGeocoderPlugin;
-    TUid iDtorKey;
+	 CReverseGeoCoderPlugin* iRevGeocoderPlugin;
 
 #endif
 	

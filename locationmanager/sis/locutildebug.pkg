@@ -40,8 +40,6 @@
 ;#include "..\inc\locplatsupport.mmh"
 ;#ifdef _LOC_REVERSEGEOCODE
 ;MACRO LOC_REVERSEGEOCODE
-; Reverse geocode
-;"\EPOC32\RELEASE\ARMV5\UDEB\ReverseGeocode.dll" -"!:\sys\bin\ReverseGeocode.dll"
 
 ; Tag creator
 ;"\EPOC32\RELEASE\ARMV5\UDEB\tagcreator.dll" -"!:\sys\bin\tagcreator.dll"
@@ -49,13 +47,7 @@
 ; Geo tagger
 ;"\EPOC32\RELEASE\ARMV5\UDEB\geotagger.dll" -"!:\sys\bin\geotagger.dll"
 
-; Reverse geocode plugin
-;"\epoc32\RELEASE\armv5\UDEB\ReverseGeoCoderPlugin.dll"-"!:\sys\bin\ReverseGeoCoderPlugin.dll"
-;"\epoc32\data\z\resource\plugins\reversegeocoderplugin.rsc"-"!:\resource\plugins\reversegeocoderplugin.rsc"
-
 ;#endif
-
-
 
 ; End of file
 

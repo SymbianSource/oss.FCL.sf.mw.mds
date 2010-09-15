@@ -105,6 +105,8 @@ private:
 	   * @return None.
 	   */
      CLocationGeoTagTimerAO(CMdESession& aMdeSession, MGeoTaggerObserver& aObserver);
+     
+     TBool IsLowBattery();
       
 private:      
       CGeoTagger* iGeoTagger;

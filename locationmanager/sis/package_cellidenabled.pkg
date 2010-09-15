@@ -33,6 +33,8 @@
 ; Geo converter
 "\EPOC32\RELEASE\ARMV5\UREL\geoconverter.dll" -"c:\sys\bin\geoconverter.dll"
 
+; Geo tagger
+"\EPOC32\RELEASE\ARMV5\UREL\geotagger.dll" -"c:\sys\bin\geotagger.dll"
 
 ; End of file
 

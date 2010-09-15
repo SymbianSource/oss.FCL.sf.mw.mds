@@ -32,10 +32,7 @@
 #include "locationtraildefs.h"
 #include "locationtrailpskeys.h"
 #include "mdeconstants.h"
-#ifdef LOC_REVERSEGEOCODE
-#include "reversegeocoderplugin.h"
-const TUid KReverseGeoCodeUid = {0x2002DD12}; 
-#endif	
+
 
 
 using namespace MdeConstants;
@@ -136,15 +133,13 @@ void CLocationRecord::ConstructL()
 #ifdef LOC_REVERSEGEOCODE
     iTagCreator = CTagCreator::NewL();
 
-    iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
-          REComSession::CreateImplementationL(KReverseGeoCodeUid,iDtorKey));
-     if( iRevGeocoderPlugin )
-	 	{
-     	iRevGeocoderPlugin->AddObserverL(*this);
+	  TInt pluginerr = KErrNone;
+    TRAP(pluginerr,iRevGeocoderPlugin = CReverseGeoCoderPlugin::NewL());
+    		
+   if(pluginerr == KErrNone)
+   	{
+		iRevGeocoderPlugin->AddObserverL(*this);
 	 	}
-
-
- 
  #endif
 
 	
@@ -257,7 +252,6 @@ if(iNetLocationQuery)
 	// set the pointer to NULL, ECOM will destroy object.
     delete iRevGeocoderPlugin;
     iRevGeocoderPlugin = NULL;
-    REComSession::DestroyedImplementation(iDtorKey);
 #endif
     LOG( "CLocationRecord::~CLocationRecord(), end" );	
     }
@@ -1821,6 +1815,7 @@ void CLocationRecord::HandleNetLocationQueryL( CMdEQuery& aQuery )
         CMdEObject& locationObject = static_cast<CMdEObject&>(item);
         locationId = locationObject.Id();
         
+        iMediaItems[0]->iLocationId = locationId;
         TRAP( error, CreateRelationL( iMediaItems[0]->iObjectId, locationId ) );
 #ifdef LOC_REVERSEGEOCODE
         //check if found location object has lat, long

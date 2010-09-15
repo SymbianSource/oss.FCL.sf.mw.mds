@@ -162,9 +162,7 @@ void CWatchdog::Start()
 CWatchdog::~CWatchdog()
     {
     delete iShutdownObserver;
-    iShutdownObserver = NULL;
     delete iSelfShutdownObserver;
-    iSelfShutdownObserver = NULL;
     Cancel();
     }
 

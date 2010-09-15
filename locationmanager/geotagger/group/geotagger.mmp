@@ -46,8 +46,6 @@ USERINCLUDE     ../../geoconverter/inc
 #ifdef _LOC_REVERSEGEOCODE
 MACRO LOC_REVERSEGEOCODE
 USERINCLUDE     ../../tagcreator/inc
-USERINCLUDE     ../../ReverseGeocode/inc
-USERINCLUDE	../../ReverseGeoCoderPlugin/inc
 #endif
 
 
@@ -76,7 +74,6 @@ LIBRARY         geoconverter.lib
 #endif
 
 #ifdef _LOC_REVERSEGEOCODE
-LIBRARY        reversegeocode.lib 
 LIBRARY        tagcreator.lib 
 #endif
 

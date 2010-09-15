@@ -24,10 +24,6 @@
 #include "mdeconstants.h"
 #include "mdesession.h"
 #include "cinternalgeotagger.h"
-#ifdef LOC_REVERSEGEOCODE
-#include "reversegeocoderplugin.h"
-const TUid KReverseGeoCodeUid = {0x2002DD12};
-#endif
 
 using namespace MdeConstants;
 
@@ -113,15 +109,15 @@ void CInternalGeoTagger::ConstructL()
     //for reverse geocoding (geo-tagging)
     
 #ifdef LOC_REVERSEGEOCODE
-      
-	   TRAP_IGNORE(
-        iRevGeocoderPlugin = reinterpret_cast<CReverseGeoCoderPlugin*>(
-           REComSession::CreateImplementationL(KReverseGeoCodeUid, iDtorKey));)
-           	
-        if( iRevGeocoderPlugin )
-			{
-            iRevGeocoderPlugin->AddObserverL(*this); 
-			}
+    	
+		TInt pluginerr = KErrNone;
+    TRAP(pluginerr,iRevGeocoderPlugin = CReverseGeoCoderPlugin::NewL());
+    		
+   if(pluginerr == KErrNone)
+   	{
+		iRevGeocoderPlugin->AddObserverL(*this);
+	 	}
+
 
 #endif //LOC_REVERSEGEOCODE
 
@@ -168,7 +164,7 @@ CInternalGeoTagger::~CInternalGeoTagger()
     iTagCreator = NULL;
     delete iRevGeocoderPlugin;
     iRevGeocoderPlugin = NULL;
-    REComSession::DestroyedImplementation(iDtorKey);	
+
 #endif //LOC_REVERSEGEOCODE
     if(iMdeSessionOwnFlag)
         {

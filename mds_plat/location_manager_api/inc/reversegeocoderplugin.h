@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2009 Nokia Corporation and/or its subsidiary(-ies). 
+* Copyright (c) 2009 Nokia Corporation and/or its subsidiary(-ies). 
 * All rights reserved.
 * This component and the accompanying materials are made available
 * under the terms of "Eclipse Public License v1.0"
@@ -11,18 +11,24 @@
 *
 * Contributors:
 *
-* Description:  Reverse Geocode utility which converts the geo coordinates in to
-* the actual address information.
+* Description:	The header file for ReverseGeoCoderPlugin that creates the ReverseGeocoder
+*
 */
 
-#ifndef REVERSEGEOCODE_H_
-#define REVERSEGEOCODE_H_
+
+#ifndef __REVERSEGEOCODERPLUGIN_H__
+#define __REVERSEGEOCODERPLUGIN_H__
+
+// INCLUDES
 
 #include <e32base.h> 
 #include <lbsposition.h> 
 #include <etel.h>
 #include <etelmm.h>
-#include "geotagger.h"
+#include <geotagobserver.h>
+
+const TUid KReversegeocodeInterfaceUid = {0x2002DD13};
+
 
 /*
  * Data class to get the address details. An handle to this type will be given to the
@@ -89,7 +95,6 @@ class MAddressInfo
      */
     virtual TDesC& GetThoroughfareNumber() = 0;
     };
-
 /*
  * Observer class which exposes callbacks to notify the completion of reversegeocoding event.
  *
@@ -134,40 +139,71 @@ class MReverseGeocodeObserver
         GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag) = 0;
     };
 
-/*
- * CReverseGeocode
- * Concrete class which exposes interfaces to convert the geo-coordinates information
- * in to the address information.
+
+/**
+ * CReverseGeoCoderPlugin
  *
- **/
-class CReverseGeocode : public CBase
-    {
-    public:
-    /*
-     * Factory function to create the instance of CReverseGeocode Class. This also registers
-     * observer for getting the reverse geocode completion notifications.
-     * 
-     * @param aObserver refrence to the instance MReverseGeocodeObserver's 
-     *                  implementation class.
-     * @return pointer to the instance of CReverseGeocode.                 
-     */
-    IMPORT_C static CReverseGeocode* NewL( MReverseGeocodeObserver& aObserver );
-        
-    /*
-     * Gets the address information for the given geo coordinates. This is an asynchronous function
-     * Whose completion will be notified by the MReverseGeocodeObserver::ReverseGeocodeComplete callback.
-     * 
-     * @param aObserver refrence to the instance MReverseGeocodeObserver's 
-     *                  implementation class.
-     */
-    virtual void GetAddressByCoordinateL( TLocality aLocality, 
-                                            const TConnectionOption aOption = ESilent ) = 0;
-
-	/*
-	* checks if silent connection is allowed
-	* @return ETrue if silent connection is allowed
+ * An implementation of the CReverseGeoCoderPlugin definition. 
+ *              Encapsulates the reverse goecoding functionality
+ *              This is concrete class, instance of which
+ *              ECOM framework gives to ECOM clients.
+ */
+class CReverseGeoCoderPlugin : public CBase
+	{
+public:
+	
+	/**
+	* Create instance of concrete implementation. 
+	* @return: Instance of this class.
 	*/
-    virtual TBool SilentConnectionAllowed() = 0;
-    };
+	static CReverseGeoCoderPlugin* NewL();
 
-#endif /* REVERSEGEOCODE_H_ */
+
+	/**
+	* Destructor.
+	*/
+	virtual ~CReverseGeoCoderPlugin();
+
+
+public:
+	
+	/**
+	 * Creates the instance of Reverse Geocoder
+	 * 
+	 */
+	virtual void CreateReverseGeoCoderL() = 0;
+
+	/**
+	 * Initializes the ReverseGeoCodeObserver
+	 * @param: aObserver The observer class instance that is to be notified when reverse geocoding completes
+	 * 
+	 */
+    virtual void AddObserverL(MReverseGeocodeObserver& aObserver)=0;
+
+	/**
+	 * A wrapper API to fetch the address from geocoordinates
+	 * Internally calls the ReverseGeoCoder
+	 * @param aLocality A TLocality object that contains the geocoordinate information
+	 * @param aOption Indicates if the connection is silent connection or not
+	 * 
+	 */
+    virtual void GetAddressByCoordinateL( TLocality aLocality,const TConnectionOption aOption )=0;
+
+	/**
+	 * Wrapper API to check if the ReverseGeoCoder allows a silent connection
+	 * @return:TBool Indicates if a silent connection is allowed
+	 * 
+	 */
+	  virtual TBool SilentConnectionAllowed() = 0;
+	
+private:
+	
+	TUid iDtorKey;
+
+	};
+#include "reversegeocoderplugin.inl"
+
+#endif //__REVERSEGEOCODERPLUGIN_H__
+
+//End of file
+

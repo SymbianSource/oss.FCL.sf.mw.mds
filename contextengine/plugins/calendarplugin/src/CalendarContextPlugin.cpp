@@ -369,11 +369,15 @@ void CCalendarContextPlugin::AddMetaDataL( CMdEObject& aMdEObject ) const
 			}
 
 		WRITELOG( "CCalendarContextPlugin::AddMetaDataL - Add calendar relation to MDE" );
+#ifdef _DEBUG
 		TRAP( addError, iMdeSession->AddRelationL( *relationObject ) );
 		if ( addError != KErrNone)
 			{
 			WRITELOG1( "CCalendarContextPlugin::AddMetaDataL - Add calendar relation to MDE error: %d", addError );
 			}
+#else
+		TRAP_IGNORE( iMdeSession->AddRelationL( *relationObject ) );	
+#endif
 
 		CleanupStack::PopAndDestroy( relationObject );
 		CleanupStack::PopAndDestroy( calendarObject );
@@ -519,7 +523,6 @@ void CCalendarContextPlugin::OpenViewL(TBool aRetry)
 void CCalendarContextPlugin::StartRetryL()
     {
     WRITELOG( "CCalendarContextPlugin::StartRetryL() ENTER" );
-    TInt err(KErrNone);
     
     if(iRetryCount++ > KMaxRetryCount)
         {
@@ -538,10 +541,11 @@ void CCalendarContextPlugin::StartRetryL()
 		return; 
         }
     
-    
+#ifdef _DEBUG
+    TInt err( KErrNone );
     if(!iInitTimer)
         {
-        TRAP(err, iInitTimer = CPeriodic::NewL(CActive::EPriorityStandard) );
+        TRAP(err, iInitTimer = CPeriodic::NewL( CActive::EPriorityStandard ) );
         }
                 
     if( err != KErrNone )
@@ -549,7 +553,13 @@ void CCalendarContextPlugin::StartRetryL()
         WRITELOG1( "CCalendarContextPlugin::OpenViewL() iInitTimer->Start failed %d", err );
         User::Leave( err );
         }
-        
+#else
+    if(!iInitTimer)
+        {
+        iInitTimer = CPeriodic::NewL( CActive::EPriorityStandard );
+        }    
+#endif
+    
     WRITELOG( "CCalendarContextPlugin::OpenViewL() iInitTimer->Start" );
     iInitTimer->Start( KInitRetryTimeout, KInitRetryTimeout, TCallBack(InitRetryCallback, this));
     WRITELOG( "CCalendarContextPlugin::StartRetryL() RETURN" );

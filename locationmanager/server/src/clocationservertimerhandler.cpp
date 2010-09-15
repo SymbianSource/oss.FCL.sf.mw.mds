@@ -26,7 +26,7 @@
 //
 CLocationServerTimerHandler::CLocationServerTimerHandler
             (MLocationServerTimerObserver& aLocationServerTimerObserver):
-        CTimer(EPriorityStandard ),
+        CTimer( EPriorityStandard ),
         iLocationServerTimerObserver(aLocationServerTimerObserver),
         iLocationServerTimerType(MLocationServerTimerObserver::ELocGeneralPurpose)
     {
