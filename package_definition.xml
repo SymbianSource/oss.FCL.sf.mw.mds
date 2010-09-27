@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <SystemDefinition schema="3.0.0">
- <package id="mds" name="Metadata Services" levels="mgr eng server int">
+ <package id="mds" name="Metadata Services" version="2.0.0" levels="mgr eng server int">
   <collection id="mds_plat" name="Metadata Services Platform Interfaces" level="int">
    <component id="context_engine_plugin_api" name="Context Engine Plugin API" introduced="^2" class="api" filter="s60">
     <meta rel="Api" href="mds_plat/context_engine_plugin_api/context_engine_plugin_api.metaxml"/>
@@ -10,7 +10,6 @@
    <component id="harvester_framework_api" name="Harvester Framework API" introduced="^2" class="api" filter="s60">
     <meta rel="Api" href="mds_plat/harvester_framework_api/harvester_framework_api.metaxml"/>
     <unit bldFile="mds_plat/harvester_framework_api/group" filter="!test"/>
-    <unit bldFile="mds_plat/harvester_framework_api/tsrc/group" filter="test,api_test"/>
 		<!-- can only have one unit with the same filter, #include the following from the previous unit -->
     <unit bldFile="mds_plat/harvester_framework_api/tsrc/composerplugintest/group" filter="test,api_test"/>
     <unit bldFile="mds_plat/harvester_framework_api/tsrc/harvesterclienttest/group" filter="test,api_test"/>
@@ -68,27 +67,9 @@
     <unit bldFile="locationmanager/geoconverter/group"/>
    </component>
    <component id="geo_tagcreator" filter="s60" name="Geo Tag Creator" introduced="^4">
-    <meta rel="config">
-    <defined condition="_LOC_REVERSEGEOCODE"/>
-   </meta>
     <unit bldFile="locationmanager/tagcreator/group"/>
    </component>
-   <component id="reversegeocode" filter="s60" name="Reverse Geocode" introduced="^4">
-    <meta rel="config">
-    <defined condition="_LOC_REVERSEGEOCODE"/>
-   </meta>
-    <unit bldFile="locationmanager/ReverseGeocode/group"/>
-   </component>
-   <component id="reversegeocoderplugin" filter="s60" name="Reverse Geo-Coder Plugin" class="plugin" introduced="^4">
-    <meta rel="config">
-    <defined condition="_LOC_REVERSEGEOCODE"/>
-   </meta>
-    <unit bldFile="locationmanager/ReverseGeoCoderPlugin/group"/>
-   </component>
    <component id="geotagger" filter="s60" name="Geo Tagger" introduced="^4">
-    <meta rel="config">
-    <defined condition="_LOC_REVERSEGEOCODE"/>
-   </meta>
     <unit bldFile="locationmanager/geotagger/group"/>
    </component>
    <component id="locationtrail" filter="s60" name="Location Trail" introduced="^2">
