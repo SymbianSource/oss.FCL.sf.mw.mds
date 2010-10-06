@@ -230,7 +230,15 @@ CMdEObject* CMdeObjectHandler::GetMetadataObjectL( CHarvesterData& aHD, const TD
                         }
 #endif
                     WRITELOG( "CMdeObjectHandler::GetMetadataObjectL() - file handle is open! Returning." );
-                    return NULL;
+                    if( error == KErrInUse || error == KErrLocked )
+                        {
+                        // If file is locked, push it to reharvesting queue
+                        User::Leave( error );
+                        }
+                    else
+                        {
+                        return NULL;
+                        }
                     }
                 tempFile.Close();
         		}

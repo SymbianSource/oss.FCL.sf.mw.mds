@@ -65,7 +65,7 @@ NONSHARABLE_CLASS( RBlacklistClient ) : public RSessionBase
         
         /*!
         @function AddL
-        @discussion Add object to blacklist.
+        @discussion Prepare adding object to blacklist. 
         @param aUri - object uri.
         @param aMediaId - drive id where object is located (E,C ...).
         @param aLastModifiedTime - time when object is modified.
@@ -89,6 +89,8 @@ NONSHARABLE_CLASS( RBlacklistClient ) : public RSessionBase
         @discussion Closes server database. 
         */
         IMPORT_C void CloseDBL();
+        
+        IMPORT_C void Close();
 
     private: // private functions
     

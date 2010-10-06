@@ -20,7 +20,7 @@ PRJ_PLATFORMS
 
 PRJ_EXPORTS
 ../data/20007183.txt /epoc32/data/z/private/10202BE9/20007183.txt
-../data/20007183.txt /epoc32/WINSCW/C/private/10202BE9/20007183.txt
+../data/20007183.txt /epoc32/winscw/c/private/10202BE9/20007183.txt
 
 PRJ_MMPFILES
 mmcmonitorplugin.mmp

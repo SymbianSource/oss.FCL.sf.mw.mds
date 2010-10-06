@@ -58,7 +58,6 @@ void CWDSelfShutdownObserver::ConstructL()
     PRINT(_L("CWDSelfShutdownObserver::ConstructL()"));
     
     TInt error = RProperty::Define(KWatchdogPSShutdown, KShutdown,RProperty::EInt,KAllowAllPolicy,KPowerMgmtPolicy);
-    RProperty::Set(KWatchdogPSShutdown,KShutdown,0);
 
     // attach to the property    
     User::LeaveIfError( iProperty.Attach(KWatchdogPSShutdown,KShutdown,EOwnerThread) );

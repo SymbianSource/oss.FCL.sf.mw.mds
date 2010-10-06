@@ -847,7 +847,7 @@ void CFileEventHandlerAO::MultiDeleteFromMDEL( const RPointerArray<TDesC>& aUrls
 //
 void CFileEventHandlerAO::FormatL( TUint32 aOldMediaId, TBool aSubClose )
 	{
-	WRITELOG2( "CFileEventHandlerAO::FormatL - old media ID %d subclose %d", 
+	WRITELOG2( "CFileEventHandlerAO::FormatL - old media ID %u subclose %d", 
 			aOldMediaId, aSubClose );
 
 	if ( aOldMediaId )

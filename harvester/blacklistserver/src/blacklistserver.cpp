@@ -539,7 +539,7 @@ TInt CBlacklistServer::GetMemoryTableIndex( const TDesC& aUri, TUint32 aMediaId 
     WRITELOG( "CBlacklistServer::GetMemoryTableIndex - begin" );
     OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_GETMEMORYTABLEINDEX, "CBlacklistServer::GetMemoryTableIndex - begin" );
     
-    for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
+    for( TInt i = iBlacklistMemoryTable.Count() - 1; i >=0; i-- )
         {
         if ( iBlacklistMemoryTable[i]->Compare( aUri, aMediaId ) )
             {
@@ -805,7 +805,7 @@ void CBlacklistServer::WriteAllDataToDBL()
     WRITELOG( "CBlacklistServer::WriteAllDataToDBL - begin" );
     OstTrace0( TRACE_NORMAL, CBLACKLISTSERVER_WRITEALLDATATODBL, "CBlacklistServer::WriteAllDataToDBL - begin" );
     
-    for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
+    for( TInt i = iBlacklistMemoryTable.Count() - 1; i >=0; i-- )
         {
         AddToDBL(  *iBlacklistMemoryTable[i]->Uri(),  iBlacklistMemoryTable[i]->MediaId(), iBlacklistMemoryTable[i]->Modified() );
         }
@@ -836,7 +836,11 @@ void CBlacklistServer::CommitBufferedItemsL()
     const TInt addedCount( iBufferedAddedItems.Count() );
     for ( TInt i( 0 ); i < addedCount; ++i )
         {
-        iSqLiteConnection->ExecuteL( KMdsBlacklistUpdate, *iBufferedAddedItems[i] );
+        TRAPD( err, iSqLiteConnection->ExecuteL( KMdsBlacklistInsert, *iBufferedAddedItems[i] ) );
+        if ( err == KSqlErrConstraint ) // is the file already blacklisted...
+            {
+            iSqLiteConnection->ExecuteL( KMdsBlacklistUpdate, *iBufferedAddedItems[i] );
+            }
         iBufferedAddedItems[i]->Column( 0 ).Free();  
         }
 

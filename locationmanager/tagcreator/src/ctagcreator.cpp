@@ -30,6 +30,7 @@ using namespace MdeConstants;
 _LIT ( KCountry, "country:");   // country:finland
 _LIT ( KCity, "city:");         // city:helsinki|country:finland
 _LIT ( KSeparator, "|" );       // Separator for city tag. Separate city and country.
+_LIT ( KUnMappedLocation, " " ); //a blank title for geocoordinates that could not be mapped to a valid location
 
 // --------------------------------------------------------------------------
 // CTagCreator::NewL
@@ -90,25 +91,35 @@ void CTagCreator::CreateTagForCountryL( const TPtrC& aCountry,
                         TItemId& aCountryTagId )
     {
     LOG( "CTagCreator::CreateTagForCountryL - begin" );
-    
-    // Crete new string for uri, -> country:India.
-    TUint totalLength = ( aCountry.Length() + KCountry().Length() );
-    HBufC* buf = HBufC::NewLC( totalLength );
-    TPtr uriPtr = buf->Des();
-    _LIT(KCountryUriFormat, "%S%S");
-    uriPtr.Format(KCountryUriFormat, &(KCountry()), &aCountry); 
-    
-    // Check if there is allready tag for current country.
-    aCountryTagId = TagExistsL( uriPtr );
-       
-    if( !aCountryTagId )
-	   {
-	   // No tag, create tag for country.
-	   aCountryTagId = CreateTagL( aCountry, uriPtr, MdeConstants::Tag::ESystemDefineCountryTags);
-	   }  
-      
-    CleanupStack::PopAndDestroy( buf );
-    
+
+        // Crete new string for uri, -> country:India.
+        TUint totalLength = ( aCountry.Length() + KCountry().Length() );
+        HBufC* buf = HBufC::NewLC( totalLength );
+        TPtr uriPtr = buf->Des();
+        _LIT(KCountryUriFormat, "%S%S");
+        uriPtr.Format(KCountryUriFormat, &(KCountry()), &aCountry); 
+        
+        // Check if there is allready tag for current country.
+        aCountryTagId = TagExistsL( uriPtr );
+           
+        if( !aCountryTagId )
+           {
+            // No tag, create tag for country.
+            if(aCountry.Length()> 0)
+                {
+                	//Valid country name
+                aCountryTagId = CreateTagL( aCountry, uriPtr, MdeConstants::Tag::ESystemDefineCountryTags);
+                }
+            else
+                {
+                	//No valid country name. So create a tag of type EUnMappedLocationTags
+                aCountryTagId = CreateTagL( aCountry, uriPtr, MdeConstants::Tag::EUnMappedLocationTags);
+                }
+           }  
+          
+        CleanupStack::PopAndDestroy( buf );
+
+
     LOG( "CTagCreator::CreateTagForCountryL - end" );
     }
 
@@ -119,31 +130,39 @@ void CTagCreator::CreateTagForCountryL( const TPtrC& aCountry,
 void CTagCreator::CreateTagForCityL( const TPtrC& aCountry, const TPtrC& aCity, TItemId& aCityTagId )
     {
     LOG( "CTagCreator::CreateTagForCityL - begin" );
-
-    // Crete new string for uri, -> city:bangalore|country:india
-    TUint totalLength = ( aCity.Length() + KCity.iTypeLength +
-        aCountry.Length() + KCountry.iTypeLength + KSeparator.iTypeLength );
-    
-    HBufC* buf = HBufC::NewLC( totalLength );
-    TPtr uriPtr = buf->Des();
-    _LIT(KCityCountryUriFormat, "%S%S%S%S%S");
-    uriPtr.Format(KCityCountryUriFormat,
-                    &(KCity()),
-                    &aCity,
-                    &(KSeparator()),
-                    &(KCountry()),
-                    &aCountry);
+        // Crete new string for uri, -> city:bangalore|country:india
+        TUint totalLength = ( aCity.Length() + KCity.iTypeLength +
+            aCountry.Length() + KCountry.iTypeLength + KSeparator.iTypeLength );
         
-    // Check if there is allready tag for current city.
-    aCityTagId = TagExistsL( uriPtr );
-	
-	if( !aCityTagId )
-		{
-		// No tag, create tag for city.
-		aCityTagId = CreateTagL( aCity, uriPtr, MdeConstants::Tag::ESystemDefineCityTags);
-		}
-    
-    CleanupStack::PopAndDestroy( buf );
+        HBufC* buf = HBufC::NewLC( totalLength );
+        TPtr uriPtr = buf->Des();
+        _LIT(KCityCountryUriFormat, "%S%S%S%S%S");
+        uriPtr.Format(KCityCountryUriFormat,
+                        &(KCity()),
+                        &aCity,
+                        &(KSeparator()),
+                        &(KCountry()),
+                        &aCountry);
+            
+        // Check if there is allready tag for current city.
+        aCityTagId = TagExistsL( uriPtr );
+        
+        if( !aCityTagId )
+            {
+               // No tag, create tag for city.
+            if(aCity.Length() > 0)
+                {
+                	//Valid city name
+                aCityTagId = CreateTagL( aCity, uriPtr, MdeConstants::Tag::ESystemDefineCityTags);
+                }
+            else
+                {  
+                	//No valid city name. So create a tag of type EUnMappedLocationTags
+                aCityTagId = CreateTagL( aCity, uriPtr, MdeConstants::Tag::EUnMappedLocationTags);
+                }
+            }
+        
+        CleanupStack::PopAndDestroy( buf );
  
     LOG( "CTagCreator::CreateTagForCityL - end" );
     }
@@ -198,6 +217,10 @@ TUint32 CTagCreator::CreateTagL( const TPtrC& aTitle,
 	    {
 	    tagObject->AddTextPropertyL( titleDef, aTitle ); // Add title
 	    }
+    else
+    	{
+    	tagObject->AddTextPropertyL( titleDef,KUnMappedLocation); // Add empty title
+	   	}
 	
 	// Finally add to database.
 	TItemId itemId = iMdeSession->AddObjectL( *tagObject );
@@ -293,15 +316,10 @@ EXPORT_C void CTagCreator::CreateLocationTagsL( const TPtrC& aCountry, TItemId& 
                                                const TPtrC& aCity, TItemId& aCityTagId)
 	{        
 	LOG( "CGeoTagger::CreateLocationTagsL" );
-    if( aCountry.Length() > 0 )
-        {
-        CreateTagForCountryL( aCountry, aCountryTagId );
-        } 
-                             
-    if( aCity.Length() > 0 )
-        {
-        CreateTagForCityL( aCountry, aCity, aCityTagId );
-        }
+
+    CreateTagForCountryL( aCountry, aCountryTagId );
+    CreateTagForCityL( aCountry, aCity, aCityTagId );
+
 	} 
    
 // End of file

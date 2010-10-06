@@ -34,7 +34,7 @@
 
 __DEFINE_LOGGER
 
-const TInt64 KDiskSpaceGarbageCollectorThreshold = 1024*1024; // 1 MB
+const TInt64 KDiskSpaceGarbageCollectorThreshold = 1024*1024*2; // 2 MB 
 
 _LIT( KSchema, "schema.mde" );
 _LIT( KDefaultImportProfile, "defaultimportfile.mde" );
@@ -595,6 +595,7 @@ void CMdSServer::ShutdownNotification()
     {
     if (!iShutdown)
         {    
+        User::RenameThread(KMdSServerNameIAD);
         CActiveScheduler::Stop();
         iShutdown = ETrue;
         }

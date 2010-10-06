@@ -332,12 +332,13 @@ void CMMCMonitorAO::PrintAllLists()
 		if ( !(iPreviousDriveList[i] == 0 && iDriveList[i] == 0 && iMediaIdList[i] == 0) )
 			{
 		    TInt32 drive;
+		    TUint32 mediaId;
 			drive = iPreviousDriveList[i];
 		    WRITELOG1( "CMMCMonitorAO::PrintAllLists() - Previous drive element: %d", drive );
 			drive = iDriveList[i];
 		    WRITELOG1( "CMMCMonitorAO::PrintAllLists() - Current drive element : %d", drive );
-			drive = iMediaIdList[i];
-		    WRITELOG1( "CMMCMonitorAO::PrintAllLists() - Current MediaId       : %d", drive );
+		    mediaId = iMediaIdList[i];
+		    WRITELOG1( "CMMCMonitorAO::PrintAllLists() - Current MediaId       : %u", mediaId );
 			}
 		}
 	}

@@ -21,7 +21,7 @@ PRJ_PLATFORMS
 
 PRJ_EXPORTS
 ../data/200009FE.txt /epoc32/data/z/private/10202BE9/200009FE.txt
-../data/200009FE.txt /epoc32/WINSCW/C/private/10202BE9/200009FE.txt
+../data/200009FE.txt /epoc32/winscw/c/private/10202BE9/200009FE.txt
 
 PRJ_MMPFILES
 harvesterdata.mmp

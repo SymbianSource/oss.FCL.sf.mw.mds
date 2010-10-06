@@ -32,7 +32,7 @@
 // CWDShutdownObserver::NewL()
 // ---------------------------------------------------------------------------
 //
-CWDShutdownObserver* CWDShutdownObserver::NewL( MWDShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
+EXPORT_C CWDShutdownObserver* CWDShutdownObserver::NewL( MWDShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
     { 
     CWDShutdownObserver* self = new( ELeave )CWDShutdownObserver( aObserver/*, aKeyCategory */);
     CleanupStack::PushL( self );

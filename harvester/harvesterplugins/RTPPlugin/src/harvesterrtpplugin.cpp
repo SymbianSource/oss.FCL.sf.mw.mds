@@ -116,6 +116,8 @@ CHarvesterRtpPlugin* CHarvesterRtpPlugin::NewL()
 CHarvesterRtpPlugin::~CHarvesterRtpPlugin()
     {
     WRITELOG( "CHarvesterRtpPlugin::~CHarvesterRtpPlugin()" );
+    delete iPropDefs;
+    iPropDefs = NULL;
     }
 
 // ---------------------------------------------------------------------------

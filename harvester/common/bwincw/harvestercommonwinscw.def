@@ -67,4 +67,5 @@ EXPORTS
 	?SendHarvestingStatusEventL@CHarvesterPluginFactory@@QAEXH@Z @ 66 NONAME ; void CHarvesterPluginFactory::SendHarvestingStatusEventL(int)
 	?PauseHarvester@CHarvesterPluginFactory@@QAEXH@Z @ 67 NONAME ; void CHarvesterPluginFactory::PauseHarvester(int)
 	?GetObjectDefL@CHarvesterPluginFactory@@QAEXPAVCHarvesterData@@AAVTDes16@@@Z @ 68 NONAME ; void CHarvesterPluginFactory::GetObjectDefL(class CHarvesterData *, class TDes16 &)
+	?GetAlwaysScanOnBootPathsL@CHarvesterCenRepUtil@@SAXAAV?$RPointerArray@UTScanItem@@@@@Z @ 69 NONAME ; void CHarvesterCenRepUtil::GetAlwaysScanOnBootPathsL(class RPointerArray<struct TScanItem> &)
 

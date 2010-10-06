@@ -85,7 +85,6 @@ CMdSFindSequence::CMdSFindSequence(
 void CMdSFindSequence::ConstructL()
     {
     CActiveScheduler::Add( this );
-    __INIT_LOGGER;
     }
 
 // ------------------------------------------------

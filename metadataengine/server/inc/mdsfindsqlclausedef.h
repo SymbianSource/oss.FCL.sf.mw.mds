@@ -205,9 +205,6 @@ _LIT( KObjectUsageCount,    "UsageCount" );
 _LIT( KObjectUriEqual,      "URI=?" );
 _LIT( KObjectUriBeginsWith, "URI LIKE ?" );
 
-_LIT( KBaseObjectIdIn,    "BO.ObjectId IN" );
-_LIT( KBaseObjectIdNotIn, "BO.ObjectId NOT IN" );
-
 // Object searches
 _LIT( KSelectObjectIdFromBaseObject, "SELECT ObjectId FROM Object" );
 

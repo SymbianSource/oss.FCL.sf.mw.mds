@@ -42,7 +42,7 @@ RESOURCE REGISTRY_INFO theInfo
 					version_no = 1;
 					display_name = "Harvester audio plugin";
 					default_data = "Audio";
-					opaque_data = "mp3 aac amr awb mid midi mxmf rng spmid wav au wma nrt mka";
+					opaque_data = "mp3 aac amr awb mid midi mxmf rng spmid wav au wma nrt mka m4a";
 					rom_only = 0;
 					}
 				};

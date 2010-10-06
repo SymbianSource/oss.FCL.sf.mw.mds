@@ -25,7 +25,6 @@
 //                           X:[<UID>]<database-name>.db
 _LIT( KMdsSqlDbDefaultName, "C:[200009f3]metadata.sq" );
 _LIT( KMdsSqlDbDefaultPath, "C:\\private\\10281E17\\[200009f3]metadata.sq" );
-_LIT( KMdsSqlDbBackupPath, "C:\\private\\200009F5\\[200009f3]metadata.sq" );
 
 // default import metadata file
 _LIT( KMdsDefaultImportFile, "C:\\private\\200009f3\\defaultimportfile.mde" );
@@ -56,6 +55,7 @@ const TInt KMaxTitleFieldLength = 255;
 const TInt KTriggerDbMaintenanceTreasholdValue( 3000 );
 
 _LIT( KMdSServerName,"!MdSServer" ); // Server name
+_LIT( KMdSServerNameIAD,"!__MdSServer" ); // Server name after shutdown
 _LIT( KMdSServerProcessString,"!MdSServer*" ); 
 _LIT( KSchemaChunkName, "MdSSchema" );
 

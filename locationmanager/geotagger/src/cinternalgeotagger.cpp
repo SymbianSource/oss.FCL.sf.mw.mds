@@ -128,7 +128,7 @@ void CInternalGeoTagger::ConstructL()
 // CInternalGeoTagger::~CInternalGeoTagger
 // --------------------------------------------------------------------------
 //    
-CInternalGeoTagger::~CInternalGeoTagger()
+EXPORT_C CInternalGeoTagger::~CInternalGeoTagger()
     {  
     LOG("CInternalGeoTagger::~CInternalGeoTagger ,begin");
 #ifdef LOC_GEOTAGGING_CELLID

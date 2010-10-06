@@ -47,6 +47,7 @@
 #include "mdssqldbmaintenance.h"
 #include "mdspreferences.h"
 #include "mdscommoninternal.h"
+#include "mdsdatabaseupdater.h"
 
 const TInt KMdsMaxUriLenght = KMaxFileName;
 const TChar KMdsLineFeed = '\n';
@@ -880,11 +881,23 @@ TBool CMdsImportExport::ImportCheckVersionInfoL()
 	// DB version
     MMdsPreferences::GetL( KMdsDBVersionName, MMdsPreferences::EPreferenceBothGet,
     						  majorVersion, &minorVersion );
-	if ( majorVersion != KMdSServMajorVersionNumber || (TInt64)minorVersion != KMdSServMinorVersionNumber )
+	if ( majorVersion != KMdSServMajorVersionNumber )
 		{
 		return EFalse;
 		}
 
+    if ( (TInt64)minorVersion < KMdSServMinorVersionNumber )
+        {
+        CMdSDatabaseUpdater* updater = CMdSDatabaseUpdater::NewL();
+        TBool success( updater->UpdateDatabaseL( (TInt64)minorVersion ) );
+        delete updater;
+        updater = NULL;
+        if( !success )
+            {
+            return EFalse;
+            }
+        }	
+	
 	// schema version
     MMdsPreferences::GetL( KMdsSchemaVersionName, MMdsPreferences::EPreferenceBothGet,
     						  majorVersion, &minorVersion );

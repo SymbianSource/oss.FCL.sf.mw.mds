@@ -74,9 +74,9 @@ LIBRARY	        PlatformEnv.lib
 LIBRARY 	centralrepository.lib 
 LIBRARY         ecom.lib
 LIBRARY         commsdat.lib
+LIBRARY         profileeng.lib 
 
 LIBRARY        geotagger.lib
-LIBRARY        libc.lib
 
 #ifdef _LOC_REVERSEGEOCODE
 LIBRARY        tagcreator.lib 

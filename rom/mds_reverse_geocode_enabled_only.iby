@@ -82,7 +82,6 @@ file=ABI_DIR\BUILD_DIR\mdswatchdog.exe	PROGRAMS_DIR\mdswatchdog.exe
 REM locationtrail
 file=ABI_DIR\BUILD_DIR\locationtrail.dll		    SHARED_LIB_DIR\locationtrail.dll
 
-
 REM tagcreator
 file=ABI_DIR\BUILD_DIR\tagcreator.dll		    SHARED_LIB_DIR\tagcreator.dll
 

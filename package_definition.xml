@@ -61,9 +61,6 @@
   </collection>
   <collection id="locationmanager" name="Location Manager" level="mgr">
    <component id="geoconverter" filter="s60" name="Geoconverter" introduced="^4">
-    <meta rel="config">
-    <defined condition="_LOC_GEOTAGGING_CELLID"/>
-   </meta>
     <unit bldFile="locationmanager/geoconverter/group"/>
    </component>
    <component id="geo_tagcreator" filter="s60" name="Geo Tag Creator" introduced="^4">

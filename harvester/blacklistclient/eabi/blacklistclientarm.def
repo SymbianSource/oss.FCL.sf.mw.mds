@@ -11,4 +11,5 @@ EXPORTS
 	_ZNK16RBlacklistClient7RemoveLERK7TDesC16m @ 10 NONAME
 	_ZTI14CBlacklistItem @ 11 NONAME ABSENT; #<TI>#
 	_ZTV14CBlacklistItem @ 12 NONAME ABSENT; #<VT>#
+	_ZN16RBlacklistClient5CloseEv @ 13 NONAME
 

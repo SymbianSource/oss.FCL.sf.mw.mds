@@ -58,8 +58,6 @@ LIBRARY		harvestercommon.lib
 LIBRARY     metadatautility.lib 
 LIBRARY     thumbnailmanager.lib 
 LIBRARY     centralrepository.lib
-LIBRARY     caf.lib
-LIBRARY     cafutils.lib
 LIBRARY     platformenv.lib 
 
 PAGED

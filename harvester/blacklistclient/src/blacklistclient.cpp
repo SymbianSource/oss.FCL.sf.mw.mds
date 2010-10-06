@@ -387,7 +387,7 @@ TInt RBlacklistClient::GetListIndex( const TDesC& aUri, TUint32 aMediaId )
     WRITELOG( "RBlacklistClient::GetListIndex - begin" );
     OstTrace0( TRACE_NORMAL, RBLACKLISTCLIENT_GETLISTINDEX, "RBlacklistClient::GetListIndex - begin" );
     
-    for ( TInt i( 0 ); i < iBlacklistMemoryTable.Count(); ++i )
+    for( TInt i = iBlacklistMemoryTable.Count() - 1; i >=0; i-- )
         {
         if ( iBlacklistMemoryTable[i]->Compare( aUri, aMediaId ) )
             {
@@ -424,7 +424,6 @@ EXPORT_C void RBlacklistClient::AddL( const TDesC& aUri, TUint32 aMediaId, TTime
 
     WRITELOG( "RBlacklistClient::AddL - end" );
     OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_ADDL, "RBlacklistClient::AddL - end" );
-    
     }
 
 
@@ -448,7 +447,6 @@ EXPORT_C void RBlacklistClient::RemoveL( const TDesC& aUri, TUint32 aMediaId ) c
 
     WRITELOG( "RBlacklistClient::RemoveL - end" );
     OstTrace0( TRACE_NORMAL, DUP1_RBLACKLISTCLIENT_REMOVEL, "RBlacklistClient::RemoveL - end" );
-    
     }
 
 // ---------------------------------------------------------------------------
@@ -474,5 +472,18 @@ EXPORT_C void RBlacklistClient::CloseDBL()
     
     }
 
+// ----------------------------------------------------------------------------------------
+// Close
+// ----------------------------------------------------------------------------------------
+//
+EXPORT_C void RBlacklistClient::Close()
+    {
+    WRITELOG( "RBlacklistClient::Close" );
+
+    iFs.Close();
+    iBlacklistChunk.Close();
+    
+    RSessionBase::Close();
+    }
 
 // End of File

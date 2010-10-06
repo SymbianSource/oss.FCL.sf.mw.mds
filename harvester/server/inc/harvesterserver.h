@@ -33,6 +33,7 @@
 
 _LIT( KDefaultPanicName, "Harvester Server Panic" );
 _LIT( KHarvesterServerName, "HarvesterServer" );
+_LIT( KHarvesterServerNameIAD, "__HarvesterServer" );
 
 class CHarvesterServer : public CPolicyServer,
 						 public MHarvesterStatusObserver,

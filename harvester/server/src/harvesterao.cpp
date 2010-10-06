@@ -506,7 +506,7 @@ void CHarvesterAO::ResumeMonitoring()
 //
 void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 	{
-    WRITELOG1( "CHarvesterAO::HandleUnmount(%d)", aMediaId );    
+    WRITELOG1( "CHarvesterAO::HandleUnmount(%u)", aMediaId );    
 	OstTrace1( TRACE_NORMAL, CHARVESTERAO_HANDLEUNMOUNT, "CHarvesterAO::HandleUnmount;aMediaId=%d", aMediaId );
     
     iUnmountDetected = ETrue;
@@ -3126,30 +3126,50 @@ void CHarvesterAO::BootPartialRestoreScanL()
 	partialRestore = ETrue;
 #endif
 	
-	if ( !partialRestore )
-		{
-		return;
-		}
-	
 	if( !iMdeSessionInitialized )
 	    {
 	    return;
 	    }
 	
-	iMdEHarvesterSession->ChangeCDriveMediaId();
+    if( partialRestore )
+        {
+        iMdEHarvesterSession->ChangeCDriveMediaId();
 
-	WRITELOG("CHarvesterAO::BootPartialRestoreScanL() - partial restore");
-    OstTrace0( TRACE_NORMAL, CHARVESTERAO_BOOTPARTIALRESTORESCANL, "CHarvesterAO::BootPartialRestoreScanL - partial restore" );
+        WRITELOG("CHarvesterAO::BootPartialRestoreScanL() - partial restore");  
+        }
+    else
+        {
+        WRITELOG("CHarvesterAO::BootPartialRestoreScanL() - preinstalled content bootup scan");
+        }
+    OstTrace0( TRACE_NORMAL, CHARVESTERAO_BOOTPARTIALRESTORESCANL, "CHarvesterAO::BootPartialRestoreScanL - prepare bootup scan" );
     
 	RPointerArray<TScanItem> scanItems;
 	TCleanupItem cleanupItem( MdsUtils::CleanupPtrArray<TScanItem>, &scanItems );
     CleanupStack::PushL( cleanupItem );
 
-	CHarvesterCenRepUtil::GetPartialRestorePathsL( scanItems );
+    if( partialRestore )
+        {
+        CHarvesterCenRepUtil::GetPartialRestorePathsL( scanItems );
+        }
+
+    RPointerArray<TScanItem> preinstalledItems;
+    TCleanupItem cleanupItem2( MdsUtils::CleanupPtrArray<TScanItem>, &preinstalledItems );
+    CleanupStack::PushL( cleanupItem2 );
+    
+    // Scan for preinstalled content anyways
+    CHarvesterCenRepUtil::GetAlwaysScanOnBootPathsL( preinstalledItems );
+
+    for( TInt i = preinstalledItems.Count() - 1; i >=0; i-- )
+        {
+        TScanItem* preinstalledLocation = preinstalledItems[i];
+        preinstalledLocation->iPreinstalled = MdeConstants::MediaObject::EPreinstalled;
+        scanItems.Append( preinstalledLocation );
+        }
+    preinstalledItems.Reset(); 
 
 	RPointerArray<HBufC> ignorePaths;
-	TCleanupItem cleanupItem2( MdsUtils::CleanupPtrArray<HBufC>, &ignorePaths );
-    CleanupStack::PushL( cleanupItem2 );
+	TCleanupItem cleanupItem3( MdsUtils::CleanupPtrArray<HBufC>, &ignorePaths );
+    CleanupStack::PushL( cleanupItem3 );
 
 	CHarvesterCenRepUtil::GetIgnoredPartialRestorePathsL( ignorePaths );
 
@@ -3161,6 +3181,7 @@ void CHarvesterAO::BootPartialRestoreScanL()
 	iRestoreWatcher->UnregisterL();
 
 	CleanupStack::PopAndDestroy( &ignorePaths );
+	CleanupStack::PopAndDestroy( &preinstalledItems );
 	CleanupStack::PopAndDestroy( &scanItems );
 	}
 
@@ -3270,7 +3291,7 @@ void CHarvesterAO::BootScanL( RPointerArray<TScanItem>& aScanItems,
 						TScanItem* item = new (ELeave) TScanItem();
 						CleanupStack::PushL( item );
 						item->iPath = name->AllocL();
-						item->iPreinstalled = MdeConstants::MediaObject::ENotPreinstalled;
+						item->iPreinstalled = preinstalled;
 						CleanupStack::Pop( item );
 						aScanItems.AppendL( item ); // ownership is transferred
 						}

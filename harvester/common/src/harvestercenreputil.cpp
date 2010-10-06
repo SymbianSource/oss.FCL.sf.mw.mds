@@ -27,6 +27,7 @@ const TUint32 KBootScanPartialKey             = 0x00020000;
 const TUint32 KBootIgnorePartialKey           = 0x00030000;
 const TUint32 KPartialRestorePartialKey       = 0x00040000;
 const TUint32 KPartialRestoreIgnorePartialKey = 0x00050000;
+const TUint32 KAlwaysScanPartialKey           = 0x00060000;
 
 const TUint32 KRomScanEnabledKey              = 0x00090000;
 
@@ -179,6 +180,12 @@ EXPORT_C void CHarvesterCenRepUtil::IsThumbnailDaemonEnabledL( TBool& aEnabled )
     CleanupStack::PopAndDestroy( rep );    
     }
 
+EXPORT_C void CHarvesterCenRepUtil::GetAlwaysScanOnBootPathsL( 
+        RPointerArray<TScanItem>& aPaths )
+    {
+    GetItemsL( KAlwaysScanPartialKey, aPaths );
+    }
+
 void CHarvesterCenRepUtil::GetPathsL( TUint32 aPartialKey, RPointerArray<HBufC>& aPaths )
 	{
 	CRepository* repo = CRepository::NewLC( KHarvesterRepoUid ); 
@@ -227,10 +234,6 @@ void CHarvesterCenRepUtil::GetItemsL( TUint32 aPartialKey, RPointerArray<TScanIt
 	        }
 		TUint32 preinstalled = MdeConstants::MediaObject::ENotPreinstalled;
 		
-		if( path[ path.Length() - 1 ] != TChar('\\') )
-			{
-			User::LeaveIfError( repo->GetMeta( scanPathKeys[i], preinstalled ) );
-			}
 		TScanItem* item = new (ELeave) TScanItem();
 		CleanupStack::PushL( item );
 		item->iPath = path.AllocL();

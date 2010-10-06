@@ -21,7 +21,7 @@ PRJ_PLATFORMS
 
 PRJ_EXPORTS
 200071BE.txt /epoc32/data/z/private/10202BE9/200071BE.txt
-200071BE.txt /epoc32/WINSCW/C/private/10202BE9/200071BE.txt
+200071BE.txt /epoc32/winscw/c/private/10202BE9/200071BE.txt
 ../sis/locationmanager_stub.sis  /epoc32/data/z/system/install/locationmanager_stub.sis
 
 PRJ_MMPFILES

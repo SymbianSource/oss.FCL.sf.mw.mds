@@ -97,6 +97,13 @@ public: // new functions
      * @param aEnabled is rom scan enabled
      */
     IMPORT_C static void IsThumbnailDaemonEnabledL( TBool& aEnabled );
+
+    /**
+     * Check paths for preinstalled content
+     * 
+     * @param aEnabled is rom scan enabled
+     */
+    IMPORT_C static void GetAlwaysScanOnBootPathsL( RPointerArray<TScanItem>& aPaths );
     
 private:
 	CHarvesterCenRepUtil();

@@ -206,7 +206,13 @@ void CFolderRenamer::RenameL(const TDesC &aOldName, const TDesC &aNewName)
 		}
 	
 	CRenameItem *renameItem = CRenameItem::NewL(aOldName,aNewName);
-	iRenamedFolders.AppendL(renameItem);
+    if( iRenamedFolders.Append( renameItem ) != KErrNone )
+         {
+         delete renameItem;
+         renameItem = NULL;
+         return;
+         }
+	
 	iIsRunning = ETrue;
 	//First item --> Kickstart
 		

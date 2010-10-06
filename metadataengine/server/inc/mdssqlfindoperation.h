@@ -23,7 +23,6 @@
 #include "mdssqliteconnection.h"
 
 // FORWARD DECLARATIONS
-class CMdSSqLiteConnection;
 class CMdSFindSqlClause;
 class CMdSFindSequence;
 class CMdCSerializationBuffer;

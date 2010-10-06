@@ -52,6 +52,9 @@
 #include <reversegeocoderplugin.h>
 #endif
 
+#include <CProfileChangeNotifyHandler.h>
+#include <MProfileChangeObserver.h>
+
 typedef RLocationTrail::TTrailState TLocTrailState;
 
 class CTelephony;
@@ -125,6 +128,7 @@ class TLocationSnapshotItem
 #ifdef LOC_REVERSEGEOCODE
         TItemId         iCountryTagId;
         TItemId         iCityTagId;
+		TUint           iReverseGeocodeSuccess;
 #endif		
     };
 class MLocationAddObserver
@@ -147,7 +151,8 @@ public:
 class CLocationRecord : public CBase,
                         public MNetworkInfoObserver,
                         public MPositionInfoObserver,
-                        public MMdEQueryObserver
+                        public MMdEQueryObserver,
+                        public MProfileChangeObserver 
 #ifdef LOC_GEOTAGGING_CELLID	
                         ,public MGeoConverterObserver
 #endif						
@@ -507,6 +512,14 @@ private:
 	* Callback method on geotagging complete
 	*/	
     void GeoTaggingCompleted();
+    
+    /**
+     * MProfileChangeObserver pure virtual function
+     * @param aProfileEvent Profile event
+     * @param aProfileId Active profile id
+     */
+     void HandleActiveProfileEventL(TProfileEvent aProfileEvent,TInt aProfileId );
+     
 
 #ifdef LOC_REVERSEGEOCODE
     /**
@@ -752,7 +765,17 @@ private:
 	 CReverseGeoCoderPlugin* iRevGeocoderPlugin;
 
 #endif
-	
+
+    /**
+     *to listen profile change.
+     */
+   CProfileChangeNotifyHandler* iProfileHandler; 
+   
+   /* 
+   *To check for offline profile 
+   */
+   TBool iOfflineCheck;
+ 
     };
 
 #endif // C_CLOCATIONRECORD_H 

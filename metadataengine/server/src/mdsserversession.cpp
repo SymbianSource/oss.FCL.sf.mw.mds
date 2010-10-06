@@ -89,9 +89,12 @@ CMdSServerSession::~CMdSServerSession()
     iFindEngines.ResetAndDestroy();
     iFindEngines.Close();
 
-	iServer.LockList().UnlockBySession( *this );
-	iServer.Notifier().RemoveEntriesBySession( *this );
-    
+    if( !iServer.ShutdownInProgress() )
+        {
+        iServer.LockList().UnlockBySession( *this );
+        iServer.Notifier().RemoveEntriesBySession( *this );
+        }
+
     // purge any pending notifications
 	iNotificationCache.ResetAndDestroy();
     iNotificationCache.Close();

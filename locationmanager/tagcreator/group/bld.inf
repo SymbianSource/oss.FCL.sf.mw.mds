@@ -15,6 +15,11 @@
 *
 */
 
+
+#include "../../inc/locplatsupport.mmh"
+
+#ifdef _LOC_REVERSEGEOCODE
+
 PRJ_PLATFORMS
     DEFAULT
 
@@ -27,3 +32,5 @@ PRJ_TESTMMPFILES
 
 PRJ_TESTEXPORTS
 
+
+#endif

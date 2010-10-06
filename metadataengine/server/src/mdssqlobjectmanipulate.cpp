@@ -3425,11 +3425,13 @@ TBool CMdSSqlObjectManipulate::DoGarbageCollectionL()
 	   	    		buffer.ConstBufferL(), emptyRow ) );
 	   	    iDictionaryToBeCleaned = EFalse;
 			}
+		
+	    // empryRow, rowDataDelContext, rowDataUpdRel, rowDataDelRel, rowDataUpd, 
+	    CleanupStack::PopAndDestroy( 5, &rowDataUpd );		
    	    }
 
-   	// empryRow, rowDataDelContext, rowDataUpdRel, rowDataDelRel, rowDataUpd, 
    	// rowDataDel, commonClauseOne
-	CleanupStack::PopAndDestroy( 7, &commonClauseOne );
+	CleanupStack::PopAndDestroy( 2, &commonClauseOne );
 
 #ifdef MDS_PLAYLIST_HARVESTING_ENABLED	
 	if( updateResult == 0 )

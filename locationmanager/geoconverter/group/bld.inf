@@ -15,6 +15,11 @@
 *
 */
 
+
+#include "../../inc/locplatsupport.mmh"
+
+#ifdef _LOC_GEOTAGGING_CELLID
+
 PRJ_PLATFORMS
     DEFAULT
 
@@ -27,3 +32,4 @@ PRJ_TESTMMPFILES
 PRJ_TESTEXPORTS
 
 
+#endif

@@ -24,7 +24,7 @@ PRJ_PLATFORMS
 
 PRJ_EXPORTS
 ../data/200009F3.txt /epoc32/data/z/private/10202BE9/200009F3.txt
-../data/200009F3.txt /epoc32/WINSCW/C/private/10202BE9/200009F3.txt
+../data/200009F3.txt /epoc32/winscw/c/private/10202BE9/200009F3.txt
 ../data/schema.mde 				/epoc32/winscw/c/private/200009F3/schema.mde
 ../data/defaultimportfile.mde 	/epoc32/winscw/c/private/200009F3/defaultimportfile.mde
 mde_backup_registration.xml		/epoc32/winscw/c/private/200009F3/backup_registration.xml

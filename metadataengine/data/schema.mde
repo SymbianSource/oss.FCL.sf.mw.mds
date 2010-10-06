@@ -166,13 +166,13 @@ property   DownloadID                     0    0        6    min   max
 property   Duration                       0    0        8    min   max
 property   ReleaseDate                    0    0        10   min   max
 property   CaptureDate                    0    0        10   min   max
-property   Artist                         0    0        11   min   max   1
+property   Artist                         0    0        11   min   max 
 property   Author                         0    0        11   min   max
 property   Copyright                      0    0        11   min   max
 property   Legal                          0    0        11   min   max
 property   Description                    0    0        11   min   max
 property   Comment                        0    0        11   min   max
-property   Genre                          0    0        11   min   max   1
+property   Genre                          0    0        11   min   max 
 property   Track                          0    0        4    min   max
 property   AudioFourCC                    0    0        6    min   max
 
@@ -231,8 +231,8 @@ property   RelatedSoundFile               0    0        11   min   max
 
 object http://sw.nokia.com/MdE Audio MediaObject 0
 property   SamplingFrequency              0    0        8    min   max
-property   Album                          0    0        11   min   max   1
-property   Composer                       0    0        11   min   max   1
+property   Album                          0    0        11   min   max 
+property   Composer                       0    0        11   min   max 
 property   OriginalArtist                 0    0        11   min   max
 property   AlbumArtist                    0    0        11   min   max
 

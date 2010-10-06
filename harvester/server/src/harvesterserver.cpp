@@ -323,6 +323,8 @@ void CHarvesterServer::ShutdownNotification()
     WRITELOG( "CHarvesterServer::ShutdownNotification" );
     OstTrace0( TRACE_NORMAL, CHARVESTERSERVER_SHUTDOWNNOTIFICATION, "CHarvesterServer::ShutdownNotification" );
     
+    User::RenameThread( KHarvesterServerNameIAD );
+    
     CActiveScheduler::Stop();
     }
 

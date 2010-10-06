@@ -21,6 +21,7 @@
 #include <ecom.h>
 #include <centralrepository.h>
 #include <hwrmpowerstatesdkpskeys.h>
+#include <MProfileEngine.h> //profile enum
 #ifdef LOC_GEOTAGGING_CELLID
 #include <lbslocationinfo.h>
 #endif //LOC_GEOTAGGING_CELLID
@@ -104,6 +105,8 @@ CLocationRecord::CLocationRecord(MGeoTaggerObserver& aGeoTaggerObserver,
     ,iLastReverseGeocodeFails(EFalse)
 	,iRevGeocoderPlugin( NULL )
 #endif
+    ,iProfileHandler(NULL)
+    ,iOfflineCheck(ETrue)
     {
     iMaxTrailSize = KMaxTrailLength / KUpdateInterval;
     }
@@ -129,6 +132,7 @@ void CLocationRecord::ConstructL()
     iPositionInfo = CPositionInfo::NewL( this );
 	iRemapper = CLocationRemappingAO::NewL();
     iNetworkInfoTimer = CPeriodic::NewL( CActive::EPriorityStandard );
+    iProfileHandler = CProfileChangeNotifyHandler::NewL(this); 	
 
 #ifdef LOC_REVERSEGEOCODE
     iTagCreator = CTagCreator::NewL();
@@ -170,11 +174,13 @@ void CLocationRecord::ConstructL()
 #ifdef LOC_REVERSEGEOCODE
     iLastMediaItem.iCityTagId= 0;
     iLastMediaItem.iCountryTagId = 0;
+    iLastMediaItem.iReverseGeocodeSuccess = 0;
 
     iLastLocationItem.iFlag = 0;
     iLastLocationItem.iCityTagId= 0;
     iLastLocationItem.iCountryTagId = 0;
     iLastLocationItem.iLocationId = 0;
+    iLastLocationItem.iReverseGeocodeSuccess = 0;
 #endif
     LOG( "CLocationRecord::ConstructL(), end" );    
     }
@@ -248,11 +254,24 @@ if(iNetLocationQuery)
 		delete iTagQuery;
         iTagQuery = NULL;
 		}	
-	delete iTagCreator;
-	// set the pointer to NULL, ECOM will destroy object.
-    delete iRevGeocoderPlugin;
-    iRevGeocoderPlugin = NULL;
+    if(iTagCreator)
+        {
+		delete iTagCreator;
+        iTagCreator = NULL;
+        }
+    
+    if(iRevGeocoderPlugin)
+        {
+	    // set the pointer to NULL, ECOM will destroy object.
+        delete iRevGeocoderPlugin;
+        iRevGeocoderPlugin = NULL;
+  	    }
 #endif
+    if(iProfileHandler)
+    	{
+        delete iProfileHandler;
+        iProfileHandler = NULL;
+    	}
     LOG( "CLocationRecord::~CLocationRecord(), end" );	
     }
 
@@ -300,8 +319,9 @@ EXPORT_C void CLocationRecord::StartL( RLocationTrail::TTrailCaptureSetting aCap
         StartTimerL();
     	}
     
-    iTrailStarted = ETrue;
-    SetCurrentState( RLocationTrail::ETrailStarting );
+     iTrailStarted = ETrue;
+     iState = RLocationTrail::ETrailStopped;
+     SetCurrentState( RLocationTrail::ETrailStarting );
     
     LOG( "CLocationRecord::StartL(), end" );
     }
@@ -699,7 +719,7 @@ void CLocationRecord::NetworkInfo( const CTelephony::TNetworkInfoV1 &aNetworkInf
 		const TInt aError )
     {
     LOG("CLocationRecord::NetworkInfo, begin");
-    if ( aError == KErrNone )
+    if ( aError == KErrNone && iOfflineCheck)
         {
         LOG("CLocationRecord::NetworkInfo - KErrNone");
         iNetwork = aNetworkInfo;
@@ -946,10 +966,18 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 	iMediaItems.Append( newItem );
 
 	TItemId lastLocationId = 0;
-	if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0)
+
+#ifdef LOC_REVERSEGEOCODE
+	if ( ( iLastMediaItem.iReverseGeocodeSuccess == 1  ) && (iLastMediaItem.iFlag & KSnapMediaFile) > 0  )
 	    {
         lastLocationId = iLastMediaItem.iLocationId;
 	    }
+#else
+    if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0  )
+        {
+        lastLocationId = iLastMediaItem.iLocationId;
+        }	
+#endif
 
 	CTelephony::TNetworkInfoV1* net = &locationData.iNetworkInfo;
 	// capture only network data
@@ -1013,8 +1041,8 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 			}
 		// check match for last created locationobject
 #ifdef LOC_REVERSEGEOCODE
-		else if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0 &&
-            iLastMediaItem.iCountryTagId > 0)
+     else if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0 &&
+            iLastMediaItem.iCountryTagId > 0 && ( iLastMediaItem.iReverseGeocodeSuccess == 1 ) )
 #else
         else if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0)
 #endif //LOC_REVERSEGEOCODE
@@ -1034,7 +1062,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 				CreateRelationL( aObjectId, lastLocationId );
 				// attach same tags associated to last location
 #ifdef LOC_REVERSEGEOCODE
-				if ( iLastMediaItem.iCountryTagId )   //found from DB last time
+				if ( iLastMediaItem.iCountryTagId && ( iLastMediaItem.iReverseGeocodeSuccess == 1 ) )   //found from DB last time
 				    {
 				    iTagCreator->AttachTagsL( aObjectId, 
                                 iLastMediaItem.iCountryTagId, iLastMediaItem.iCityTagId );
@@ -1096,7 +1124,7 @@ EXPORT_C void CLocationRecord::LocationSnapshotL( const TUint& aObjectId )
 					
 #ifdef LOC_REVERSEGEOCODE
 					// attach same tags associated to last location
-					if ( iLastMediaItem.iCountryTagId )
+				if ( iLastMediaItem.iCountryTagId && ( iLastMediaItem.iReverseGeocodeSuccess == 1 ) )						
 					    {
 					    iTagCreator->AttachTagsL( 
 					          aObjectId, iLastMediaItem.iCountryTagId, iLastMediaItem.iCityTagId );
@@ -2584,16 +2612,19 @@ void CLocationRecord::ReverseGeocodeComplete( TInt& aErrorcode, MAddressInfo& aA
                 {
                 iLocationItems[0]->iCountryTagId = countryTagId;
                 iLocationItems[0]->iCityTagId = cityTagId;
+				iLocationItems[0]->iReverseGeocodeSuccess = 1 ;
+				
                 iLastLocationItem = (*iLocationItems[0]);
                 
                 TRAP_IGNORE( iTagCreator->AttachTagsL( 
                                 iLocationItems[0]->iObjectId, countryTagId, cityTagId  ) );
                 if ( (iLastMediaItem.iFlag & KSnapMediaFile) > 0 
-                    && iLastMediaItem.iLocationId == iLastLocationItem.iLocationId )
+                    && iLastMediaItem.iLocationId == iLastLocationItem.iLocationId && (iLastLocationItem.iReverseGeocodeSuccess == 1))
                     {
                     LOG("Updating country/city\n");
                     iLastMediaItem.iCountryTagId = countryTagId;
                     iLastMediaItem.iCityTagId = cityTagId;
+					iLastMediaItem.iReverseGeocodeSuccess = 1;
                     }
                 
                 }
@@ -2861,9 +2892,35 @@ void CLocationRecord::GetTagsL( TItemId aImageID )
     iTagQuery->FindL(); // results to a call to HandleQueryCompleted()
     LOG( "CLocationRecord::GetTagsL(), end" );    
     }
-
-
+    
 #endif //LOC_REVERSEGEOCODE
+
+
+// --------------------------------------------------------------------------
+// CLocationRecord::HandleActiveProfileEventL()
+// --------------------------------------------------------------------------
+//    
+void CLocationRecord::HandleActiveProfileEventL( TProfileEvent aProfileEvent,TInt aProfileId )
+    {
+     LOG( "CLocationRecord::HandleActiveProfileEventL(), begin" );
+	 ARG_USED(aProfileEvent);
+	 iOfflineCheck = ETrue;
+     
+	    
+     if ( EProfileOffLineId == aProfileId )
+         {
+         LOG( "HandleActiveProfileEventL() if condition to stop trail, begin" ); 
+         iNetwork.iAreaKnown = EFalse;
+         iNetwork.iAccess = CTelephony::ENetworkAccessUnknown;
+         iNetwork.iCellId = 0;
+         iNetwork.iLocationAreaCode = 0;
+         iNetwork.iCountryCode.Zero();
+         iNetwork.iNetworkId.Zero();
+         iOfflineCheck = EFalse;
+         LOG( "HandleActiveProfileEventL() if condition to stop trail, end" );   	
+         }
+     LOG( "CLocationRecord::HandleActiveProfileEventL(), end" );    
+    }
 
 // End of file
 

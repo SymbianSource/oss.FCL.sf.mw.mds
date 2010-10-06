@@ -25,7 +25,7 @@
 // CHarvesterShutdownObserver::NewL()
 // ---------------------------------------------------------------------------
 //
-CHarvesterShutdownObserver* CHarvesterShutdownObserver::NewL( MHarvesterShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
+EXPORT_C CHarvesterShutdownObserver* CHarvesterShutdownObserver::NewL( MHarvesterShutdownObserver& aObserver/*, const TUid& aKeyCategory */)
     { 
     CHarvesterShutdownObserver* self = new( ELeave )CHarvesterShutdownObserver( aObserver/*, aKeyCategory */);
     CleanupStack::PushL( self );

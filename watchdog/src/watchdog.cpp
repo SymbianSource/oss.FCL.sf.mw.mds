@@ -277,7 +277,6 @@ void CWatchdog::SelfShutdownNotification()
     {
     PRINT(_L("CWatchdog::SelfShutdownNotification()"));
     CActiveScheduler::Stop();
-    
     }
 
 void MainL()

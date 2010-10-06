@@ -307,10 +307,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
         case EFsFileCreate:
             {
 #ifdef _DEBUG            
-            if (function == EFsFileCreate)
-                {
-            	WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileCreate" );
-                }
+            WRITELOG( "CMdsFileServerPlugin::DoRequestL() - EFsFileCreate" );
 #endif            
             
             HBufC* createdFileName = iFileName.Alloc();
@@ -497,7 +494,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 				{
 				return KErrNone;
 				}
-			drvNumber = iFormatOldMediaId;
+			drvNumber = iFormatDriveNumber;
 			volInfo.iUniqueID = iFormatOldMediaId;
 			iFormatOldMediaId = 0;
 			iFormatDriveNumber = -1;
@@ -546,7 +543,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             queueItem->iFileEventType = fileEventType;
             queueItem->iProcessId = processId;
 
-            iQueue.AppendL( queueItem ); // owenership is transferred
+            iQueue.AppendL( queueItem ); // ownership is transferred
             CleanupStack::Pop( queueItem );
             err = KErrNone;
             iPendingEvents++;

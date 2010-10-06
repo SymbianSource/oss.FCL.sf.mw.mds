@@ -21,18 +21,11 @@
 #include <e32base.h>
 #include <w32std.h>
 
-_LIT( KHarvesterServerName, "HarvesterServer" );
-_LIT( KHarvesterServerProcess, "*HarvesterServer*");
-_LIT( KHarvesterServerExe, "harvesterserver.exe" );
+_LIT( KHarvesterServerProcess, "HarvesterServer*");
 
-_LIT( KMdsServerName, "!MdSServer" );
-_LIT( KMdSServerProcess, "*!mdsserver*");
+_LIT( KMdSServerProcess, "!MdSServer*");
 
-_LIT( KTAGDaemonName, "ThumbAGDaemon" );
-_LIT( KTAGDaemonProcess, "*ThumbAGDaemon*" );
-_LIT( KTAGDaemonExe, "thumbagdaemon.exe" );
-
-_LIT( KListenerProcess, "*iadlistener*");
+_LIT( KTAGDaemonProcess, "ThumbAGDaemon*" );
 
 _LIT( KWatchdogProcess, "*mdswatchdog*");
 

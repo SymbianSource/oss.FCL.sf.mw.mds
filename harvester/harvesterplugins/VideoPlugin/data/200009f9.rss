@@ -42,7 +42,7 @@ RESOURCE REGISTRY_INFO theInfo
 					version_no = 1;
 					display_name = "Harvester video plugin";
 					default_data = "Video Audio";
-					opaque_data = "mp4 mpg4 mpeg4 m4v m4a 3gp 3gpp rm rv rmvb 3g2 avi mkv ra wmv divx asf";
+					opaque_data = "mp4 mpg4 mpeg4 m4v 3gp 3gpp rm rv rmvb 3g2 avi mkv ra wmv divx asf";
           rom_only = 0;
 					}
 				};

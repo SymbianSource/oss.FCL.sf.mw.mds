@@ -39,7 +39,6 @@ class RRowData;
 class TColumn;
 class CMdSObjectLockList;
 class CMdSServerSession;
-class RMdsStatement;
 
 // CLASS DECLARATION
 /**
