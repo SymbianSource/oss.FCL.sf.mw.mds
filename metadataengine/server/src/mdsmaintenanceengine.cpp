@@ -16,6 +16,8 @@
 */
 
 // INCLUDE FILES
+#include <driveinfo.h>
+
 #include "mdsmaintenanceengine.h"
 #include "mdslogger.h"
 #include "mdsmanipulationengine.h"
@@ -77,7 +79,6 @@ void CMdSMaintenanceEngine::ConstructL()
 CMdSMaintenanceEngine::~CMdSMaintenanceEngine()
     {
     delete iMaintenance;
-    iMaintenance = NULL;
     }
 
 // ------------------------------------------------
@@ -120,7 +121,7 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
     TBool isValid(EFalse);
     TRAPD(err, isValid = iMaintenance->ValidateL( ));
     
-    if( err == KErrCorrupt )
+    if(err == KErrCorrupt)
         {
         DeleteDatabase();
         User::Leave( err );
@@ -174,6 +175,11 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 				User::Leave( schemaError );
 				}
 			}
+
+		if ( FailedImports() != 0 )
+  			{
+	       	User::Leave( KErrBadName );
+       		}
 		
 		// try to read default import file from C drive
        	TRAPD( err, ImportMetadataL( aManipulate, aSchema, KMdsDefaultImportFile ) );
@@ -183,13 +189,6 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
        		// and ignore errors
        		TRAP_IGNORE( ImportMetadataL( aManipulate, aSchema, KMdsDefaultRomImportFile ) );
        		}
-
-#ifdef _DEBUG
-        if ( FailedImports() != 0 )
-            {
-            User::Leave( KErrBadName );
-            }
-#endif
        	
        	__LOG1( ELogAlways, "MDS DB tables created %d", 0 );
 
@@ -208,12 +207,6 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 			DeleteDatabase();
 			User::Leave( err );
         	}
-        
-        if( !iMaintenance->CheckForCorruptionL() )
-            {
-            DeleteDatabase();
-            User::Leave( KErrCorrupt );
-            }
         }
     __LOG1( ELogAlways, "CMdSMaintenanceEngine::InstallL complete: %d", 0 );
     }
@@ -289,6 +282,31 @@ void CMdSMaintenanceEngine::StoreDriveMediaIdsL()
     User::LeaveIfError( fs.Volume( volumeInfo, EDriveC ) );
     MMdsPreferences::InsertL( KCMediaIdKey, MMdsPreferences::EPreferenceValueSet,
     		(TUint32) volumeInfo.iUniqueID );
+
+    TInt drive( -1 );
+    TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+    if( massStorageError == KErrNone )
+        {
+        TVolumeInfo massStorageVolumeInfo;
+        massStorageError = fs.Volume( massStorageVolumeInfo, drive );
+        if( massStorageError == KErrNone )
+            {
+            const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
+            massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+            if( massStorageError == KErrNone )
+                {
+                massStorageError = fs.Volume( massStorageVolumeInfo, drive );
+                // Update mass storage media id if the mass storage is not memory card
+                if( massStorageError == KErrNone &&
+                    massStorageVolumeInfo.iUniqueID != massStorageMediaId &&
+                    massStorageMediaId != 0 )
+                    {
+                    MMdsPreferences::InsertL( KMassStorageMediaIdKey, MMdsPreferences::EPreferenceValueSet,
+                            (TUint32) massStorageMediaId );
+                    }        
+                }
+            }
+        }
     
     CleanupStack::PopAndDestroy( &fs );
 	}

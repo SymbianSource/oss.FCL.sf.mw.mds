@@ -20,7 +20,7 @@
 
 #if defined(WINSCW)
 deffile ../bwincw/locationmanagerclientwinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
 deffile ../eabi/locationmanagerclientarm.def
 #endif
 nostrictdef
@@ -40,10 +40,9 @@ USERINCLUDE	    ../../../inc
 SOURCEPATH      ../src
 SOURCE          rlocationmanager.cpp
 SOURCE          rlocationtrail.cpp
-SOURCE	        rlocationobjectmanipulator.cpp 
-SOURCE          CTrackLogObserverAO.cpp
-SOURCE          rtracklog.cpp
-SOURCE          rlocationgeotagger.cpp
+SOURCE	    rlocationobjectmanipulator.cpp 
+SOURCE      CTrackLogObserverAO.cpp 
+SOURCE      rtracklog.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -55,6 +54,4 @@ LIBRARY	    mdccommon.lib
 PAGED
 BYTEPAIRCOMPRESSTARGET
 OPTION ARMCC -O3 -OTime
-
-// End of file
 

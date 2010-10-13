@@ -138,38 +138,16 @@ void CLocationContextPlugin::ContextSnapshot( MContextPluginObserver& aObserver,
     	return;
     	}
     
-    if ( !iLocationTrailConnected ) 
-    	{        
-        WRITELOG( "CLocationContextPlugin::ContextSnapshot() - try to reconnect" );      
-        iManipulator.Close();
-        iLocationTrail.Close();        
-        TInt err = iLocationTrail.Connect();
-        if ( err == KErrNone )
-            {         
-            err = iManipulator.Connect();
-            if( err == KErrNone )
-                {
-                iLocationTrailConnected = ETrue;         
-                }
-            }
-        
-        if (err != KErrNone )
-            {
-            // no trail, no snapshot            
-            aHD.SetErrorCode( KErrDisconnected );
-            aObserver.PluginSnapshotStatus( &aHD );
-            return;
-            }
+    if ( !iLocationTrailConnected ) // no trail, no snapshot
+    	{
+    	aHD.SetErrorCode( KErrDisconnected );
+        aObserver.PluginSnapshotStatus( &aHD );
+    	return;
     	}
     
     TInt ret = KErrNone;
     
     ret = iManipulator.LocationSnapshot( aHD.MdeObject().Id() );
-    
-    if( ret == KErrServerTerminated )
-        {        
-        iLocationTrailConnected = EFalse;
-        }    
     
     if( ret != KErrNone )
         {

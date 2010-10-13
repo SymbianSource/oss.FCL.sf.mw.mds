@@ -582,7 +582,6 @@ void CMdEObject::DoAddPropertyL(CMdEProperty& aProperty)
 		CMdEProperty* oldProperty = iPropertyArray[f];
 		iPropertyArray[f] = &aProperty;
 		delete oldProperty;
-		oldProperty = NULL;
 		}
 	else if (err < KErrNone)
 		{
@@ -744,7 +743,6 @@ EXPORT_C void CMdEObject::MovePropertiesL(CMdEObject& aObject)
             CMdEProperty* oldProperty = iPropertyArray[f];
             iPropertyArray[f] = aObject.iPropertyArray[i];
             delete oldProperty;
-            oldProperty = NULL;
             }
         else if (err < KErrNone)
             {
@@ -819,7 +817,6 @@ void CMdEObject::ClearObject( TBool aClearFlags )
         if ( prop->Removed() )
         	{
         	delete prop;
-        	prop = NULL;
         	iPropertyArray.Remove( i );
         	continue;
         	}
@@ -1058,7 +1055,6 @@ CMdEObject* CMdEObject::NewLC( CMdESession* aSession, CMdCSerializationBuffer& a
 		        CMdEProperty* oldProperty = newObject->iPropertyArray[f];
 		        newObject->iPropertyArray[f] = property;
 		        delete oldProperty;
-		        oldProperty = NULL;
 		        }
 		    else if (err < KErrNone)
 		        {

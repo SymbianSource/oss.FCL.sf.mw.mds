@@ -65,8 +65,7 @@ EXPORT_C CHarvesterPlugin::CHarvesterPlugin() :
     iDtor_ID_Key( KNullUid ),
     iOriginPropertyDef( NULL ),
     iTitlePropertyDef( NULL ),
-    iHarvesting( EFalse ),
-    iPaused( EFalse )
+    iHarvesting( EFalse )
 	{
 	}
 
@@ -110,7 +109,6 @@ EXPORT_C void CHarvesterPlugin::StartHarvest()
 	{
 	if( iState == EHarvesterIdle )
 		{
-		iPaused = EFalse;
 		SetNextRequest( EHarvesterGathering );
 		}
 	}
@@ -146,17 +144,16 @@ EXPORT_C void CHarvesterPlugin::RunL()
             {
             if( iQueue->Count() == 0 )
                 {
+                SetNextRequest( EHarvesterIdle );
                 if( iHarvesting )
                     {
                     TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( EFalse ) );
                     iHarvesting = EFalse;     
                     }
                 iQueue->Compress();
-                SetNextRequest( EHarvesterIdle );
                 }
             else
             	{
-                WRITELOG( "CHarvesterPlugin::RunL EHarvesterGathering - items in queue" );
                 if ( !iHarvesting )
                     {
                     TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( ETrue ) );
@@ -165,11 +162,6 @@ EXPORT_C void CHarvesterPlugin::RunL()
             
             	CHarvesterData* hd = (*iQueue)[0];
             	iQueue->Remove( 0 );
-            	if( !hd )
-            	    {
-            	    SetNextRequest( EHarvesterGathering );
-            	    break;
-            	    }
             	const TDesC& uri = hd->Uri();
             	TUint32 mediaId = hd->MdeObject().MediaId();
             	
@@ -202,7 +194,7 @@ EXPORT_C void CHarvesterPlugin::RunL()
 				TRAP_IGNORE( SetDefaultPropertiesL( *hd ) );
 				
 				WRITELOG1("CHarvesterPlugin::RunL - Calling HarvestL for file: %S", &uri);  
-                TRAPD( err, HarvestL( hd ) );
+                TRAPD(err, HarvestL( hd ) );
                 
                 if ( iBlacklist )
                     {
@@ -247,28 +239,12 @@ EXPORT_C  TInt CHarvesterPlugin::RunError( TInt /*aError*/ )
 	}
 
 // ---------------------------------------------------------------------------
-// StartHarvest
-// ---------------------------------------------------------------------------
-//
-EXPORT_C void CHarvesterPlugin::StopHarvest()
-    {
-    Cancel();
-    iState = EHarvesterIdle;
-    if( iHarvesting )
-        {
-        TRAP_IGNORE( iFactory->SendHarvestingStatusEventL( EFalse ) );
-        iHarvesting = EFalse;     
-        }
-    iPaused = ETrue;
-    }
-
-// ---------------------------------------------------------------------------
 // SetNextRequest
 // ---------------------------------------------------------------------------
 //
 void CHarvesterPlugin::SetNextRequest( THarvesterState aState )
     {
-    if ( !IsActive() && !iPaused )
+    if ( ! IsActive() )
         {
         iState = aState;
         SetActive();

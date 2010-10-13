@@ -28,9 +28,7 @@
 #include "rlocationtrail.h"
 #include "locationmanagerdebug.h"
 #include "locationtraildefs.h"
-#ifdef LOC_REVERSEGEOCODE
-#include "ctagcreator.h"
-#endif
+
 
 class TRemapItem
 	{
@@ -130,19 +128,6 @@ public:
 	 * @param aLocationId, locationId for relations 
 	 */ 
 	void UpdateRelationsL( TItemId aLocationId );
-
-#ifdef LOC_REVERSEGEOCODE
-	/**
-	* AttachGeoTagsL
-	* Attaches the country and city tags to all objects
-	* @param  aTagCreator An instance of the tag creator
-	* @param  aCountryTagId country tagId
-	* @param  aCityTagId	city tag Id
-	*/
-    void AttachGeoTagsL( CTagCreator *aTagCreator,
-                             const TItemId aCountryTagId, 
-                             const TItemId aCityTagId );
-#endif    
 private:
 
 	/**
@@ -260,5 +245,3 @@ private:
 
 
 #endif /*LOCATIONREMAPPINGAO_H_*/
-
-// End of file

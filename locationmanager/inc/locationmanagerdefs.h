@@ -18,7 +18,7 @@
 #ifndef __LOCATIONMANAGERDEFS_H__
 #define __LOCATIONMANAGERDEFS_H__
 
-_LIT( KLocServerFileName, "locationmanagerserver.exe");
+_LIT( KLocServerFileName, "LocationManagerServer.exe");
 _LIT( KLocServerName,     "LocationManagerServer" );
 
 const TInt KLocationManagerServerMinor = 0;
@@ -51,11 +51,7 @@ enum TLocCommands // Server commands.
     ELocManTrackLogName,
     ELocManRegObserver,
     ELocManGetCaptureSetting,
-    ELocManCancelTrackLogNotify,
-    ELocManTagPending,
-    ELocManStartGeoTaging,
-    ELocManCancelTagPendingReq,
-    ELocManCancelGeoTaggingReq
+    ELocManCancelTrackLogNotify
     };
 
 /** Message argument indices */
@@ -65,8 +61,6 @@ enum TArgumentIndices
     EArgumentLocationData,
     EArgumentState
     };
-
-const TInt KLocManagerSessionPriority = 5;
 
 #endif // __LOCATIONMANAGERDEFS_H__
 

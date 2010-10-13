@@ -107,8 +107,6 @@ const CActive::TPriority KHarvesterPriorityHarvestingPlugin = CActive::EPriority
 
 // Between Standard and UserInput to allow components to react to important events correctly
 const TInt KHarvesterCustomImportantPriority = 5;
-// Higher than MonitorPlugin priority but lower than High. Highest priority within Harvester
-const TInt KHarvesterServerHighPriority = 11;
 
 #endif
 

@@ -22,6 +22,7 @@
 #include <mdeobjectdef.h>
 #include <mdeobject.h>
 #include <centralrepository.h>
+#include <caf/caf.h>
 #include <pathinfo.h>
 
 #include "harvestercommon.h"
@@ -35,60 +36,53 @@
 const TInt KMimeLength( 10 );
 const TUid KHarvesterRepoUid = { 0x200009FE };
 const TUint32 KEnableAlbumArtHarvest = 0x00090001;
-const TInt KKiloBytes = 1024;
 
-CHarvesterAudioPluginPropertyDefs::CHarvesterAudioPluginPropertyDefs() : CBase(),
-    iCreationDatePropertyDef( NULL )
+CHarvesterAudioPluginPropertyDefs::CHarvesterAudioPluginPropertyDefs() : CBase()
 	{
 	}
 
 void CHarvesterAudioPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
-    SetByObjectDefL( aObjectDef );
-	}
+	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 
-CHarvesterAudioPluginPropertyDefs* CHarvesterAudioPluginPropertyDefs::NewL()
-    {
-    CHarvesterAudioPluginPropertyDefs* self = 
-        new (ELeave) CHarvesterAudioPluginPropertyDefs();
-    return self;
-    }
-
-void CHarvesterAudioPluginPropertyDefs::SetByObjectDefL(CMdEObjectDef& aObjectDef)
-    {
-    CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
-
-    // Common property definitions
-    CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
-    iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
-    iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
-    iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
-    iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
-    iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	// Common property definitions
+	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
+	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
+	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
+	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
+	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
+	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
     iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTimeOffsetProperty );
     iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
 
-    // Media property definitions
-    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
-    iRatingPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KRatingProperty );
-    iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
-    iArtistPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KArtistProperty );
-    iDurationPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDurationProperty );
-    iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KCopyrightProperty );
-    iTrackPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KTrackProperty );
-    iThumbnailPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KThumbnailPresentProperty );
-    iDatePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KReleaseDateProperty );
+	// Media property definitions
+	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
+	iRatingPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KRatingProperty );
+	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
+	iArtistPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KArtistProperty );
+	iDurationPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDurationProperty );
+	iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KCopyrightProperty );
+	iTrackPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KTrackProperty );
+	iThumbnailPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KThumbnailPresentProperty );
+	iDatePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KReleaseDateProperty );
     iDrmPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDRMProperty );
-    iBitratePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KBitrateProperty );
 
-    // Audio property definitions
-    CMdEObjectDef& audioDef = nsDef.GetObjectDefL( MdeConstants::Audio::KAudioObject );
-    iAlbumPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KAlbumProperty );
-    iComposerPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KComposerProperty );
-    iOriginalArtistPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KOriginalArtistProperty );
-    iSampleRatePropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KSamplingFrequencyProperty );
-    iAlbumArtistPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::Audio::KAlbumArtistProperty );
-    }
+	// Audio property definitions
+	CMdEObjectDef& audioDef = nsDef.GetObjectDefL( MdeConstants::Audio::KAudioObject );
+	iAlbumPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KAlbumProperty );
+	iComposerPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KComposerProperty );
+	iOriginalArtistPropertyDef = &audioDef.GetPropertyDefL( MdeConstants::Audio::KOriginalArtistProperty );
+	}
+
+CHarvesterAudioPluginPropertyDefs* CHarvesterAudioPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterAudioPluginPropertyDefs* self = 
+		new (ELeave) CHarvesterAudioPluginPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
+	}
 
 using namespace MdeConstants;
 
@@ -125,16 +119,11 @@ CHarvesterAudioPlugin::~CHarvesterAudioPlugin()
 	WRITELOG( "CHarvesterAudioPlugin::~CHarvesterAudioPlugin()" );
 	
 	delete iAudioParser;
-	iAudioParser = NULL;
 	delete iPropDefs;
-	iPropDefs = NULL;
 	delete iTNM;
-	iTNM = NULL;
 	
 	delete iPhoneSoundsPath;
-	iPhoneSoundsPath = NULL;
 	delete iMmcSoundsPath;
-	iMmcSoundsPath = NULL;
 	}
 
 // ---------------------------------------------------------------------------
@@ -156,8 +145,6 @@ void CHarvesterAudioPlugin::ConstructL()
         {
         TRAP_IGNORE( iTNM = CThumbnailManager::NewL( *this ) );
         }
-		
-    iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL();
     
     SetPriority( KHarvesterPriorityHarvestingPlugin - 2 );
 	
@@ -302,7 +289,13 @@ void CHarvesterAudioPlugin::GetPlaceHolderPropertiesL( CHarvesterData* aHD,
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
     TTime localModifiedDate = entry.iModified + timeOffsetSeconds;
 	
-	InitPropDefsL( mdeObject.Def() );
+	if( !iPropDefs )
+		{
+		CMdEObjectDef& objectDef = mdeObject.Def();
+		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
+		// Prefetch max text lengt for validity checking
+		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+		}
 	
 	CMdeObjectWrapper::HandleObjectPropertyL(
                  mdeObject, *iPropDefs->iCreationDatePropertyDef, &localModifiedDate, aIsAdd );
@@ -331,7 +324,13 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
     
     if ( mapping && !mdeObject.Placeholder() )
         {
-        InitPropDefsL( mdeObject.Def() );
+    	if( !iPropDefs )
+    		{
+    		CMdEObjectDef& objectDef = mdeObject.Def();
+    		iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( objectDef );
+    		// Prefetch max text lengt for validity checking
+    		iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+    		}
         
     	CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
     			*iPropDefs->iItemTypePropertyDef, (TAny*)&(mapping->iMimeType), aIsAdd );
@@ -345,7 +344,7 @@ const TMimeTypeMapping<TAudioMetadataHandling>* CHarvesterAudioPlugin::GetMimeTy
 // ---------------------------------------------------------------------------
 //    
 void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
-                                      TBool aIsAdd, TPtrC /*aMimeType*/ )
+                                      TBool aIsAdd, TPtrC aMimeType )
     {
 #ifdef _DEBUG
     TTime dStart, dStop;
@@ -356,6 +355,38 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     
     CMdEObject& mdeObject = aHD->MdeObject();
     const TDesC& uri = mdeObject.Uri();
+ 
+    if( !iPropDefs )
+        {
+        CMdEObjectDef& audioObjectDef = mdeObject.Def();
+        iPropDefs = CHarvesterAudioPluginPropertyDefs::NewL( audioObjectDef );
+        // Prefetch max text lengt for validity checking
+        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+        }
+
+    TBool possiblyProtectedContent( EFalse );
+    if( aMimeType.Length() > 0 )
+        {
+        if( aMimeType == KMimeTypeWma )
+            {
+            possiblyProtectedContent = ETrue;
+            }
+        }
+
+    if( possiblyProtectedContent )
+        {
+        ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
+        ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
+        
+        TBool protectedContent( EFalse );
+        TInt err = data->GetAttribute( ContentAccess::EIsProtected, protectedContent );
+        if( err == KErrNone && protectedContent )
+            {
+            CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
+                    *iPropDefs->iDrmPropertyDef, &protectedContent, aIsAdd );
+            }
+        CleanupStack::PopAndDestroy( 2 ); // content, data
+        }
 
     TBool parsed( EFalse );
     TRAPD( parseError, parsed = iAudioParser->ParseL( uri ) );
@@ -366,24 +397,18 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     	return;
     	}
 
-    InitPropDefsL( mdeObject.Def() );
-    
     // We do not want to get all long text fields at this time
-    TPtrC song        = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldSong );
-    TPtrC artist      = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldArtist );
-    TPtrC album       = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldAlbum );
-    TPtrC genre       = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldGenre );
-    TPtrC composer    = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldComposer );
-    TPtrC rating      = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldRating );
-    TPtrC orgArtist   = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldOriginalArtist );
-    TPtrC track       = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldTrack );
-    TPtrC duration    = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldDuration );
-    TPtrC copyright   = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldCopyright );
-    TPtrC date        = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldDate );   
-    TPtrC prot        = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldProtected );
-    TPtrC samplerate  = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldSampleRate );
-    TPtrC bitrate     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldBitRate );
-    TPtrC albumartist = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldAlbumArtist );
+    TPtrC song      = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldSong );
+    TPtrC artist    = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldArtist );
+    TPtrC album     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldAlbum );
+    TPtrC genre     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldGenre );
+    TPtrC composer  = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldComposer );
+    TPtrC rating    = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldRating );
+    TPtrC orgArtist = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldOriginalArtist );
+    TPtrC track     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldTrack );
+    TPtrC duration  = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldDuration );
+    TPtrC copyright     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldCopyright );
+    TPtrC date     = iAudioParser->MetaDataFieldL( CAudioMDParser::EAudioMDFieldDate );
     
     TPtrC8 jpeg = iAudioParser->MetaDataField8L( CAudioMDParser::EAudioMDFieldJpeg );
  
@@ -500,49 +525,6 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
                 *iPropDefs->iDatePropertyDef, &releaseDate, aIsAdd );
         }
 
-    TLex lex;
-    
-    if ( prot.Length() > 0 )
-        {
-        lex.Assign( prot );
-        TInt protValue( 0 );
-        if( KErrNone == lex.Val( protValue ) && protValue == 1 )
-            {
-            CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-                    *iPropDefs->iDrmPropertyDef, &protValue, aIsAdd );
-            }
-        }
-    
-    if ( samplerate.Length() )
-        {
-        lex.Assign( samplerate );
-        TReal32 value( 0 );
-        if( KErrNone == lex.Val( value ) && value != 0 )
-            {
-            CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-                    *iPropDefs->iSampleRatePropertyDef, &value, aIsAdd );
-            }
-        }
-    
-    if ( bitrate.Length() > 0 )
-        {
-        lex.Assign( bitrate );
-        TInt value( 0 );
-        if( KErrNone == lex.Val( value ) && value != 0 )
-            {
-            value /= KKiloBytes;
-            CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-                    *iPropDefs->iBitratePropertyDef, &value, aIsAdd );
-            }
-        }
-    
-    if ( albumartist.Length() > 0
-        && albumartist.Length() < iPropDefs->iDatePropertyDef->MaxTextLengthL() )
-        {
-        CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
-                *iPropDefs->iAlbumArtistPropertyDef, &albumartist, aIsAdd );
-        }
-
     if( iHarvestAlbumArt && iTNM && jpeg.Length() > 0 )
         {
         HBufC8* jpegBuf = jpeg.AllocLC();  
@@ -554,7 +536,6 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         CleanupStack::Pop(); // jpegBuf
         iTNM->CreateThumbnails( *tnmSource );
         delete tnmSource;
-        tnmSource = NULL;
         TBool thumbnailPresent( ETrue );
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                           *iPropDefs->iThumbnailPropertyDef, &thumbnailPresent, aIsAdd );
@@ -572,16 +553,6 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
     dStop.UniversalTime();
     WRITELOG1( "CHarvesterAudioPlugin::GetMusicPropertiesL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
 #endif   
-    }
-
-void CHarvesterAudioPlugin::InitPropDefsL(CMdEObjectDef& aObjectDef)
-    {
-    if( !iPropDefs->iCreationDatePropertyDef )
-        {
-        iPropDefs->SetByObjectDefL( aObjectDef );
-        // Prefetch max text lengt for validity checking
-        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-        }
     }
 
 // End of file

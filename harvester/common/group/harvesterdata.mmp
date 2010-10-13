@@ -29,7 +29,7 @@ CAPABILITY 		CAP_GENERAL_DLL
 
 #if defined(WINSCW)
     deffile ../bwincw/harvesterdatawinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
     deffile ../eabi/harvesterdataarm.def
 #endif
 nostrictdef

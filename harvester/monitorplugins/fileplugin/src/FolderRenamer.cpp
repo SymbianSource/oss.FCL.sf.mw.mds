@@ -38,9 +38,7 @@ CRenameItem * CRenameItem::NewL(
 CRenameItem::~CRenameItem()
 	{
 	delete iOldName;
-	iOldName = NULL;
 	delete iNewName;
-	iNewName = NULL;
 	iFileEvents.ResetAndDestroy();
 	}
 	
@@ -65,14 +63,9 @@ void CRenameItem::AddFileEvent(TMdsFSPStatus &aEvent)
 	{
 	TMdsFSPStatus* event = NULL;
 	event = new TMdsFSPStatus(aEvent);
-	
 	if (event)
 		{
-		if(iFileEvents.Append(event) != KErrNone)
-		    {
-            delete event;
-            event = NULL;
-		    }
+		iFileEvents.Append(event);
 		}
 	}
 
@@ -164,10 +157,7 @@ void CFolderRenamer::RunL()
 			iRenamedFolders.Remove(0);
 			TRAP_IGNORE(currItem->HandleFileEventsL(iCFileEventHandlerAO));
 			delete currItem;
-			currItem = NULL;
-			
 			SetNextRequest(ERenameStateIdle);
-			
 			if (iRenamedFolders.Count() == 0)
 				{
 				iIsRunning = EFalse;

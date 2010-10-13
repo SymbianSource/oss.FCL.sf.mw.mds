@@ -22,8 +22,6 @@
 #include <e32base.h>
 #include <badesca.h>
 
-#include <rlocationobjectmanipulator.h>
-
 #include "contextengine.h"
 #include "mdeharvestersession.h"
 
@@ -76,8 +74,7 @@ class CHarvesterAoPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-        static CHarvesterAoPropertyDefs* NewL();
-        void SetByObjectDefL( CMdEObjectDef& aObjectDef );
+		static CHarvesterAoPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
 	};
 
 /**
@@ -558,6 +555,8 @@ class CHarvesterAO : public CActive,
         
         CHarvesterAoPropertyDefs* iPropDefs;
         
+        TBool iMassMemoryIdChecked;
+        
         // Own.
         CDesCArray* iCameraExtensionArray;
 
@@ -586,11 +585,7 @@ class CHarvesterAO : public CActive,
         HBufC* iMmcSoundsPath;
         
         TBool iUnmountDetected;
-        TBool iUnmountHandlingOngoing;
         TBool iPriorityInterruptDetected;
-        
-        RLocationObjectManipulator iLocManipulator;
-        TBool iLocManipulatorConnected;
 	};
 	
 #endif //__CHARVESTERAO_H__

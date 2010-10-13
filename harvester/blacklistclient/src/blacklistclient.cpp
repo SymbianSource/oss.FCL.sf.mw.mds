@@ -278,7 +278,6 @@ void RBlacklistClient::AddToMemoryTableL( const TInt64& aModified,
     if ( err != KErrNone )
         {
         delete item;
-        item = NULL;
         }
 
 
@@ -301,7 +300,6 @@ void RBlacklistClient::RemoveFromMemoryTableL( const TDesC& aUri, const TUint32 
         {
         CBlacklistItem* item = iBlacklistMemoryTable[index];
         delete item;
-        item = NULL;
         iBlacklistMemoryTable.Remove( index );
         }
 

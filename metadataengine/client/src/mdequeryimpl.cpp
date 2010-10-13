@@ -70,7 +70,6 @@ CMdEObjectQueryImpl::~CMdEObjectQueryImpl()
     	iAsyncFind->Cancel();
     	
     	delete iAsyncFind;
-    	iAsyncFind = NULL;
     	}
     }
 
@@ -153,7 +152,6 @@ void CMdERelationQueryImpl::ConstructL( CMdESessionImpl& aSessionImpl,
 CMdERelationQueryImpl::~CMdERelationQueryImpl()
     {
 	delete iAsyncFind;
-	iAsyncFind = NULL;
     }
 
 
@@ -228,7 +226,6 @@ void CMdEEventQueryImpl::ConstructL( CMdESessionImpl& aSessionImpl,
 CMdEEventQueryImpl::~CMdEEventQueryImpl()
     {
 	delete iAsyncFind;
-	iAsyncFind = NULL;
     }
 
 

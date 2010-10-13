@@ -84,7 +84,6 @@ CCLFDbItemProvider::~CCLFDbItemProvider()
     {
     Cancel();
     delete iObjectQuery;
-    iObjectQuery = NULL;
     iItemArray.ResetAndDestroy();
     }
 

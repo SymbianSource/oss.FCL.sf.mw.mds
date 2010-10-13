@@ -55,11 +55,6 @@ class CMdSSqlDbMaintenance : public CBase
         * Drops and re-creates tables
         */
         void CreateDatabaseL();
-
-        /**
-        * Does quick check to the existing database to detect obvious corruption
-        */
-        TBool CheckForCorruptionL();
     };
 
 #endif // __MDSSQLDBMAINTENANCE_H__

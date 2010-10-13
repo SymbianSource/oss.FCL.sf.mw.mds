@@ -66,7 +66,6 @@ CMdENotifierAO::~CMdENotifierAO()
     {
     Cancel(); // Causes call to DoCancel()
     delete iDataBuffer;
-    iDataBuffer = NULL;
     iIdArray.Close();
     iRelationItemArray.Close();
     }

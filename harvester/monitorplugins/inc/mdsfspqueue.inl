@@ -15,7 +15,7 @@
 */
 
 
-
+#include "mdsfspqueue.h"
 
 //-----------------------------------------------------------------------------
 // CMdsFSPQueueItem::NewL()
@@ -52,6 +52,7 @@ void CMdsFSPQueueItem::GetAsFspStatus( TMdsFSPStatus& aStatus )
 	aStatus.iNewFileName.Copy( *iNewFileName );
 	aStatus.iFileEventType = iFileEventType;
 	aStatus.iProcessId = iProcessId;
+	aStatus.iDriveMediaId = iDriveMediaId;
 	}
 
 //-----------------------------------------------------------------------------
@@ -67,18 +68,16 @@ void CMdsFSPQueueItem::SetStatusL( TMdsFSPStatus& aStatus )
 	if( iFileName ) 
 		{
 		delete iFileName;
-		iFileName = NULL;
 		}
-	
 	if( iNewFileName )
 		{
 		delete iNewFileName;
-		iNewFileName = NULL;
 		}
 	
 	iFileName = aStatus.iFileName.AllocL();
 	iNewFileName = aStatus.iNewFileName.AllocL();
 	
+	iDriveMediaId = aStatus.iDriveMediaId;
 	}
 
 //-----------------------------------------------------------------------------
@@ -88,8 +87,6 @@ void CMdsFSPQueueItem::SetStatusL( TMdsFSPStatus& aStatus )
 CMdsFSPQueueItem::~CMdsFSPQueueItem()
 	{
 	delete iFileName;
-	iFileName = NULL;
 	delete iNewFileName;
-	iNewFileName = NULL;
 	}
     

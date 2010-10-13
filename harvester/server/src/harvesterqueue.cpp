@@ -144,7 +144,7 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
     WRITELOG( "CHarvesterQueue::Append()" );
     TInt err( KErrNone );
 
-    if ( iBlacklist && aItem->Origin() != MdeConstants::Object::ECamera )
+    if ( iBlacklist )
         {
         TUint32 mediaId( 0 );
 		err = iMediaIdUtil->GetMediaId( aItem->Uri(), mediaId );
@@ -174,7 +174,6 @@ void CHarvesterQueue::Append( CHarvesterData* aItem )
     if ( aItem->ObjectType() == EFastHarvest || aItem->Origin() == MdeConstants::Object::ECamera )
     	{
     	err = iItemQueue.Insert( aItem, 0 );
-    	
     	if( !iHarvesterAO->IsActive() )
     	    {
             iHarvesterAO->SetPriority( KHarvesterPriorityMonitorPlugin );

@@ -53,11 +53,7 @@ class CAudioMDParser : public CBase
 	        EAudioMDFieldDuration,
 	        EAudioMDFieldCopyright,
 	        EAudioMDFieldDate,
-	        EAudioMDFieldJpeg,
-	        EAudioMDFieldProtected,
-	        EAudioMDFieldSampleRate,
-	        EAudioMDFieldBitRate,
-	        EAudioMDFieldAlbumArtist
+	        EAudioMDFieldJpeg
 	        };
 	
 	public:

@@ -73,13 +73,9 @@ CHarvesterMessagePlugin::~CHarvesterMessagePlugin()
 	{
 	WRITELOG("CHarvesterMessagePlugin::~CHarvesterMessagePlugin()");
 	delete iMmsMtm;
-	iMmsMtm = NULL;
 	delete iSmsMtm;
-	iSmsMtm = NULL;
 	delete iMtmReg;
-	iMtmReg = NULL;
-	delete iMsvSession;
-	iMsvSession = NULL;
+	delete iMsvSession;  
 	}
 
 /**

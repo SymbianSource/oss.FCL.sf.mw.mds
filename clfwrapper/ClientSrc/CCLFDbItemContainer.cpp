@@ -65,7 +65,6 @@ CCLFContainerItem* CCLFContainerItem::NewLC( const CMdEObject* aObject )
 CCLFContainerItem::~CCLFContainerItem()
     {
     delete iMdEObject;
-    iMdEObject = NULL;
     }
 
 // -----------------------------------------------------------------------------

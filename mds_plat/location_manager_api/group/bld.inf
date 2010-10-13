@@ -16,7 +16,6 @@
 */
 
 #include <platform_paths.hrh>
-#include "../../../locationmanager/inc/locplatsupport.mmh"
 
 PRJ_PLATFORMS
     DEFAULT
@@ -29,11 +28,6 @@ PRJ_EXPORTS
 ../inc/rlocationobjectmanipulator.h MW_LAYER_PLATFORM_EXPORT_PATH(rlocationobjectmanipulator.h)
 ../inc/locationdatatype.h MW_LAYER_PLATFORM_EXPORT_PATH(locationdatatype.h)
 ../inc/locationeventdef.h MW_LAYER_PLATFORM_EXPORT_PATH(locationeventdef.h)
-../inc/geotagobserver.h MW_LAYER_PLATFORM_EXPORT_PATH(geotagobserver.h)
-../inc/rlocationgeotagger.h MW_LAYER_PLATFORM_EXPORT_PATH(rlocationgeotagger.h)
-../inc/geotagger.h MW_LAYER_PLATFORM_EXPORT_PATH(geotagger.h)
-../inc/reversegeocoderplugin.h MW_LAYER_PLATFORM_EXPORT_PATH(reversegeocoderplugin.h)
-../inc/reversegeocoderplugin.inl MW_LAYER_PLATFORM_EXPORT_PATH(reversegeocoderplugin.inl)
 
 PRJ_MMPFILES
 

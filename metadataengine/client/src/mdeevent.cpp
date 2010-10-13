@@ -70,9 +70,7 @@ void CMdEEvent::ConstructL(const TDesC* aSource, const TDesC* aParticipant)
 CMdEEvent::~CMdEEvent()
 	{
 	delete iSource;
-	iSource = NULL;
 	delete iParticipant;
-	iParticipant = NULL;
 	}
 
 CMdEEvent* CMdEEvent::NewL(CMdESession* aSession, CMdCSerializationBuffer& aBuffer, CMdENamespaceDef& aNamespaceDef )

@@ -80,55 +80,9 @@ CObjectDataArray* CObjectDataArray::NewL()
 //
 void CObjectDataArray::Append( CMdEObject* aMdeObject, CLocationData* aLocationData, CMdEQuery* aQuery )
     {
-    TInt mdeObjectIndex(KErrNone);
-    TInt locationDataIndex(KErrNone);
-    
-    mdeObjectIndex = iMdeObjectArray.Append( aMdeObject );
-    
-    if( mdeObjectIndex != KErrNone )
-        {
-        delete aMdeObject;
-        aMdeObject = NULL;
-        
-        delete aLocationData;
-        aLocationData = NULL;
-        
-        delete aQuery;
-        aQuery = NULL;
-        }
-    else
-        {
-        locationDataIndex = iLocationArray.Append( aLocationData );
-        
-        if( locationDataIndex != KErrNone )
-            {
-            iMdeObjectArray.Remove( mdeObjectIndex );
-            delete aMdeObject;
-            aMdeObject = NULL;
-            
-            delete aLocationData;
-            aLocationData = NULL;
-            
-            delete aQuery;
-            aQuery = NULL;
-            }
-        else
-            {
-            if( iQueryArray.Append( aQuery ) != KErrNone )
-                {
-                iMdeObjectArray.Remove( mdeObjectIndex );
-                delete aMdeObject;
-                aMdeObject = NULL;
-                
-                iLocationArray.Remove( locationDataIndex );
-                delete aLocationData;
-                aLocationData = NULL;
-                
-                delete aQuery;
-                aQuery = NULL;
-                }
-            }
-        }
+    iMdeObjectArray.Append( aMdeObject );
+    iLocationArray.Append( aLocationData );
+    iQueryArray.Append( aQuery );
     }
 
 // ---------------------------------------------------------------------------
@@ -142,14 +96,8 @@ void CObjectDataArray::Remove( TInt aIndex )
         return;
         }
     delete iMdeObjectArray[aIndex];
-    iMdeObjectArray[aIndex] = NULL;
-    
     delete iLocationArray[aIndex];
-    iLocationArray[aIndex] = NULL;
-    
     delete iQueryArray[aIndex];
-    iQueryArray[aIndex] = NULL;
-    
     iMdeObjectArray.Remove( aIndex );
     iLocationArray.Remove( aIndex );
     iQueryArray.Remove( aIndex );

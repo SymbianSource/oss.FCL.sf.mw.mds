@@ -93,7 +93,6 @@ EXPORT_C void CHarvesterEventManager::ReleaseInstance()
             {
             // destroy the singleton and free TLS
             delete data;
-            data = NULL;
             UserSvr::DllFreeTls( KHarvesterEventManagerTLSKey );
             }
         }
@@ -440,7 +439,6 @@ EXPORT_C TInt CHarvesterEventManager::UnregisterEventObserver( const RMessage2& 
 				
 				iRegisteredObservers.Remove( i );
 				delete observer;
-				observer = NULL;
 				}
 			// Find if any other observer is using the same queue
 			else
@@ -470,7 +468,6 @@ EXPORT_C TInt CHarvesterEventManager::UnregisterEventObserver( const RMessage2& 
                     iEventQueues.Remove( mid );
                     queue->Close();
                     delete queue;
-                    queue = NULL;
                     break;
 	                }
 	            else if( compare > 0 )

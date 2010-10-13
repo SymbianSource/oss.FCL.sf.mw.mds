@@ -35,12 +35,4 @@ EXPORTS
 	_ZTI19CTrackLogObserverAO @ 34 NONAME ABSENT; #<TI>#
 	_ZTV19CTrackLogObserverAO @ 35 NONAME ABSENT; #<VT>#
 	_ZN26RLocationObjectManipulator16LocationSnapshotEm @ 36 NONAME
-	_ZN18RLocationGeoTagger11GeoTagStausER14TRequestStatusR16TGeoTaggingSatus @ 37 NONAME
-	_ZN18RLocationGeoTagger15StartGeoTaggingER14TRequestStatus17TConnectionOption @ 38 NONAME
-	_ZN18RLocationGeoTagger23CancelGeoTaggingRequestEv @ 39 NONAME
-	_ZN18RLocationGeoTagger23CancelTagPendingRequestEv @ 40 NONAME
-	_ZN18RLocationGeoTaggerC1Ev @ 41 NONAME
-	_ZN18RLocationGeoTaggerC2Ev @ 42 NONAME
-	_ZN18RLocationGeoTaggerD1Ev @ 43 NONAME
-	_ZN18RLocationGeoTaggerD2Ev @ 44 NONAME
 

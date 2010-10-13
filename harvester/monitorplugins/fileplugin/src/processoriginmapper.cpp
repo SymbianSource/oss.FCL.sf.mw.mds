@@ -59,7 +59,6 @@ CProcessOriginMapper* CProcessOriginMapper::NewL()
 CProcessOriginMapper::~CProcessOriginMapper()
     {
     delete iLineBuffer;
-    iLineBuffer = NULL;
     iProcessOriginMap.Close();
     iReadStream.Close();
     iWriteStream.Close();
@@ -227,7 +226,7 @@ TInt CProcessOriginMapper::ReadFileL( const TDesC& aFile )
 //
 TInt CProcessOriginMapper::ReadFileL()
     {
-    WRITELOG( "CProcessOriginMapper::ReadFileL - reading default file" );
+    WRITELOG( "CProcessOriginMapper::ReadFileL - reading default file..." );
     iDefaultFileRead = ETrue;
     const TInt count = ReadFileL( KDefaultMappingFile );
     iDefaultFileRead = EFalse;

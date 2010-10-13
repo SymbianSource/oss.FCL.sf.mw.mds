@@ -48,13 +48,10 @@ CComposerImagePlugin::~CComposerImagePlugin() // destruct
     WRITELOG( "CComposerImagePlugin::~CComposerImagePlugin()" );
 
     delete iImageComposerAO;
-    iImageComposerAO = NULL;
     delete iLocationRelationObserver;
-    iLocationRelationObserver = NULL;
     delete iImagePresentObserver;
-    iImagePresentObserver = NULL;
+    
     delete iMdEHarvesterSession;
-    iMdEHarvesterSession = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -88,15 +85,11 @@ void CComposerImagePlugin::SetObservers()
     {
     WRITELOG( "CComposerImagePlugin::SetObservers()" );
 
-#ifdef _DEBUG
     TRAPD( err, SetObserversL() );
     if ( err != KErrNone )
         {
         WRITELOG1( "CComposerImagePlugin::SetObservers Error: %d", err );
         }
-#else
-    TRAP_IGNORE( SetObserversL() );    
-#endif
     }
 
 // ---------------------------------------------------------------------------

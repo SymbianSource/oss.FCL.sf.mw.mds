@@ -71,7 +71,6 @@ CMdSIdentifierGenerator* CMdSIdentifierGenerator::NewLC( )
 CMdSIdentifierGenerator::~CMdSIdentifierGenerator()
     {
     delete iDigest;
-    iDigest = NULL;
     }
 
 void CMdSIdentifierGenerator::ConstructL( )
@@ -179,14 +178,11 @@ CMdSSqlObjectManipulate::~CMdSSqlObjectManipulate()
 	for (TInt i = 0; i < count; ++i)
 		{
 		delete iBuffers[i].iBuffer;
-		iBuffers[i].iBuffer = NULL;
 		}
 	iBuffers.Close();
 
 	delete iGenerator;
-	iGenerator = NULL;
 	delete iUri;
-	iUri = NULL;
     }
 
 CMdSSqlObjectManipulate::CMdSSqlObjectManipulate( const CMdsSchema& aSchema, 
@@ -2271,8 +2267,8 @@ void CMdSSqlObjectManipulate::RemoveObjectsByUriL(
 		TPtrC16 uri = aBuffer.ReceivePtr16L();
         objectId = SearchObjectByUriL( uri, flags );
         if ( objectId != KNoId && 
-             uri != KSystemFavouritesAlbumUri && 
-             uri != KSystemCapturedAlbumUri )
+             objectId != KSystemFavouritesAlbumId && 
+             objectId != KSystemCapturedAlbumId )
 			{
 			// unlock object, so update is no possible anymore
 			if ( iLockList.IsLocked( *iNamespaceDef, objectId ) )

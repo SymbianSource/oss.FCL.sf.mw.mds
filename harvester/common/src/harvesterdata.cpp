@@ -29,11 +29,7 @@
 CHarvesterData::CHarvesterData( const HBufC* aUri )
 	{
 	iUri = aUri;
-	iClientData = NULL;
-	iMdeObject = NULL;
-	iLocationData = NULL;
 	iIsBinary = ETrue;
-	iClientId = KNullUid;
 	}
 
 //==========================================================================
@@ -43,13 +39,9 @@ CHarvesterData::CHarvesterData( const HBufC* aUri )
 CHarvesterData::~CHarvesterData()
 	{
 	delete iUri;
-	iUri = NULL;
 	delete iClientData;
-	iClientData = NULL;
 	delete iMdeObject;
-	iMdeObject = NULL;
 	delete iLocationData;
-	iLocationData = NULL;
 	}
 
 //==========================================================================
@@ -233,11 +225,6 @@ EXPORT_C CMdEObject& CHarvesterData::MdeObject()
 //
 EXPORT_C void CHarvesterData::SetMdeObject( CMdEObject* aMdeObject )
 	{
-    if( iMdeObject )
-        {
-        delete iMdeObject;
-        iMdeObject = NULL;
-        }
 	iMdeObject = aMdeObject;
 	}
 

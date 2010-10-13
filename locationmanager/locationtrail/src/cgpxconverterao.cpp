@@ -22,7 +22,6 @@
 #include "locationmanagerdebug.h"
 
 // ---------------------------------------------------------------------------
-// CGpxConverterAO::CGpxConverterAO()
 // Default constructor.
 // ---------------------------------------------------------------------------
 //
@@ -33,7 +32,6 @@ CGpxConverterAO::CGpxConverterAO() : CActive( CActive::EPriorityStandard ),
     }
 
 // ---------------------------------------------------------------------------
-// CGpxConverterAO::NewL
 // Standard NewL for first phase construction.
 // ---------------------------------------------------------------------------
 //
@@ -48,19 +46,18 @@ CGpxConverterAO* CGpxConverterAO::NewL()
     }
 
 // ---------------------------------------------------------------------------
-// CGpxConverterAO::ConstructL
 // 2nd phase construction.
 // ---------------------------------------------------------------------------
 //
 void CGpxConverterAO::ConstructL()
     {
-    LOG( "CGpxConverterAO::ConstructL ,begin" );
+    LOG( "CGpxConverterAO::ConstructL" );
     CActiveScheduler::Add( this );
 	User::LeaveIfError( iFs.Connect() );
 	
 	iWriteBuf = HBufC8::NewL( KWriteBufSize );
 	iFormatBuf = HBufC::NewL( KWriteBufSize );
-	LOG( "CGpxConverterAO::ConstructL ,end" );
+	
     }
 
 // ---------------------------------------------------------------------------
@@ -69,7 +66,7 @@ void CGpxConverterAO::ConstructL()
 //
 CGpxConverterAO::~CGpxConverterAO()
     {
-    LOG( "CGpxConverterAO::~CGpxConverterAO ,begin" );
+    LOG( "CGpxConverterAO::~CGpxConverterAO" ); // DEBUG INFO
     Cancel();
     iFs.Close();
     
@@ -82,19 +79,13 @@ CGpxConverterAO::~CGpxConverterAO()
     iBoundQueue.Close();
 
     delete iTempFile;
-    iTempFile = NULL;
     delete iBoundaries;
-    iBoundaries = NULL;
         
     delete iWriteBuf;
-    iWriteBuf = NULL;
     delete iFormatBuf;
-    iFormatBuf = NULL;
-	LOG( "CGpxConverterAO::~CGpxConverterAO ,end" );
     }
 
 // ---------------------------------------------------------------------------
-// CGpxConverterAO::RunError
 // From CActive.
 // ---------------------------------------------------------------------------
 //
@@ -109,7 +100,6 @@ TInt CGpxConverterAO::RunError( TInt )
     }
 
 // ---------------------------------------------------------------------------
-// CGpxConverterAO::DoCancel
 // From CActive. 
 // ---------------------------------------------------------------------------
 //
@@ -118,15 +108,13 @@ void CGpxConverterAO::DoCancel()
     LOG( "CGpxConverterAO::DoCancel" );
     }
 
-// ---------------------------------------------------------------------------
-// CGpxConverterAO::AddToQueueL
-// Adds temp-file and possible pre-calculated boundaries
-// into processing queue
-// ---------------------------------------------------------------------------
-//
+/**
+ * Adds temp-file and possible pre-calculated boundaries
+ * into processing queue
+ */
 void CGpxConverterAO::AddToQueueL( const TDesC& aFileName, TBoundaries* aBoundaries )
 	{
-	LOG("CGpxConverterAO::AddToQueueL ,begin");
+	LOG("CGpxConverterAO::AddToQueueL");
 	TFileName *filename = new (ELeave) TFileName(aFileName);
 	CleanupStack::PushL( filename );
 	iFileQueue.AppendL( filename );
@@ -137,15 +125,11 @@ void CGpxConverterAO::AddToQueueL( const TDesC& aFileName, TBoundaries* aBoundar
 		{
 		SetState( ENextFile );
 		}
-
-	LOG("CGpxConverterAO::AddToQueueL ,end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::SetState
- // Set next state for RunL
- // ---------------------------------------------------------------------------
+/**
+ * Set next state for RunL
+ */
 void CGpxConverterAO::SetState( TProcessingState aState )
 	{
     LOG1( "CGpxConverterAO::SetState: %d", aState );
@@ -157,13 +141,11 @@ void CGpxConverterAO::SetState( TProcessingState aState )
 		TRequestStatus* ptrStatus = &iStatus;
 		User::RequestComplete( ptrStatus, KErrNone );
 		}
-	LOG("CGpxConverterAO::SetState ,end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::RunL()
- // ---------------------------------------------------------------------------
+/**
+ * RunL
+ */
 void CGpxConverterAO::RunL()
 	{
 	switch( iState )
@@ -182,9 +164,7 @@ void CGpxConverterAO::RunL()
 				TInt err;
 				iFixLost = ETrue;
                 delete iTempFile;
-                iTempFile = NULL;
                 delete iBoundaries;
-                iBoundaries = NULL;
 				// get next temp-file from queue
 				iTempFile = iFileQueue[0];
 				iBoundaries = iBoundQueue[0];
@@ -330,14 +310,12 @@ void CGpxConverterAO::RunL()
 		}
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::ReadTagIdL
- // Read Tag Id from temp-file
- // ---------------------------------------------------------------------------
+/**
+ * Read Tag Id from temp-file
+ */
 void CGpxConverterAO::ReadTagIdL()
 	{
-	LOG("CGpxConverterAO::ReadTagIdL ,begin");
+	LOG("CGpxConverterAO::ReadTagIdL");
 	TUint32 low( 0 );
 	TUint32 high( 0 );	
 
@@ -345,15 +323,11 @@ void CGpxConverterAO::ReadTagIdL()
 	high = iReader.ReadUint32L();
 
 	iTagId = MAKE_TINT64( high, low );
-
-	LOG("CGpxConverterAO::ReadTagIdL ,end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::CalculateBoundaries
- // Calculate min and max coordinates for tracklog
- // ---------------------------------------------------------------------------
+/**
+ * Calculate min and max coordinates for tracklog
+ */
 void CGpxConverterAO::CalculateBoundaries()
 	{
 	LOG("CGpxConverterAO::CalculateBoundaries start");
@@ -398,14 +372,11 @@ void CGpxConverterAO::CalculateBoundaries()
 	LOG("CGpxConverterAO::CalculateBoundaries end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::WriteStartingTags
- // Writes header tags for GPX file
- // ---------------------------------------------------------------------------
+/**
+ * Writes header tags for GPX file
+ */
 void CGpxConverterAO::WriteStartingTags()
 	{
-	LOG("CGpxConverterAO::WriteStartingTags ,begin");
 	TPtr8 writePtr = iWriteBuf->Des();
 	TPtr formatter = iFormatBuf->Des();
 	
@@ -440,17 +411,13 @@ void CGpxConverterAO::WriteStartingTags()
 	
 	writePtr.Copy( KTagTrackStart );
 	iGpxFile.Write( writePtr );
-	LOG("CGpxConverterAO::WriteStartingTags ,end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::WriteItemToFile
- // Writes single trackpoint to GPX file
- // ---------------------------------------------------------------------------
+/**
+ * Writes single trackpoint to GPX file
+ */
 void CGpxConverterAO::WriteItemToFile()
 	{
-	LOG("CGpxConverterAO::WriteItemToFile ,begin");
 	TTime timeStamp;
 	
 	TPtr8 writePtr = iWriteBuf->Des();
@@ -536,16 +503,14 @@ void CGpxConverterAO::WriteItemToFile()
 		writePtr.Copy( KTagTrkPointEnd );
 		iGpxFile.Write( writePtr );
 		}
-	LOG("CGpxConverterAO::WriteItemToFile ,end");
+	
 	}
 
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::WriteClosingTags
- // Close GPX file
- // ---------------------------------------------------------------------------
+/**
+ * Close GPX file 
+ */
 void CGpxConverterAO::WriteClosingTags()
 	{
-	LOG("CGpxConverterAO::WriteClosingTags ,begin");
 	TPtr8 writePtr = iWriteBuf->Des();
 	
 	// end segment
@@ -560,14 +525,11 @@ void CGpxConverterAO::WriteClosingTags()
 	writePtr.Append( KTagGpxEnd );
 
 	iGpxFile.Write( writePtr );
-	LOG("CGpxConverterAO::WriteClosingTags ,end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::GetTrackLogPathL
- // Resolve where to save tracklog file
- // ---------------------------------------------------------------------------
+/**
+ * Resolve where to save tracklog file
+ */
 void CGpxConverterAO::GetTrackLogPathL( TDes& aFileName )
 	{
 	LOG("CGpxConverterAO::GetTrackLogPathL start");
@@ -598,15 +560,11 @@ void CGpxConverterAO::GetTrackLogPathL( TDes& aFileName )
 	LOG("CGpxConverterAO::GetTrackLogPathL end");
 	}
 
-
- // ---------------------------------------------------------------------------
- // CGpxConverterAO::AddObserver
- // Adds observer for GPX file creation notifications
- // ---------------------------------------------------------------------------
+/**
+ * Adds observer for GPX file creation notifications
+ */
 void CGpxConverterAO::AddObserver( MGpxConversionObserver* aObserver )
 	{
 	iObservers.Append( aObserver );
 	}
 
-
-//End of File

@@ -339,7 +339,6 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             		  {
             			fileEventType = EMdsFileCreated;
             			delete iCreatedFiles[i];
-            			iCreatedFiles[i] = NULL;
             			iCreatedFiles.Remove( i );
             			
 						//Have to check whether file has been hidden          			
@@ -434,7 +433,6 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
                     if ( MdsUtils::Compare( iFileName, *(iModifiedFiles[i]) ) == 0 )
                       {
                         delete iModifiedFiles[i];
-                        iModifiedFiles[i] = NULL;
                         iModifiedFiles.Remove( i );
                         found = ETrue;
                         }
@@ -497,7 +495,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
 				{
 				return KErrNone;
 				}
-			drvNumber = iFormatOldMediaId;
+			drvNumber = iFormatDriveNumber;
 			volInfo.iUniqueID = iFormatOldMediaId;
 			iFormatOldMediaId = 0;
 			iFormatDriveNumber = -1;
@@ -546,7 +544,7 @@ TInt CMdsFileServerPlugin::DoRequestL( TFsPluginRequest& aRequest )
             queueItem->iFileEventType = fileEventType;
             queueItem->iProcessId = processId;
 
-            iQueue.AppendL( queueItem ); // owenership is transferred
+            iQueue.AppendL( queueItem ); // ownership is transferred
             CleanupStack::Pop( queueItem );
             err = KErrNone;
             iPendingEvents++;

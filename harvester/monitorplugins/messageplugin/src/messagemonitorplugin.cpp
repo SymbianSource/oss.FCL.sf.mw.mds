@@ -465,7 +465,6 @@ void CMessageMonitorPlugin::RemoveObjectL( const TDesC& aUri )
 		
 		iMdeSession->AddEventL( *event );
 		delete event;
-		event = NULL;
     	}
     
     WRITELOG( "CMessageMonitorPlugin::RemoveObjectL return" );

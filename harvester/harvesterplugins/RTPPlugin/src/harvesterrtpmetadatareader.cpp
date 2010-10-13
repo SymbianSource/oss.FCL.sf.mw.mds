@@ -46,7 +46,6 @@ CHarvesterRtpMetaDataReader::~CHarvesterRtpMetaDataReader()
     {
     WRITELOG( "CHarvesterRtpMetaDataReader::~CHarvesterRtpMetaDataReader()" );
     delete iMetaData;
-    iMetaData = NULL;
     }
 
 // ---------------------------------------------------------------------------

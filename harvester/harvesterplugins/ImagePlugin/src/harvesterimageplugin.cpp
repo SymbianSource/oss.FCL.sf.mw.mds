@@ -69,90 +69,87 @@ _LIT( KExtOtb, "OTB" );
 const TUid KBGPSUid = { 0x0ADC2480 };
 #endif
 
-CHarvesterImagePluginPropertyDefs::CHarvesterImagePluginPropertyDefs() : CBase(),
-    iCreationDatePropertyDef( NULL )
+CHarvesterImagePluginPropertyDefs::CHarvesterImagePluginPropertyDefs() : CBase()
 	{
 	}
 
-void CHarvesterImagePluginPropertyDefs::ConstructL( CMdEObjectDef& aObjectDef )
+void CHarvesterImagePluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
-    SetByObjectDefL( aObjectDef );
+	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
+
+	// Image property definitions
+	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( Object::KBaseObject );
+	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( Object::KCreationDateProperty );
+	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
+	iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
+	iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
+	iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
+
+	// Media property definitions
+	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
+	iWidthPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KWidthProperty );
+	iHeightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KHeightProperty );
+	iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDescriptionProperty );
+	iCommentPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCommentProperty );
+	iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
+	iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCopyrightProperty );
+	iCaptureDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCaptureDateProperty );
+	iResolutionUnitPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KResolutionUnitProperty );
+	iArtistPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KArtistProperty );
+
+	// Image property definitions
+	CMdEObjectDef& imageDef = nsDef.GetObjectDefL( Image::KImageObject );
+	iPixelYDimensionPropertyDef = &imageDef.GetPropertyDefL( Image::KPixelYDimensionProperty );
+	iPixelXDimensionPropertyDef = &imageDef.GetPropertyDefL( Image::KPixelXDimensionProperty );
+	iBitsPerSamplePropertyDef = &imageDef.GetPropertyDefL( Image::KBitsPerSampleProperty );
+	iFrameCountPropertyDef = &imageDef.GetPropertyDefL( Image::KFrameCountProperty );
+	iDateTimeOriginalPropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeOriginalProperty );
+	iDateTimeDigitizedPropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeDigitizedProperty );
+	iDateTimePropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeProperty );
+	iWhiteBalancePropertyDef = &imageDef.GetPropertyDefL( Image::KWhiteBalanceProperty );
+	iFlashPropertyDef = &imageDef.GetPropertyDefL( Image::KFlashProperty );
+	iExposureProgramPropertyDef = &imageDef.GetPropertyDefL( Image::KExposureProgramProperty );
+	iMakePropertyDef = &imageDef.GetPropertyDefL( Image::KMakeProperty );
+	iModelPropertyDef = &imageDef.GetPropertyDefL( Image::KModelProperty );
+	iOrientationPropertyDef = &imageDef.GetPropertyDefL( Image::KOrientationProperty );
+	iXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KXResolutionProperty );
+	iYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KYResolutionProperty );
+	iYCbCrPositioningPropertyDef = &imageDef.GetPropertyDefL( Image::KYCbCrPositioningProperty );
+	iExposureTimePropertyDef = &imageDef.GetPropertyDefL( Image::KExposureTimeProperty );
+	iFNumberPropertyDef = &imageDef.GetPropertyDefL( Image::KFNumberProperty );
+	iExifVersionPropertyDef = &imageDef.GetPropertyDefL( Image::KExifVersionProperty );
+	iShutterSpeedValuePropertyDef = &imageDef.GetPropertyDefL( Image::KShutterSpeedValueProperty );
+	iApertureValuePropertyDef = &imageDef.GetPropertyDefL( Image::KApertureValueProperty );
+	iFocalLengthPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalLengthProperty );
+	iFlashPixVersionPropertyDef = &imageDef.GetPropertyDefL( Image::KFlashPixVersionProperty );
+	iColourSpacePropertyDef = &imageDef.GetPropertyDefL( Image::KColourSpaceProperty );
+	iISOSpeedRatingsPropertyDef = &imageDef.GetPropertyDefL( Image::KISOSpeedRatingsProperty );
+	iComponentsConfigurationPropertyDef = &imageDef.GetPropertyDefL( Image::KComponentsConfigurationProperty );
+	iExposureBiasValuePropertyDef = &imageDef.GetPropertyDefL( Image::KExposureBiasValueProperty );
+	iSamplesPerPixelPropertyDef = &imageDef.GetPropertyDefL( Image::KSamplesPerPixelProperty );
+	iThumbCompressionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbCompressionProperty );
+	iThumbXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbXResolutionProperty );
+	iThumbYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbYResolutionProperty );
+	iThumbResolutionUnitPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbResolutionUnitProperty );
+	iFocalLengthIn35mmFilmPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalLengthIn35mmFilmProperty );
+	iMeteringModePropertyDef = &imageDef.GetPropertyDefL( Image::KMeteringModeProperty );
+	iRelatedSoundFilePropertyDef = &imageDef.GetPropertyDefL( Image::KRelatedSoundFileProperty );
+	iFocalPlaneResolutionUnitPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneResolutionUnitProperty );
+	iFocalPlaneXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneXResolutionProperty );
+	iFocalPlaneYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneYResolutionProperty );
+	iDraftPropertyDef = &imageDef.GetPropertyDefL( Image::KDraftProperty );
 	}
 
-CHarvesterImagePluginPropertyDefs* CHarvesterImagePluginPropertyDefs::NewL()
-    {
-    CHarvesterImagePluginPropertyDefs* self = 
-        new (ELeave) CHarvesterImagePluginPropertyDefs();
-    return self;
-    }
-
-void CHarvesterImagePluginPropertyDefs::SetByObjectDefL(CMdEObjectDef& aObjectDef)
-    {
-    CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
-
-    // Image property definitions
-    CMdEObjectDef& objectDef = nsDef.GetObjectDefL( Object::KBaseObject );
-    iCreationDatePropertyDef = &objectDef.GetPropertyDefL( Object::KCreationDateProperty );
-    iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
-    iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
-    iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
-    iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
-    iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
-
-    // Media property definitions
-    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
-    iWidthPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KWidthProperty );
-    iHeightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KHeightProperty );
-    iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDescriptionProperty );
-    iCommentPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCommentProperty );
-    iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
-    iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCopyrightProperty );
-    iCaptureDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCaptureDateProperty );
-    iResolutionUnitPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KResolutionUnitProperty );
-    iArtistPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KArtistProperty );
-
-    // Image property definitions
-    CMdEObjectDef& imageDef = nsDef.GetObjectDefL( Image::KImageObject );
-    iPixelYDimensionPropertyDef = &imageDef.GetPropertyDefL( Image::KPixelYDimensionProperty );
-    iPixelXDimensionPropertyDef = &imageDef.GetPropertyDefL( Image::KPixelXDimensionProperty );
-    iBitsPerSamplePropertyDef = &imageDef.GetPropertyDefL( Image::KBitsPerSampleProperty );
-    iFrameCountPropertyDef = &imageDef.GetPropertyDefL( Image::KFrameCountProperty );
-    iDateTimeOriginalPropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeOriginalProperty );
-    iDateTimeDigitizedPropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeDigitizedProperty );
-    iDateTimePropertyDef = &imageDef.GetPropertyDefL( Image::KDateTimeProperty );
-    iWhiteBalancePropertyDef = &imageDef.GetPropertyDefL( Image::KWhiteBalanceProperty );
-    iFlashPropertyDef = &imageDef.GetPropertyDefL( Image::KFlashProperty );
-    iExposureProgramPropertyDef = &imageDef.GetPropertyDefL( Image::KExposureProgramProperty );
-    iMakePropertyDef = &imageDef.GetPropertyDefL( Image::KMakeProperty );
-    iModelPropertyDef = &imageDef.GetPropertyDefL( Image::KModelProperty );
-    iOrientationPropertyDef = &imageDef.GetPropertyDefL( Image::KOrientationProperty );
-    iXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KXResolutionProperty );
-    iYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KYResolutionProperty );
-    iYCbCrPositioningPropertyDef = &imageDef.GetPropertyDefL( Image::KYCbCrPositioningProperty );
-    iExposureTimePropertyDef = &imageDef.GetPropertyDefL( Image::KExposureTimeProperty );
-    iFNumberPropertyDef = &imageDef.GetPropertyDefL( Image::KFNumberProperty );
-    iExifVersionPropertyDef = &imageDef.GetPropertyDefL( Image::KExifVersionProperty );
-    iShutterSpeedValuePropertyDef = &imageDef.GetPropertyDefL( Image::KShutterSpeedValueProperty );
-    iApertureValuePropertyDef = &imageDef.GetPropertyDefL( Image::KApertureValueProperty );
-    iFocalLengthPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalLengthProperty );
-    iFlashPixVersionPropertyDef = &imageDef.GetPropertyDefL( Image::KFlashPixVersionProperty );
-    iColourSpacePropertyDef = &imageDef.GetPropertyDefL( Image::KColourSpaceProperty );
-    iISOSpeedRatingsPropertyDef = &imageDef.GetPropertyDefL( Image::KISOSpeedRatingsProperty );
-    iComponentsConfigurationPropertyDef = &imageDef.GetPropertyDefL( Image::KComponentsConfigurationProperty );
-    iExposureBiasValuePropertyDef = &imageDef.GetPropertyDefL( Image::KExposureBiasValueProperty );
-    iSamplesPerPixelPropertyDef = &imageDef.GetPropertyDefL( Image::KSamplesPerPixelProperty );
-    iThumbCompressionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbCompressionProperty );
-    iThumbXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbXResolutionProperty );
-    iThumbYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbYResolutionProperty );
-    iThumbResolutionUnitPropertyDef = &imageDef.GetPropertyDefL( Image::KThumbResolutionUnitProperty );
-    iFocalLengthIn35mmFilmPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalLengthIn35mmFilmProperty );
-    iMeteringModePropertyDef = &imageDef.GetPropertyDefL( Image::KMeteringModeProperty );
-    iRelatedSoundFilePropertyDef = &imageDef.GetPropertyDefL( Image::KRelatedSoundFileProperty );
-    iFocalPlaneResolutionUnitPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneResolutionUnitProperty );
-    iFocalPlaneXResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneXResolutionProperty );
-    iFocalPlaneYResolutionPropertyDef = &imageDef.GetPropertyDefL( Image::KFocalPlaneYResolutionProperty );
-    iDraftPropertyDef = &imageDef.GetPropertyDefL( Image::KDraftProperty );
-    }
+CHarvesterImagePluginPropertyDefs* CHarvesterImagePluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterImagePluginPropertyDefs* self = 
+		new (ELeave) CHarvesterImagePluginPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
+	}
 
 /**
 * Default constructor
@@ -188,22 +185,17 @@ CHarvesterImagePlugin::~CHarvesterImagePlugin()
 		{
 		iDecoder->Reset();
 	    delete iDecoder;
-	    iDecoder = NULL;
 		}   
     
     if (iExifUtil)
 		{
 		delete iExifUtil;
-		iExifUtil = NULL;
 		}
    	
     delete iPropDefs;
-    iPropDefs = NULL;
     
     delete iPhoneImagesPath;
-    iPhoneImagesPath = NULL;
     delete iMmcImagesPath;
-    iMmcImagesPath = NULL;
     
     iMimeTypeMappings.Close();
     iFbs.Disconnect();
@@ -218,8 +210,6 @@ void CHarvesterImagePlugin::ConstructL()
 	iDecoder = CBufferedImageDecoder::NewL( iFs );
 	iExifUtil = CHarvesterExifUtil::NewL();
     User::LeaveIfError( iFbs.Connect() );
-
-    iPropDefs = CHarvesterImagePluginPropertyDefs::NewL(); 
 
     TLinearOrder< TMimeTypeMapping<TImageMetadataHandling> > cmp(
     		TMimeTypeMapping<TImageMetadataHandling>::CompareFunction);
@@ -406,8 +396,13 @@ TInt CHarvesterImagePlugin::GatherDataL( CMdEObject& aMetadataObject,
         {
         CMdEProperty* prop = NULL;
         CMdEObjectDef& objectDef = *aFileData.iImageDef;
-		
-        InitPropDefsL( objectDef );        
+        
+        if( !iPropDefs )
+        	{
+        	iPropDefs = CHarvesterImagePluginPropertyDefs::NewL( objectDef );
+        	// Prefetch max text lengt for validity checking
+        	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+        	}
         
         aMetadataObject.Property( *iPropDefs->iSizePropertyDef, prop );
         if( prop )
@@ -697,8 +692,13 @@ void CHarvesterImagePlugin::HandleObjectPropertiesL(
     WRITELOG( "CHarvesterImagePlugin::HandleObjectPropertiesL() - New MdE object" );
     
     CMdEObject& mdeObject = aHarvesterData.MdeObject();
-	
-    InitPropDefsL( mdeObject.Def() );
+    
+    if( !iPropDefs )
+    	{
+    	iPropDefs = CHarvesterImagePluginPropertyDefs::NewL( mdeObject.Def() );
+    	// Prefetch max text lengt for validity checking
+    	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+    	}
 
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
 
@@ -1084,14 +1084,3 @@ TInt CHarvesterImagePlugin::CheckIfMimeSupported(const TDesC& aMimeBuf)
     
     return KErrNotSupported;
     }
-
-void CHarvesterImagePlugin::InitPropDefsL( CMdEObjectDef& aObjectDef )
-    {
-    if( !iPropDefs->iCreationDatePropertyDef )
-        {
-        iPropDefs->SetByObjectDefL( aObjectDef );
-        // Prefetch max text lengt for validity checking
-        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-        }
-    }
-

@@ -118,7 +118,6 @@ CMdsImportExport::CMdsImportExport() : iLastDriveNumber ( -1 )
 CMdsImportExport::~CMdsImportExport()
 	{
    	delete iConverter;
-   	iConverter = NULL;
 
 #ifdef _DEBUG
    	if( iLogEnabled )
@@ -130,10 +129,8 @@ CMdsImportExport::~CMdsImportExport()
     iFs.Close();
 
    	delete iBuffer;
-   	iBuffer = NULL;
 
    	delete iSchema;
-   	iSchema = NULL;
 	}
 
 /**

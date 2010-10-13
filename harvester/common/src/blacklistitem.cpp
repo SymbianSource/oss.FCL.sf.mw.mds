@@ -51,7 +51,6 @@ void CBlacklistItem::ConstructL( const TDesC& aUri )
 CBlacklistItem::~CBlacklistItem()
     {
     delete iUri;
-    iUri = NULL;
     }
 
 // ---------------------------------------------------------------------------

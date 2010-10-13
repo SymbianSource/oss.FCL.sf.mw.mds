@@ -101,20 +101,13 @@ class CVideoHarvestData : public CBase
         ~CVideoHarvestData()
         	{
         	delete iCopyright;
-        	iCopyright = NULL;
             delete iAuthor;
-            iAuthor = NULL;
             delete iGenre;
-            iGenre = NULL;
             delete iPerformer;
-            iPerformer = NULL;
             delete iDescription;
-            iDescription = NULL;
             delete iTitle;
-            iTitle = NULL;
 
         	delete iMimeBuf;
-        	iMimeBuf = NULL;
         	}
     };
 
@@ -162,8 +155,7 @@ class CHarvesterVideoPluginPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterVideoPluginPropertyDefs* NewL();
-		void SetByObjectDefL( CMdEObjectDef& aObjectDef );
+		static CHarvesterVideoPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
 	};
 
 class CHarvesterVideoPlugin : public CHarvesterPlugin
@@ -240,8 +232,6 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 		
 		void CheckForCodecSupport( HBufC* aMimeBuffer, CVideoHarvestData& aVHD );
 		
-        void InitPropDefsL( CMdEObjectDef& aObjectDef );
-
 	private:
 		RArray<THarvestingHandling> iMimeTypeMappings;
 		

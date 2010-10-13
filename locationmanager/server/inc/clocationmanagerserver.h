@@ -24,9 +24,6 @@
 #include <centralrepository.h>
 #include <locationdatatype.h>
 #include <locationeventdef.h>
-#ifdef LOC_REVERSEGEOCODE
-#include <geotagger.h>
-#endif //LOC_REVERSEGEOCODE
 
 #include "rlocationtrail.h"
 #include "rlocationobjectmanipulator.h"
@@ -38,13 +35,9 @@
 #include "mdequery.h"
 #include "mderelationquery.h"
 #include "locationmanagerdefs.h"
-#include "clocationservertimerhandler.h"
+
 
 class CMdESession;
-class CLocationGeoTagTimerAO;
-class CGeoTagger;
-class REComSession;
-class CNwRegistrationStatusHandler;
 
 // Total number of ranges
 const TUint KLocationManagerRangeCount = 1;
@@ -92,9 +85,7 @@ class CLocationManagerServer : public CPolicyServer,
                                public MMdESessionObserver,
                                public MMdEQueryObserver,
                                public MMdEObjectObserver,
-                               public MGpxConversionObserver,
-                               public MGeoTaggerObserver,
-                               public MLocationServerTimerObserver
+                               public MGpxConversionObserver
     {
 private:
 	struct TMessageQuery
@@ -268,122 +259,30 @@ public:
 	 * @return None.
 	 */ 
 	void RemoveLocationObjectL(TUint& aObjectId);
-
-	/**
-	  * Copies the location object
-	  * @param aSource source location object
-	  *	@param aTargets target location object
-	  * @param aQuery message query type
-
-	  */	
 	void CopyLocationObjectL( TItemId aSource, const RArray<TItemId>& aTargets, TMessageQuery& aQuery );
-
-	/**
-	  * Copies the location object
-	  * @param aSource The source location object
-	  *	@param aTargets target location object
-	  * @param aQuery message query type
-	  */
 	void CopyLocationObjectL( const TDesC& aSource, const RArray<TPtrC>& aTargets, TMessageQuery& aQuery );
-
-	/**
-	  * checks if the session is ready
-	  * @return ETrue if Session is ready
-	  */	
+	
 	TBool IsSessionReady();
-
-	/**
-	  * Start track log
-	  *
-	  * @return The itemId
-	  */	
+	
 	TItemId StartTrackLogL();
-
-	/** 
-	  * Stop track log
-	  *
-	  */	
+	
 	void StopTrackLogL();
-
-	/**
-	  * IsTrackLogRecording
-	  *
-	  * @param aRec
-	  */	
+	
 	void IsTrackLogRecording( TBool &aRec );
 	
-	/**
-	  * Retrieve track log status
-	  *
-	  * @param aRecording 
-	  * @param aFixQuality
-	  */
 	TInt GetTrackLogStatus( TBool& aRecording, TPositionSatelliteInfo& aFixQuality);
-
-	/**
-	  * Delete track log
-	  *
-	  * @param aUri 
-	  */	
+	
 	TInt DeleteTrackLogL(const TDesC& aUri);
-
-	/**
-	  * Track log name
-	  *
-	  * @param aFileName name of file used to track log
-	  */	
+	
 	TInt TrackLogName(TFileName& aFileName);
 	
-	/**
-	  * Gets the location trail capture settings
-	  * @param aCaptureSetting The location trail capture settings
-	  */	
 	void GetCaptureSetting( RLocationTrail::TTrailCaptureSetting& aCaptureSetting );
-
-	/**
-	  * Adds an observer  for Gpx conversion
-	  * @param aObserver the observer for Gpx conversion
-	  */
+	
 	void AddGpxObserver( MGpxConversionObserver* aObserver );
 	
-	/**
-	  * Copy location by Id
-	  * @param aMessage
-	  */	
 	void InitCopyLocationByIdL( const RMessage2& aMessage );
-	
-	/**
-	  * Copy Location by Uri
-	  * @param aMessage
-	  */
 	void InitCopyLocationByURIL( const RMessage2& aMessage );
 
-	/**
-	  * Handles tag pending request
-	  *
-	  * @param aMessage IPC message
-	  */	
-    void TagPendingRequestL( const RMessage2& aMessage );
-
-	/**
-	  * Cancels the tag pending request
-	  * @param aMessage IPC message
-	  */	
-    void CancelTagPendingRequest( const RMessage2& aMessage );
-
-	/**
-	  * Cancels the geotagging request
-	  * @param aMessage IPC message
-	  */
-	void CancelGeoTaggingRequest( const RMessage2& aMessage );
-
-
-	/**
-	  * Handle starts geotagging request
-	  * @param aMessage IPC message
-	  */
-    void StartGeoTaggingL( const RMessage2& aMessage );
-    
 public: // from MLocationTrailObserver.
     /**
      * Callback method to get notification about trail state change.
@@ -441,52 +340,6 @@ public: // from MGpxConversionObserver
 	void GpxFileCreated( const TDesC& aFileName, TItemId aTagId, TReal32 aLength,
 			TTime aStart, TTime aEnd );
 
-protected:  //From MGeoTaggerObserver
-
-	/**
-	  * This method is called on completion of geotagging
-	  * and also completes start geotagging IPC message
-	  * @param aError The err code for geotagging if any
-	  */
-     void GeoTaggingCompleted( const TInt aError );   
-     /**
-      * This method is used for notifying completion of query for pending geo tags
-	  * @param aError The err code for geotagging if any           
-      */
-     void PendingGeoTagReqComplete( const TInt aError );
-
-    /*
-    * Get registrer network country code
-    *
-    * @return current register n/w info
-    */
-    RMobilePhone::TMobilePhoneNetworkInfoV2& GetCurrentRegisterNw();
-
-
-    /*
-    * Get home network country code
-    * @param aHomeNwInfoAvailableFlag ETrue if home n/w info available else EFalse
-    * @return user home n/w info
-    */
-    const RMobilePhone::TMobilePhoneNetworkInfoV1& 
-        GetHomeNetworkInfo(TBool& aHomeNwInfoAvailableFlag);
-
-    
-    /*
-    * UE is registered to home network?
-    *
-    * @return ETrue if UE is registered at home network else EFalse
-    */
-    TBool IsRegisteredAtHomeNetwork();
-
-public: //MLocationServerTimerObserver
-    /**
-        * Timer call back
-        * @param aLocationServerTimerType timer type
-        * @param aErrorCode error code
-        */
-    void LocationServerTimerCallBackL
-        (const TLocationServerTimerType aLocationServerTimerType, const TInt aErrorCode);
 private:    
     /**
     * C++ constructor.
@@ -497,11 +350,7 @@ private:
     * 2nd phase constructor.
     */
     void ConstructL();
-
-	/**
-	  * Copies the location
-	  * @param aQuery The query
-	  */	
+    
     void CopyLocationL( CMdEQuery& aQuery );
 
     /**
@@ -510,10 +359,7 @@ private:
      */ 
     void CancelRequests(RArray<RMessage2>& aMessagesList);
     
-    /**
-	  * cancels the list of copy requests
-	  * @param aMessageList  the list of query 
-	  */
+    
     void CancelCopyRequests(RArray<TMessageQuery>& aMessageList);
     
     /**
@@ -550,49 +396,21 @@ private:
      * @param aAny, a pointer to CLocationRecord object
      * @return Error code
      */
-   void PositioningStopTimeout();
+    static TInt PositioningStopTimeout( TAny* aAny );
     
     /**
      * Callback function to check if files were added to remapping queue with delay
      * @param aAny, a pointer to CLocationRecord object
      * @return Error code
      */
-    void CheckForRemappingCallback();
-
+    static TInt CheckForRemappingCallback( TAny* aAny );
     
     /**
      * Stops location trail and deletes the positioning stop timer.
      */
     void StopRecording();
-
-	/**
-	  * Complete notify request
-	  *
-	  * @param aEventType, returns the event type
-	  * @param aError, return error type for this call.
-	  */	
-    void CompleteNotifyRequest( TEventTypes aEventType, TInt aError );
-
-    /**
-      * Get supported TSY name
-      *@param aTsyName - buffer to store the supported tsy name
-      */  
-    void GetCommDbTSYnameL(TDes& aTsyName);
-
-    /**
-      * Initialize etel to access modem parameters
-      */  
-    void InitialisePhoneL();
-
-    /**
-      * Retrieve home network
-      */  
-    void RetrieveHomeNetwork();
     
-    /**
-      * Stop the server (if possible)
-      */  
-    void StopServer();
+    void CompleteNotifyRequest( TEventTypes aEventType, TInt aError );
 
 private:
     /**
@@ -648,7 +466,7 @@ private:
      * A timer to stop location trail.
      * Own.
      */
-    CLocationServerTimerHandler* iTimer;
+    CPeriodic* iTimer;
     
     TBool iClientSwitch;    
     TInt iSessionCount;
@@ -660,28 +478,12 @@ private:
     TInt iLocManStopRemapDelay;
     
     RLocationTrail::TTrailCaptureSetting iCaptureSetting;
-    TBool iRemoveLocation;    
+    TBool iRemoveLocation;   
     
     /**
      * A flag for state of waiting for position stop timeout.
      */
     TBool iWaitForPositioningStopTimeout;
-	RTelServer		iTelServer;
-	RMobilePhone	iPhone;	
-	TBool			iTelServerIsOpen;
-	TBool			iPhoneIsOpen;
-    CNwRegistrationStatusHandler *iNwRegistrationStatusHandler;
-    RMobilePhone::TMobilePhoneNetworkInfoV1 iHomeNetwork;
-    TBool iHomeNwInfoAvailableFlag;
-  
-    CLocationGeoTagTimerAO* iGeoTagTimer;
-    
-#ifdef LOC_REVERSEGEOCODE
-    CGeoTagger* iGeoTaggingPendingReqObj;
-    RMessage2 iTagPendingMessage;
-    RMessage2 iGeoTaggingMessage;
-    REComSession* iEcomSession; 
-#endif //LOC_REVERSEGEOCODE
     };
 
 

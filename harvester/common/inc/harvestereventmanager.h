@@ -154,7 +154,6 @@ class CHarvesterEventManagerStaticData : public CBase
         virtual ~CHarvesterEventManagerStaticData()
             {
             delete iHEM;
-            iHEM = NULL;
             }
 
     protected:

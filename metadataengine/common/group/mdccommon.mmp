@@ -29,7 +29,7 @@ VENDORID        VID_DEFAULT
 
 #if defined(WINSCW)
     deffile ../bwincw/mdccommonu.def
-#elif defined(EABI)
+#elif defined(ARMCC)
     deffile ../eabi/mdccommonu.def
 #endif
 nostrictdef
@@ -50,5 +50,5 @@ LIBRARY         	euser.lib
 
 PAGED
 BYTEPAIRCOMPRESSTARGET
-OPTION ARMCC -O2 -OTime
+OPTION ARMCC -O3 -OTime
 

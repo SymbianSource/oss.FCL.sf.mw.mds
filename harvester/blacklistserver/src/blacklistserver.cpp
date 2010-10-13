@@ -217,7 +217,6 @@ CBlacklistServer::~CBlacklistServer()
    	iBlacklistServerChunk.Close();
  
     delete iSqLiteConnection;
-    iSqLiteConnection = NULL;
 
     WRITELOG( "CBlacklistServer::~CBlacklistServer - end" );
     OstTrace0( TRACE_NORMAL, DUP1_CBLACKLISTSERVER_CBLACKLISTSERVER, "CBlacklistServer::~CBlacklistServer -end " );
@@ -292,7 +291,6 @@ TInt E32Main()
         {
         TRAP(result, CBlacklistServer::ExeMainL());
         delete cleanup;
-        cleanup = NULL;
         }
     __UHEAP_MARKEND;
     WRITELOG( "CBlacklistServer::E32Main - end" );
@@ -497,7 +495,6 @@ void CBlacklistServer::AddToMemoryTableL( const TInt64& aModified,
     if ( err != KErrNone )
         {
         delete item;
-        item = NULL;
         }
 
     WRITELOG( "CBlacklistServer::AddToMemoryTableL - end" );
@@ -521,7 +518,6 @@ void CBlacklistServer::RemoveFromMemoryTable( const TDesC& aUri,
         {
         CBlacklistItem * item = iBlacklistMemoryTable[index];
         delete item;
-        item = NULL;
         iBlacklistMemoryTable.Remove( index );
         }
 
@@ -727,7 +723,7 @@ void CBlacklistServer::RemoveFromDBL( const TDesC& aUri, const TUint32 aMediaId 
         variables->AppendL( TColumn( lcBuf ) );     
         variables->AppendL( TColumn( aMediaId ) );    
  
-        iBufferedRemoveItems.AppendL( variables ); // transfer ownership
+        iBufferedRemoveItems.Append( variables ); // transfer ownership
         iDBUpdateNeeded = ETrue;
         CleanupStack::Pop( lcBuf );
         CleanupStack::Pop( 2, variables );
@@ -772,7 +768,7 @@ void CBlacklistServer::AddToDBL( const TDesC& aUri, const TUint32 aMediaId,
         rowData->AppendL( TColumn( lcBuf ) );     
         rowData->AppendL( TColumn( aMediaId ) );    
 
-        iBufferedAddedItems.AppendL( rowData ); // transfer ownership
+        iBufferedAddedItems.Append( rowData ); // transfer ownership
         iDBUpdateNeeded = ETrue;
         CleanupStack::Pop( lcBuf );
         CleanupStack::Pop( 2, rowData );

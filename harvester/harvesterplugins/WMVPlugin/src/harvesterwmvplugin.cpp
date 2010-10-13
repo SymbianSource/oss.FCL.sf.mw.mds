@@ -31,24 +31,11 @@
 #include "mdetextproperty.h"
 #include "mdeobjectwrapper.h"
 
-CHarvesterWmvPluginPropertyDefs::CHarvesterWmvPluginPropertyDefs() : CBase(),
-    iCreationDatePropertyDef( NULL )
+CHarvesterWmvPluginPropertyDefs::CHarvesterWmvPluginPropertyDefs() : CBase()
 	{
 	}
 
-void CHarvesterWmvPluginPropertyDefs::ConstructL( CMdEObjectDef& aObjectDef )
-    {
-    SetByObjectDefL( aObjectDef );
-    }
-
-CHarvesterWmvPluginPropertyDefs* CHarvesterWmvPluginPropertyDefs::NewL()
-    {
-    CHarvesterWmvPluginPropertyDefs* self = 
-        new (ELeave) CHarvesterWmvPluginPropertyDefs();
-    return self;
-    }
-
-void CHarvesterWmvPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef )
+void CHarvesterWmvPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
 	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 	
@@ -66,6 +53,16 @@ void CHarvesterWmvPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef
     iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KDescriptionProperty );
     iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KAuthorProperty );
     iGenrePropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KGenreProperty );
+	}
+
+CHarvesterWmvPluginPropertyDefs* CHarvesterWmvPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterWmvPluginPropertyDefs* self = 
+		new (ELeave) CHarvesterWmvPluginPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
 	}
 
 // ======== MEMBER FUNCTIONS ========
@@ -92,12 +89,9 @@ CHarvesterWMVPlugin::~CHarvesterWMVPlugin()
     {
     WRITELOG( "CHarvesterWMVPlugin::~CHarvesterWMVPlugin()" );
     delete iPropDefs;
-    iPropDefs = NULL;
     
     delete iPhoneVideosPath;
-    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
-    iMmcVideosPath = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +151,6 @@ void CHarvesterWMVPlugin::GetMimeType( const TDesC& aUri, TDes& aMimeType )
         {
         err = content->GetStringAttribute( ContentAccess::EMimeType, aMimeType );
         delete content;
-        content = NULL;
         }
     }
 
@@ -176,8 +169,6 @@ CHarvesterWMVPlugin::CHarvesterWMVPlugin() : CHarvesterPlugin(), iPropDefs( NULL
 void CHarvesterWMVPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterWMVPlugin::ConstructL()" );
-    
-    iPropDefs = CHarvesterWmvPluginPropertyDefs::NewL();
     
     TFileName videos = PathInfo::VideosPath();
     
@@ -303,7 +294,13 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
     
     CMdEObject& mdeObject = aHD.MdeObject();
     
-    InitPropDefsL( mdeObject.Def() );
+    if( !iPropDefs )
+		{
+		CMdEObjectDef& objectDef = mdeObject.Def();
+		iPropDefs = CHarvesterWmvPluginPropertyDefs::NewL( objectDef );
+		// Prefetch max text lengt for validity checking
+		iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
+		}
     
     if( ! mdeObject.Placeholder() )
     	{
@@ -367,15 +364,5 @@ void CHarvesterWMVPlugin::HandleObjectPropertiesL(
         CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
                 *iPropDefs->iGenrePropertyDef, &aClipDetails.iGenre, aIsAdd );
         }   
-    }
-
-void CHarvesterWMVPlugin::InitPropDefsL(CMdEObjectDef& aObjectDef)
-    {
-    if( !iPropDefs->iCreationDatePropertyDef )
-        {
-        iPropDefs->SetByObjectDefL( aObjectDef );
-        // Prefetch max text lengt for validity checking
-        iMaxTextLength = iPropDefs->iGenrePropertyDef->MaxTextLengthL();
-        }
     }
 

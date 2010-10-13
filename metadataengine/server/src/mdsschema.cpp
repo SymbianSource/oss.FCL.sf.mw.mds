@@ -78,7 +78,6 @@ CMdsSchema::~CMdsSchema()
 	iProperties.Close();
 
 	delete iBaseObject;
-	iBaseObject = NULL;
 	}
 
 void CMdsSchema::Reset()

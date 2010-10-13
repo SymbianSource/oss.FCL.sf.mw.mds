@@ -43,11 +43,6 @@ CLocationManagerTestScripter::CLocationManagerTestScripter(
 //
 void CLocationManagerTestScripter::ConstructL()
     {
-    	
-#ifdef LOC_REVERSEGEOCODE
-     iLocGeoTaggerConnected = EFalse;
-#endif //LOC_REVERSEGEOCODE
-	 
     //Read logger settings to check whether test case name is to be
     //appended to log file name.
     RSettingServer settingServer;

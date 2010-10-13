@@ -87,10 +87,8 @@ void CImagePresentObserver::ConstructL( CMdESession* aSession, CComposerImagePlu
 void CImagePresentObserver::HandleObjectPresentNotification(CMdESession& /*aSession*/, 
 		TBool aPresent, const RArray<TItemId>& aObjectIdArray)
 	{
-    WRITELOG( "CImagePresentObserver::HandleObjectPresentNotification" );
 	if ( aPresent )
 		{
-	    WRITELOG( "CImagePresentObserver::HandleObjectPresentNotification - objects present" );
 		if ( !iStarted )
 			{
 			CMdEObjectDef* imageObjDef = NULL;

@@ -44,7 +44,7 @@ LIBRARY           efsrv.lib
 deffile ../bwincw/blacklistclientwinscw.def
 #else 
 
-#if defined(EABI)
+#if defined(ARMCC)
 deffile ../eabi/blacklistclientarm.def
 #endif
 

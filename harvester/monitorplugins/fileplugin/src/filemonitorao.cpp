@@ -71,7 +71,6 @@ CFileMonitorAO::~CFileMonitorAO()
     StopMonitoring();
 
     delete iMdeSession;
-    iMdeSession = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +206,7 @@ void CFileMonitorAO::ResetMdsFSPStatus()
     status.iFileName.Zero();
     status.iNewFileName.Zero();
     status.iProcessId = TUid::Null();
+    status.iDriveMediaId = 0;
     }
     
 // ---------------------------------------------------------------------------

@@ -52,7 +52,6 @@ void CMdsItemDef::ConstructL( const TDesC& aName )
 CMdsItemDef::~CMdsItemDef()
 	{
 	delete iName;
-	iName = NULL;
 	}
 
 TUint32 CMdsItemDef::RequiredBufferSize()

@@ -82,7 +82,6 @@ CMmcScannerAO::~CMmcScannerAO()
 	// Delete instance variables if any
 	
 	delete iMmcFileList;
-	iMmcFileList = NULL;
 	
 	iEntryArray.ResetAndDestroy();
 	iEntryArray.Close();
@@ -108,14 +107,6 @@ void CMmcScannerAO::RunL()
 		{
 		case( EUninitialized ):
 			{
-		    WRITELOG("CMmcScannerAO::RunL - Starting processing");
-		    if( iMediaId == 0 )
-		        {
-		        WRITELOG("CMmcScannerAO::RunL - MediaId == 0 -> end");
-                SetState( EDone );
-                break;		    
-		        }
-		    
 			WRITELOG("CMmcScannerAO::RunL - Setting files to not present");
 			iMdEClient->SetFilesToNotPresent( iMediaId, ETrue );
 			SetState( EReadFiles );
@@ -257,7 +248,6 @@ void CMmcScannerAO::HandleReharvestL()
 			hd->SetEventType( EHarvesterEdit );
 			hd->SetObjectType( ENormal );
 			delete ei;
-			ei = NULL;
 			}
 		else
 			{
@@ -265,12 +255,7 @@ void CMmcScannerAO::HandleReharvestL()
 			hd->SetObjectType( EPlaceholder );
 			hd->SetClientData( ei );
 			}
-			
-		if(iHdArray.Append( hd ) != KErrNone )
-		    {
-            delete hd;
-            hd = NULL;
-		    }
+		iHdArray.Append( hd );
         iHarvestEntryArray.Remove( i );
         }
 

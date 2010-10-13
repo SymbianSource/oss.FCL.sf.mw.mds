@@ -27,7 +27,6 @@ public:
 	virtual ~CHarvesterPluginInfo()
 	{
 		delete iPlugin;
-		iPlugin = NULL;
 		iExtensions.ResetAndDestroy();
 		iExtensions.Close();
 		iObjectTypes.ResetAndDestroy();

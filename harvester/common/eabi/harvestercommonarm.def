@@ -86,5 +86,4 @@ EXPORTS
 	_ZN18CHarvesterExifUtilD1Ev @ 85 NONAME
 	_ZN18CHarvesterExifUtilD2Ev @ 86 NONAME
 	_ZN23CHarvesterPluginFactory14PauseHarvesterEi @ 87 NONAME
-	_ZN23CHarvesterPluginFactory13GetObjectDefLEP14CHarvesterDataR6TDes16 @ 88 NONAME
 

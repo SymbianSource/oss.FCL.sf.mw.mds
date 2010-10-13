@@ -74,7 +74,6 @@ CAudioMDParser* CAudioMDParser::NewL( const TBool aAlbumArt )
 CAudioMDParser::~CAudioMDParser()
     {
     delete iMetaDataUtility;
-    iMetaDataUtility = NULL;
     
     iMimeTypeMappings.Close();
     iWantedMetadataFields.Close();
@@ -113,10 +112,6 @@ void CAudioMDParser::ConstructL( const TBool aAlbumArt )
     iWantedMetadataFields.AppendL( EMetaDataDuration );
     iWantedMetadataFields.AppendL( EMetaDataCopyright );
     iWantedMetadataFields.AppendL( EMetaDataDate );
-    iWantedMetadataFields.AppendL( EMetaDataProtected );
-    iWantedMetadataFields.AppendL( EMetaDataSampleRate );
-    iWantedMetadataFields.AppendL( EMetaDataBitRate );
-    iWantedMetadataFields.AppendL( EMetaDataAlbumArtist );
     
     if( aAlbumArt )
         {
@@ -324,26 +319,7 @@ TMetaDataFieldId CAudioMDParser::MapFieldId( TInt aFieldId )
             id = EMetaDataJpeg;
             break;
             }
-        case EAudioMDFieldProtected:
-            {
-            id = EMetaDataProtected;
-            break;
-            }
-        case EAudioMDFieldSampleRate:
-            {
-            id = EMetaDataSampleRate;
-            break;
-            }
-        case EAudioMDFieldBitRate:
-            {
-            id = EMetaDataBitRate;
-            break;
-            }
-        case EAudioMDFieldAlbumArtist:
-            {
-            id = EMetaDataAlbumArtist;
-            break;
-            }
+
         default:
             {
 #ifdef _DEBUG

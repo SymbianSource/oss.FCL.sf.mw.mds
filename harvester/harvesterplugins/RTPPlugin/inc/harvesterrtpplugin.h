@@ -59,8 +59,7 @@ class CHarvesterRtpPluginPropertyDefs : public CBase
 		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-        static CHarvesterRtpPluginPropertyDefs* NewL();
-        void SetByObjectDefL( CMdEObjectDef& aObjectDef) ;
+		static CHarvesterRtpPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
 	};
 
 /**
@@ -226,8 +225,6 @@ private:
      
      /** */
      void HandleObjectPropertiesL( CHarvesterData& aHD, CHarvesterRtpClipDetails& aClipDetails, TBool aIsAdd);
-     
-     void InitPropDefsL( CMdEObjectDef& aObjectDef );
 
 private: // data
 	CHarvesterRtpPluginPropertyDefs* iPropDefs;

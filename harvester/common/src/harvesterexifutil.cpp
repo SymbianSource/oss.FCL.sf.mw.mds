@@ -156,7 +156,6 @@ EXPORT_C TBool CHarvesterExifUtil::IsValidExifData(TPtr8 aPtr)
 		}
 	
 	delete reader;
-	reader = NULL;
 	
 	WRITELOG( "CHarvesterExifUtil::IsValidExifData end" );	
 	OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_ISVALIDEXIFDATA, "CHarvesterExifUtil::IsValidExifData end" );
@@ -433,7 +432,7 @@ EXPORT_C TInt CHarvesterExifUtil::ReadExifDataL( CHarvestData& aHd, CFileData& a
 EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
 		const TDesC8& aDateTime )
     {
-    WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL()" );
+    WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL()" );
     OstTrace0( TRACE_NORMAL, CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL" );    
     
     TDateTime datetime( 0, EJanuary, 0, 0, 0, 0, 0 );
@@ -446,7 +445,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     TInt error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get year" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get year" );
         OstTrace0( TRACE_NORMAL, DUP1_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get year" );
         
         User::Leave( error );
@@ -459,7 +458,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get month" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get month" );
         OstTrace0( TRACE_NORMAL, DUP2_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get month" );
         
         User::Leave( error );
@@ -474,7 +473,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get date" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get date" );
         OstTrace0( TRACE_NORMAL, DUP3_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get date" );
         
         User::Leave( error );
@@ -487,7 +486,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get hours" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get hours" );
         OstTrace0( TRACE_NORMAL, DUP4_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get hours" );
         
         User::Leave( error );
@@ -500,7 +499,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get minutes" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get minutes" );
         OstTrace0( TRACE_NORMAL, DUP5_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get minutes" );
         
         User::Leave( error );
@@ -513,7 +512,7 @@ EXPORT_C TTime CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL(
     error = lex.Val( number );
     if ( error != KErrNone )
         {
-        WRITELOG( "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL() - couldn't get seconds" );
+        WRITELOG( "CHarvesterImagePluginAO::ConvertExifDateTimeToSymbianTimeL() - couldn't get seconds" );
         OstTrace0( TRACE_NORMAL, DUP6_CHARVESTEREXIFUTIL_CONVERTEXIFDATETIMETOSYMBIANTIMEL, "CHarvesterExifUtil::ConvertExifDateTimeToSymbianTimeL - couldn't get seconds" );
         
         User::Leave( error );
@@ -829,9 +828,7 @@ EXPORT_C TInt CHarvesterExifUtil::ComposeExifDataL( CMdEObject& aMdeObject, TPtr
         WRITELOG( "CHarvesterExifUtil::ComposeExifData() - Image doesn't contain EXIF data" );
         modifyExif = CExifModify::NewL( aImagePtr, 
         		CExifModify::ECreate, CExifModify::ENoJpegParsing );
-        CleanupStack::PushL( modifyExif );
         SetExifDefaultsL( aMdeObject, *modifyExif );
-        CleanupStack::Pop( modifyExif );
         exifChanged = ETrue;
         }
     CleanupStack::PushL( modifyExif );

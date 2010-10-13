@@ -28,7 +28,7 @@ struct TScanItem
 {
 	TUint32 iPreinstalled;
 	HBufC* iPath;
-	~TScanItem() { delete iPath; iPath = NULL;}
+	~TScanItem() { delete iPath; }
 };
 // CLASS DECLARATION
 

@@ -46,15 +46,13 @@ CMdEQuery::~CMdEQuery()
   
     // This will destroy the entire conditions tree.
    	delete iConditions;
-   	iConditions = NULL;
-   	
+
     // Destroy all result items this query instance owns.
    	for( TInt i = iResults.Count() - 1; i >=0; i-- )
         {
         if(iResults[i].iOwned)
             {
             delete iResults[i].iItem;
-            iResults[i].iItem = NULL;
             }
         }
 
@@ -79,7 +77,6 @@ CMdEQuery::~CMdEQuery()
     iObservers.Close();
 
    	delete iDistinctResults;
-   	iDistinctResults = NULL;
 	}
 
 
@@ -157,7 +154,6 @@ EXPORT_C void CMdEQuery::FindL(TUint aMaxCount, TUint aNotifyCount)
         if(iResults[i].iOwned)
             {
             delete iResults[i].iItem;
-            iResults[i].iItem = NULL;
             }
         }
 	iResults.Reset();

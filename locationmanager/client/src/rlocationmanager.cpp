@@ -33,31 +33,19 @@ TInt LaunchServer()
     {
     LOG( "RLocationManager::LaunchServer begin" );
 
-    TFindServer findLocServer( KLocServerName );
-    TFullName name;
-
-    TInt result = findLocServer.Next( name );
-    if ( result == KErrNone )
-        {
-        LOG( "StartServer() - Server already running" );
-        
-        // Server already running
-        return KErrNone;
-        }
-    
+    // DLL launch
     RProcess server;
-    result = server.Create( KLocServerFileName, KNullDesC );   
-    if ( result != KErrNone )
+    TInt ret = server.Create( KLocServerFileName, KNullDesC );
+
+    if ( ret != KErrNone )  // Loading failed.
         {
-        LOG1( "CreateServerProcess() - failed to create server process, error: %d", result );
-        return result;
+        return ret;
         }
- 
-    // Process created successfully
-    TRequestStatus stat( KErrNone );
-    server.Rendezvous( stat );
     
-    if ( stat != KRequestPending )
+    TRequestStatus status( KErrNone );
+    server.Rendezvous( status );
+
+    if ( status != KRequestPending )
         {
         LOG( "RLocationManager::LaunchServer Failed" );
         server.Kill( 0 );     // Abort startup.
@@ -66,17 +54,15 @@ TInt LaunchServer()
         {
         server.Resume();    // Logon OK - start the server.
         }
-    
-    User::WaitForRequest( stat ); // wait for start or death
+        
+    User::WaitForRequest( status ); // wait for start or death
     // we can't use the 'exit reason' if the server panicked as this
     // is the panic 'reason' and may be '0' wehich cannot be distinguished
     // from KErrNone
-    result = ( server.ExitType() == EExitPanic ) ? KErrCommsBreak : stat.Int();
+    ret = ( server.ExitType() == EExitPanic ) ? KErrCommsBreak : status.Int();
     server.Close();
-    
     LOG( "RLocationManager::LaunchServer end" );
-    
-    return result;       
+    return ret;    
     }
 
 // --------------------------------------------------------------------------

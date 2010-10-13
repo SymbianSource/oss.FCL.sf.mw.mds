@@ -28,26 +28,7 @@
 ;:"Nokia"
 :"Vendor"
 
-"\EPOC32\RELEASE\ARMV5\UDEB\locationutilityserver.exe" -"!:\sys\bin\locationutilityserver.exe"
-"\EPOC32\RELEASE\ARMV5\UDEB\LocationTrail.dll" -"!:\sys\bin\LocationTrail.dll"
-"\EPOC32\RELEASE\ARMV5\UDEB\locationutility.dll" -"!:\sys\bin\locationutility.dll"
-"\EPOC32\RELEASE\ARMV5\UDEB\Loc.exe" -"!:\sys\bin\Loc.exe"
-
-
-; Geo converter
-"\EPOC32\RELEASE\ARMV5\UDEB\geoconverter.dll" -"!:\sys\bin\geoconverter.dll"
-
-;#include "..\inc\locplatsupport.mmh"
-;#ifdef _LOC_REVERSEGEOCODE
-;MACRO LOC_REVERSEGEOCODE
-
-; Tag creator
-;"\EPOC32\RELEASE\ARMV5\UDEB\tagcreator.dll" -"!:\sys\bin\tagcreator.dll"
-
-; Geo tagger
-;"\EPOC32\RELEASE\ARMV5\UDEB\geotagger.dll" -"!:\sys\bin\geotagger.dll"
-
-;#endif
-
-; End of file
-
+"S:\EPOC32\RELEASE\ARMV5\UDEB\locationutilityserver.exe" -"!:\sys\bin\locationutilityserver.exe"
+"S:\EPOC32\RELEASE\ARMV5\UDEB\LocationTrail.dll" -"!:\sys\bin\LocationTrail.dll"
+"S:\EPOC32\RELEASE\ARMV5\UDEB\locationutility.dll" -"!:\sys\bin\locationutility.dll"
+"S:\EPOC32\RELEASE\ARMV5\UDEB\Loc.exe" -"!:\sys\bin\Loc.exe"

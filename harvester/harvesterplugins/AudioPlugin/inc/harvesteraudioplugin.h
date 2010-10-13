@@ -56,25 +56,20 @@ class CHarvesterAudioPluginPropertyDefs : public CBase
 		CMdEPropertyDef* iDatePropertyDef;
 		CMdEPropertyDef* iDrmPropertyDef;
 		CMdEPropertyDef* iDefaultFolderPropertyDef;
-		CMdEPropertyDef* iTrackPropertyDef;
-		CMdEPropertyDef* iBitratePropertyDef;
 
 		// Audio property definitions
 		CMdEPropertyDef* iAlbumPropertyDef;
 		CMdEPropertyDef* iComposerPropertyDef;		
 		CMdEPropertyDef* iOriginalArtistPropertyDef;
-		CMdEPropertyDef* iSampleRatePropertyDef;
-		CMdEPropertyDef* iAlbumArtistPropertyDef;
-		
+		CMdEPropertyDef* iTrackPropertyDef;
 
 	private:
 		CHarvesterAudioPluginPropertyDefs();
 	
-		void ConstructL( CMdEObjectDef& aObjectDef );
+		void ConstructL(CMdEObjectDef& aObjectDef);
 
 	public:	
-		static CHarvesterAudioPluginPropertyDefs* NewL();
-		void SetByObjectDefL( CMdEObjectDef& aObjectDef );
+		static CHarvesterAudioPluginPropertyDefs* NewL(CMdEObjectDef& aObjectDef);
 	};
 
 class CHarvesterAudioPlugin : public CHarvesterPlugin,
@@ -152,8 +147,6 @@ class CHarvesterAudioPlugin : public CHarvesterPlugin,
          * file (eg. mp3).
 		 */
         void GetMusicPropertiesL( CHarvesterData* aHD, TBool aIsAdd, TPtrC aMimeType );
-
-        void InitPropDefsL( CMdEObjectDef& aObjectDef );
 
 	private:
 		CAudioMDParser* iAudioParser;

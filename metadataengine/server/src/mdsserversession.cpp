@@ -601,7 +601,7 @@ void CMdSServerSession::FindL( const RMessage2& aMsg )
 
     CleanupStack::Pop( find );
     
-    iFindEngines.AppendL( find );
+    iFindEngines.Append( find );
     }
 
 // ---------------------------------------------------------------------------
@@ -641,7 +641,7 @@ void CMdSServerSession::FindAsyncL( const RMessage2& aMsg )
 
     CleanupStack::Pop( find );
     
-    iFindEngines.AppendL( find );
+    iFindEngines.Append( find );
     }
 
 // ---------------------------------------------------------------------------
@@ -678,7 +678,6 @@ void CMdSServerSession::FindContinueAsyncL( const RMessage2& aMsg )
     else if( findEngine->IsComplete() )
     	{
     	delete findEngine;
-    	findEngine = NULL;
 
     	iFindEngines.Remove( feIndex );
     	
@@ -709,7 +708,6 @@ void CMdSServerSession::FindCancel( const RMessage2& aMsg, TInt aError )
     		findEngine->Cancel( aError );
 
     		delete findEngine;
-    		findEngine = NULL;
 
     		iFindEngines.Remove( i );
 
@@ -866,7 +864,6 @@ void CMdSServerSession::GetDataL( const RMessage2& aMsg )
             if ( serverRequest != EAsyncFindSetReady )
                 {
                 delete findEngine;
-                findEngine = NULL;
                 
                 iFindEngines.Remove( findEngineIndex );
                 iFindEngines.Compress();

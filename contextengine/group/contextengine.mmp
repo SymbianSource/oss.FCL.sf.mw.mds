@@ -47,7 +47,7 @@ LIBRARY	  	  harvestercommon.lib
 
 #if defined(WINS)
 deffile ../bwincw/contextenginewinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
 deffile ../eabi/contextenginearm.def
 #endif
 nostrictdef

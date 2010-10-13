@@ -16,7 +16,6 @@
 
 #include <collate.h>
 #include <mdeobject.h>
-#include <pathinfo.h>
 
 #include "fileeventhandlerao.h"
 #include "harvesterlog.h"
@@ -84,46 +83,12 @@ void CFileEventHandlerAO::ConstructL( MMonitorPluginObserver& aObserver,
     User::LeaveIfError( error );
     
     TRAP( error, ReadCacheSizeFromCenrepL() );
-	
     if ( error == KErrNone )
     	{
     	iQueue.Reserve( iCacheSize );
     	}
     
     iEventArray = new (ELeave) CArrayFixSeg< TMdsFSPStatus >( KMaxEventsGranularity );
-    
-    TFileName phoneRoot = PathInfo::PhoneMemoryRootPath();
-    TFileName mmcRoot = PathInfo::MemoryCardRootPath();
-    
-    TFileName images = PathInfo::ImagesPath();
-    
-    TFileName phoneImagePath( phoneRoot );
-    phoneImagePath.Append( images );
-    iPhoneImagesPath = phoneImagePath.AllocL();
-
-    TFileName mmcImagePath( mmcRoot );
-    mmcImagePath.Append( images );
-    iMmcImagesPath = mmcImagePath.Right( mmcImagePath.Length() - 1 ).AllocL();
-    
-    TFileName videos = PathInfo::VideosPath();
-    
-    TFileName phoneVideoPath( phoneRoot );
-    phoneVideoPath.Append( videos );
-    iPhoneVideosPath = phoneVideoPath.AllocL();
-
-    TFileName mmcVideoPath( mmcRoot );
-    mmcVideoPath.Append( videos );
-    iMmcVideosPath = mmcVideoPath.Right( mmcVideoPath.Length() - 1 ).AllocL();
-    
-    TFileName sounds = PathInfo::SoundsPath();
-    
-    TFileName phoneSoundPath( phoneRoot );
-    phoneSoundPath.Append( sounds );
-    iPhoneSoundsPath = phoneSoundPath.AllocL();
-
-    TFileName mmcSoundPath( mmcRoot );
-    mmcSoundPath.Append( sounds );
-    iMmcSoundsPath = mmcSoundPath.Right( mmcSoundPath.Length() - 1 ).AllocL();
     }
 
 // ---------------------------------------------------------------------------
@@ -139,37 +104,16 @@ CFileEventHandlerAO::~CFileEventHandlerAO()
     iFs.Close();
     
     delete iMapper;
-    iMapper = NULL;
-    
     delete iMoveTimer;
-    iMoveTimer = NULL;
-    
     delete iFolderRenamer;
-    iFolderRenamer = NULL;
     
     delete iEventArray;
-    iEventArray = NULL;
     
     iQueue.ResetAndDestroy();
     iQueue.Close();
 	
     iUriArray.ResetAndDestroy();
     iUriArray.Close();
-    
-    delete iPhoneImagesPath;
-	iPhoneImagesPath = NULL;
-    delete iMmcImagesPath;
-	iMmcImagesPath = NULL;
-    
-    delete iPhoneVideosPath;
-	iPhoneVideosPath = NULL;
-    delete iMmcVideosPath;
-	iMmcVideosPath = NULL;
-    
-    delete iPhoneSoundsPath;
-	iPhoneSoundsPath = NULL;
-    delete iMmcSoundsPath;
-	iMmcSoundsPath = NULL;
     }
 
 
@@ -202,7 +146,6 @@ void CFileEventHandlerAO::RunL()
     			ResetEvent();
     			item->GetAsFspStatus(iEvent);
     			delete item;
-    			item = NULL;
     			
     			if( iEvent.iFileEventType == EMdsFileDeleted )
     			    {
@@ -310,13 +253,6 @@ void CFileEventHandlerAO::HandleNotificationL(TMdsFSPStatus &aEvent)
             }
         }
 
-    // If internal origin value is used for evaluation, set it default value
-    if( origin == KOriginIgnoreAttribsChanged ||
-        origin == KOriginFastHarvest )
-        {
-        origin = MdeConstants::Object::EOther;
-        }
-    
     // ignore created file event if extension is not supported by any harverter plugin
     if( EMdsFileCreated == status.iFileEventType && 
     		status.iFileName.Length() > 0 )
@@ -514,7 +450,6 @@ void CFileEventHandlerAO::RenameToMDEL( const TDesC& aOldUrl,
         		newObject->Id() );
         if ( removedId != KNoId )
         	{
-            SetTitleL( oldObject , aNewUrl );
 	        oldObject->SetUriL( aNewUrl );
 	        TUint32 mediaId = FSUtil::MediaID( iFs, aNewUrl );
 	        oldObject->SetMediaId( mediaId );
@@ -528,7 +463,6 @@ void CFileEventHandlerAO::RenameToMDEL( const TDesC& aOldUrl,
 
     if ( oldObject )
         {
-        CheckDefaultFolderL( oldObject );
         SetModifiedTimeL( oldObject, aNewUrl );
         TOrigin origin = OriginFromMdEObjectL( *oldObject );
         if( origin == MdeConstants::Object::EOther)
@@ -706,10 +640,8 @@ void CFileEventHandlerAO::ReplaceL( const TDesC& aOldUrl, const TDesC& aNewUrl,
                     CleanupStack::PushL( oldObject );
                     SetTitleL( oldObject , aNewUrl );
         	        oldObject->SetUriL( aNewUrl );
-        	        CheckDefaultFolderL( oldObject );
         	        TUint32 mediaId = FSUtil::MediaID( iFs, aNewUrl );
         	        oldObject->SetMediaId( mediaId );
-        	        SetModifiedTimeL( oldObject, aNewUrl );
         	        TOrigin origin = OriginFromMdEObjectL( *oldObject );
         	        if( origin == MdeConstants::Object::EOther)
         	        	{
@@ -730,7 +662,6 @@ void CFileEventHandlerAO::ReplaceL( const TDesC& aOldUrl, const TDesC& aNewUrl,
                 CleanupStack::PushL( oldObject );
                 SetTitleL( oldObject , aNewUrl );
     	        oldObject->SetUriL( aNewUrl );
-    	        CheckDefaultFolderL( oldObject );
     	        TUint32 mediaId = FSUtil::MediaID( iFs, aNewUrl );
     	        oldObject->SetMediaId( mediaId );
     	        SetModifiedTimeL( oldObject, aNewUrl );
@@ -847,7 +778,7 @@ void CFileEventHandlerAO::MultiDeleteFromMDEL( const RPointerArray<TDesC>& aUrls
 //
 void CFileEventHandlerAO::FormatL( TUint32 aOldMediaId, TBool aSubClose )
 	{
-	WRITELOG2( "CFileEventHandlerAO::FormatL - old media ID %d subclose %d", 
+	WRITELOG2( "CFileEventHandlerAO::FormatL - old media ID %u subclose %d", 
 			aOldMediaId, aSubClose );
 
 	if ( aOldMediaId )
@@ -1048,63 +979,6 @@ void CFileEventHandlerAO::SetModifiedTimeL( CMdEObject* aOldObject, const TDesC&
     else
         {
         aOldObject->AddTimePropertyL( *iTimePropertyDef , time );
-        }
-    }
-
-//---------------------------------------------------------------------------
-// CFileEventHandlerAO::CheckDefaultFolderL()
-// ---------------------------------------------------------------------------
-//   
-void CFileEventHandlerAO::CheckDefaultFolderL( CMdEObject* aOldObject )
-    {
-    if( !iDefaultFolderPropertyDef )
-        {
-        iDefaultFolderPropertyDef = &aOldObject->Def().GetPropertyDefL( 
-                       MdeConstants::Object::KInDefaultFolder );
-        }
-    
-    CMdEProperty* folderProp = NULL;
-    aOldObject->Property( *iDefaultFolderPropertyDef, folderProp );
-    
-    TBool inDefaultFolder( EFalse );
-    TPtrC objectDefName( aOldObject->Def().Name() );
-    if( objectDefName == MdeConstants::Image::KImageObject )
-        {
-        const TDesC& uri = aOldObject->Uri();
-        if( uri.FindF( iMmcImagesPath->Des()) != KErrNotFound ||
-            uri.FindF( iPhoneImagesPath->Des()) != KErrNotFound ||
-            uri.FindF( KDCIMFolder ) != KErrNotFound )
-            {
-            inDefaultFolder = ETrue; 
-            }    
-        }
-    else if( objectDefName == MdeConstants::Video::KVideoObject )
-        {
-        const TDesC& uri = aOldObject->Uri();
-        if( uri.FindF( iMmcVideosPath->Des()) != KErrNotFound ||
-            uri.FindF( iPhoneVideosPath->Des()) != KErrNotFound ||
-            uri.FindF( KDCIMFolder ) != KErrNotFound )
-            {
-            inDefaultFolder = ETrue; 
-            }    
-        }
-    else if( objectDefName == MdeConstants::Audio::KAudioObject )
-        {
-        const TDesC& uri = aOldObject->Uri();
-        if( uri.FindF( iMmcSoundsPath->Des()) != KErrNotFound ||
-            uri.FindF( iPhoneSoundsPath->Des()) != KErrNotFound )
-            {
-            inDefaultFolder = ETrue;
-            } 
-        }
-
-    if( folderProp )
-        {
-        folderProp->SetBoolValueL( inDefaultFolder );
-        }
-    else
-        {
-        aOldObject->AddBoolPropertyL( *iDefaultFolderPropertyDef, inDefaultFolder );
         }
     }
 

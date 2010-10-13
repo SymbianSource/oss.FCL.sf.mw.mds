@@ -19,6 +19,7 @@
 #include <caf/caf.h>
 #include <driveinfo.h>
 
+#include <rlocationobjectmanipulator.h>
 #include <placeholderdata.h>
 #include <harvesterclientdata.h>
 #include <pathinfo.h>
@@ -52,7 +53,6 @@ const TInt32 KFileMonitorPluginUid = 0x20007186;  // file monitor plugin impleme
 
 const TInt KPlaceholderQueueSize = 99;
 const TInt KContainerPlaceholderQueueSize = 10;
-const TInt KReadyPlaceholderQueueSize = 10;
 const TInt KObjectDefStrSize = 20;
 
 _LIT( KTAGDaemonName, "ThumbAGDaemon" );
@@ -61,7 +61,7 @@ _LIT( KTAGDaemonExe, "thumbagdaemon.exe" );
 _LIT(KVideo, "Video");
 _LIT(KInUse, "InUse");
 
-_LIT(KUndefined, " ");
+_LIT(KUndefinedMime, " ");
 
 _LIT( KExtensionMp4,   "mp4" );
 _LIT( KExtensionMpg4,  "mpg4" );
@@ -76,34 +76,32 @@ CHarvesterAoPropertyDefs::CHarvesterAoPropertyDefs() : CBase()
 
 void CHarvesterAoPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
-    SetByObjectDefL( aObjectDef );
+	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
+
+	// Common property definitions
+	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
+	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
+	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
+	iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
+	iOriginPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KOriginProperty );
+	iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
+	iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
+	
+	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
+	iPreinstalledPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KPreinstalledProperty );
 	}
 
-CHarvesterAoPropertyDefs* CHarvesterAoPropertyDefs::NewL()
-    {
-    CHarvesterAoPropertyDefs* self = 
-        new (ELeave) CHarvesterAoPropertyDefs();
-    return self;
-    }
+CHarvesterAoPropertyDefs* CHarvesterAoPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterAoPropertyDefs* self = 
+		new (ELeave) CHarvesterAoPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
+	}
 
-void CHarvesterAoPropertyDefs::SetByObjectDefL(CMdEObjectDef& aObjectDef)
-    {
-    CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
-
-    // Common property definitions
-    CMdEObjectDef& objectDef = nsDef.GetObjectDefL( MdeConstants::Object::KBaseObject );
-    iCreationDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KCreationDateProperty );
-    iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KLastModifiedDateProperty );
-    iSizePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KSizeProperty );
-    iOriginPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KOriginProperty );
-    iItemTypePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KItemTypeProperty );
-    iTitlePropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KTitleProperty );
-    iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( MdeConstants::Object::KInDefaultFolder );
-    
-    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MdeConstants::MediaObject::KMediaObject );
-    iPreinstalledPropertyDef = &mediaDef.GetPropertyDefL( MdeConstants::MediaObject::KPreinstalledProperty );
-    }
-	
 // ---------------------------------------------------------------------------
 // NewLC
 // ---------------------------------------------------------------------------
@@ -155,9 +153,7 @@ CHarvesterAO::CHarvesterAO() : CActive( KHarvesterPriorityHarvestingPlugin )
     iHarvestingPlaceholders = EFalse;
     
     iUnmountDetected = EFalse;
-    iUnmountHandlingOngoing = EFalse;
     iPriorityInterruptDetected = EFalse;
-    iLocManipulatorConnected = EFalse;
     }
      
 // ---------------------------------------------------------------------------
@@ -172,8 +168,6 @@ CHarvesterAO::~CHarvesterAO()
     Cancel();
 
 	iFs.Close();
-	
-	iLocManipulator.Close();
 	
 	if (iCtxEngine)
 		{
@@ -192,18 +186,14 @@ CHarvesterAO::~CHarvesterAO()
     DeleteComposers();
 
     delete iDiskFullNotifier;
-    iDiskFullNotifier = NULL;
 	delete iBackupSubscriber;
-	iBackupSubscriber = NULL;
     
     if (iBlacklist)
 		{
 		iBlacklist->CloseDatabase();
 		delete iBlacklist;
-		iBlacklist = NULL;
 		}
 	delete iReHarvester;
-	iReHarvester = NULL;
 
     if ( iHarvestFileMessages.Count() > 0 )
         {
@@ -232,43 +222,26 @@ CHarvesterAO::~CHarvesterAO()
     iTempReadyPHArray.Close();
     
 	delete iHarvesterOomAO;
-	iHarvesterOomAO = NULL;
     delete iRestoreWatcher;
-    iRestoreWatcher = NULL;
 	delete iOnDemandAO;
-	iOnDemandAO = NULL;
 	delete iMdEHarvesterSession;
-	iMdEHarvesterSession = NULL;
 	delete iMdESession;
-	iMdESession = NULL;
 	delete iQueue;
-	iQueue = NULL;
 	delete iHarvesterPluginFactory;
-	iHarvesterPluginFactory = NULL;
 	delete iMdeObjectHandler;
-	iMdeObjectHandler = NULL;
 	delete iUnmountHandlerAO;
-	iUnmountHandlerAO = NULL;
 	
 	delete iPropDefs;
-	iPropDefs = NULL;
 	delete iCameraExtensionArray;
-	iCameraExtensionArray = NULL;
 	
     delete iPhoneImagesPath;
-    iPhoneImagesPath = NULL;
     delete iMmcImagesPath;
-    iMmcImagesPath = NULL;
     
     delete iPhoneVideosPath;
-    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
-    iMmcVideosPath = NULL;
     
     delete iPhoneSoundsPath;
-    iPhoneSoundsPath = NULL;
     delete iMmcSoundsPath;
-    iMmcSoundsPath = NULL;
 	
 	RMediaIdUtil::ReleaseInstance();
     
@@ -320,8 +293,6 @@ void CHarvesterAO::ConstructL()
     // Reset harvesting status for clients in case blacklisted file was handled
     iHarvesterPluginFactory->SendHarvestingStatusEventL( EFalse );
     
-    iPropDefs = CHarvesterAoPropertyDefs::NewL();
-	
     iCameraExtensionArray = new ( ELeave ) CDesCArraySeg( 6 );
     iCameraExtensionArray->InsertIsqL( KExtensionMp4 );
     iCameraExtensionArray->InsertIsqL( KExtensionMpg4 );
@@ -383,7 +354,8 @@ void CHarvesterAO::LoadMonitorPluginsL()
     CleanupStack::PushL( cleanupItem );
     
     CMonitorPlugin::ListImplementationsL( infoArray );
-    const TInt count( infoArray.Count() );
+    TInt count( 0 );
+    count = infoArray.Count();
     CMonitorPlugin* plugin = NULL;
     
     for ( TInt i = 0; i < count; i++ )
@@ -438,6 +410,7 @@ void CHarvesterAO::StartMonitoring()
     {
     WRITELOG( "CHarvesterAO::StartMonitoring()" );
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_STARTMONITORING, "CHarvesterAO::StartMonitoring" );    
+    
     const TInt count( iMonitorPluginArray.Count() );  
     
     for ( TInt i = 0; i < count; i++ )
@@ -456,8 +429,10 @@ void CHarvesterAO::StopMonitoring()
     WRITELOG( "CHarvesterAO::StopMonitoring()" );
     
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_STOPMONITORING, "CHarvesterAO::StopMonitoring" );
+
+    const TInt count( iMonitorPluginArray.Count() );
     
-    for( TInt i = iMonitorPluginArray.Count() - 1; i >=0; i-- )
+    for ( TInt i = 0; i < count; i++ )
         {
         iMonitorPluginArray[i]->StopMonitoring();
         }
@@ -472,11 +447,12 @@ void CHarvesterAO::PauseMonitoring()
     WRITELOG( "CHarvesterAO::PauseMonitoring()" );
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_PAUSEMONITORING, "CHarvesterAO::PauseMonitoring" );
     
-    for( TInt i = iMonitorPluginArray.Count() - 1; i >=0; i-- )
+    const TInt count( iMonitorPluginArray.Count() );
+    
+    for ( TInt i = 0; i<count; i++ )
         {
         iMonitorPluginArray[i]->PauseMonitoring();
         }
-    
     OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERAO_PAUSEMONITORING, "CHarvesterAO::PauseMonitoring - end" );    
     WRITELOG( "CHarvesterAO::PauseMonitoring() - end" );
     }
@@ -510,7 +486,6 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
 	OstTrace1( TRACE_NORMAL, CHARVESTERAO_HANDLEUNMOUNT, "CHarvesterAO::HandleUnmount;aMediaId=%d", aMediaId );
     
     iUnmountDetected = ETrue;
-    iUnmountHandlingOngoing = ETrue;
     
     if( !iServerPaused )
         {
@@ -735,10 +710,12 @@ void CHarvesterAO::HandleUnmount( TUint32 aMediaId )
     iMediaIdUtil->RemoveMediaId( aMediaId );
 	
 	// resume harvesting from last state
-    iUnmountHandlingOngoing = EFalse;
-    // resume monitoring
-    ResumeMonitoring();
-    TRAP_IGNORE( ResumeHarvesterL() );    
+    if( !iRamFull && !iDiskFull )
+        {
+        // resume monitoring
+        ResumeMonitoring();
+        TRAP_IGNORE( ResumeHarvesterL() );    
+        }
 	}
 
 // ---------------------------------------------------------------------------
@@ -849,35 +826,26 @@ void CHarvesterAO::ReadItemFromQueueL()
             {
             SetPriority( KHarvesterCustomImportantPriority );
             }
-    	while( hd &&
-			   iPHArray.Count() < KPlaceholderQueueSize &&
-			   hd->ObjectType() == EPlaceholder )
+    	while( hd != NULL &&
+				iPHArray.Count() < KPlaceholderQueueSize &&
+				hd->ObjectType() == EPlaceholder )
     		{
-        	if(iPHArray.Append( hd ) != KErrNone)
+        	iPHArray.Append( hd );
+        	if( hd->Origin() == MdeConstants::Object::ECamera || 
+        	    hd->ObjectType() == EFastHarvest  )
         	    {
-        	    HarvestCompleted( hd->ClientId(), hd->Uri(), KErrNoMemory );
-        	    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                delete hd;
-                hd = NULL;
+        	    if( !iFastHarvestNeeded )
+        	        {
+                    iFastHarvestNeeded = ETrue;
+                    // Fast harvest event must be handled even if MMC handling would be ongoing
+                    SetPriority( KHarvesterPriorityMonitorPlugin );
+        	        }
+        	    break;
         	    }
-        	else
+        	else if( iFastHarvestNeeded )
         	    {
-                if( hd->Origin() == MdeConstants::Object::ECamera || 
-                    hd->ObjectType() == EFastHarvest  )
-                    {
-                    if( !iFastHarvestNeeded )
-                        {
-                        iFastHarvestNeeded = ETrue;
-                        // Fast harvest event must be handled even if MMC handling would be ongoing
-                        SetPriority( KHarvesterPriorityMonitorPlugin );
-                        }
-                    break;
-                    }
-                else if( iFastHarvestNeeded )
-                    {
-                    iFastHarvestNeeded = EFalse;
-                    SetPriority( KHarvesterCustomImportantPriority );
-        	    	}
+        	    iFastHarvestNeeded = EFalse;
+        	    SetPriority( KHarvesterCustomImportantPriority );
         	    }
         	hd = iQueue->GetNextItem();
     		}
@@ -886,14 +854,11 @@ void CHarvesterAO::ReadItemFromQueueL()
     	    {
             TRAPD( err, HandlePlaceholdersL( ETrue ) );
 
-            // make sure that when HandlePlaceholdersL leaves unexpectedly, iPHArray is cleared
+            // make sure that when HandlePlaceholdersL leaves, iPHArray is cleared
             if ( err != KErrNone )
                 {
-                if( err != KErrDiskFull )
-                    {
-                    iPHArray.ResetAndDestroy();
-                    iTempReadyPHArray.ResetAndDestroy();
-                    }
+                iPHArray.ResetAndDestroy();
+                iTempReadyPHArray.ResetAndDestroy();
                 User::Leave( err );
                 }
             
@@ -917,21 +882,16 @@ void CHarvesterAO::ReadItemFromQueueL()
     		{
 	    	if( hd->ObjectType() == EPlaceholder )
 	    		{
-	        	if( iPHArray.Append( hd ) != KErrNone )
-	        	    {
-	        	    HarvestCompleted( hd->ClientId(), hd->Uri(), KErrNoMemory ); 
-	        	    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                    delete hd;
-                    hd = NULL;
-	        	    }
+	        	iPHArray.Append( hd );
 	    		}
 	    	else
 	    		{
-                if( iReadyPHArray.Append( hd ) != KErrNone)
-                    {
-                    delete hd;
-                    hd = NULL;
-                    }
+	    		CheckFileExtensionAndHarvestL( hd );
+	    		if( iUnmountDetected )
+	    		    {
+	    		    iQueue->Append( hd );
+	    		    return;
+	    		    }
 	    		}
     		}
 			
@@ -939,14 +899,11 @@ void CHarvesterAO::ReadItemFromQueueL()
     		{
 	    	TRAPD( err, HandlePlaceholdersL( ETrue ) );
 
-	    	// make sure that when HandlePlaceholdersL leaves unexpectedly, iPHArray is cleared
+	    	// make sure that when HandlePlaceholdersL leaves, iPHArray is cleared
 	    	if ( err != KErrNone )
 	    		{
-	    	    if( err != KErrDiskFull )
-	    	        {
-	    	        iPHArray.ResetAndDestroy();
-	    	        iTempReadyPHArray.ResetAndDestroy();
-	    	        }
+	    		iPHArray.ResetAndDestroy();
+	    		iTempReadyPHArray.ResetAndDestroy();
 	    		User::Leave( err );
 	    		}
     		}
@@ -959,7 +916,7 @@ void CHarvesterAO::ReadItemFromQueueL()
             }
         iHarvestingPlaceholders = EFalse;
         CheckFileExtensionAndHarvestL( hd );
-        if( iUnmountDetected && hd )
+        if( iUnmountDetected )
             {
             iQueue->Append( hd );
             }
@@ -980,36 +937,24 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 
 	TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
 	
-	CMdENamespaceDef& defNS = iMdESession->GetDefaultNamespaceDefL();
-	
 	TInt endindex( iPHArray.Count() );
 	for( TInt i = 0; i < endindex; i++ )
 		{
 		CHarvesterData* hd = iPHArray[i];
 		
-		if( aCheck && 
-		    hd->Origin() != MdeConstants::Object::ECamera &&
-		    iHarvesterPluginFactory->IsContainerFileL( hd->Uri() ) )
+		if( aCheck && iHarvesterPluginFactory->IsContainerFileL( hd->Uri() ) )
 			{
-			if( iContainerPHArray.Append( hd ) != KErrNone )
-			    {
-			    HarvestCompleted( hd->ClientId(), hd->Uri(), KErrNoMemory );
-			    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                delete hd;
-                hd = NULL;
-			    }
-
+			iContainerPHArray.Append( hd );
 			iPHArray.Remove( i );
-			i--;
-			endindex--;
+            i--;
+            endindex--;
 			continue;
 			}
-		
 		TBuf<KObjectDefStrSize> objDefStr;
 		
 		if( !CheckForCameraItem( hd, objDefStr ) )
 		    {
-		    iHarvesterPluginFactory->GetObjectDefL( hd, objDefStr );
+		    iHarvesterPluginFactory->GetObjectDefL( *hd, objDefStr );
 		    }
 		
 		// GetObjectDef can cause context switch, and if unmount happens when this execution is 
@@ -1020,15 +965,8 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		    WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - Unmount detected during execution!" );
 		    for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
 		        {
-		        CHarvesterData* tempHd = iTempReadyPHArray[y];
-				
-		        if(iPHArray.Insert( tempHd, 0 ) != KErrNone)
-		            {
-		            HarvestCompleted( tempHd->ClientId(), tempHd->Uri(), KErrNoMemory );
-		            iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                    delete tempHd;
-                    tempHd = NULL;
-		            }
+		        CHarvesterData* hd = iTempReadyPHArray[y];
+		        iPHArray.Insert( hd, 0 );
 		        }
 		    iTempReadyPHArray.Reset();
 		    CleanupStack::PopAndDestroy( &mdeObjectArray );
@@ -1043,69 +981,26 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
             const TInt currentPHArrayCount( iPHArray.Count() );
             for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
                 {
-                CHarvesterData* tempHd = iTempReadyPHArray[y];
-                if(iPHArray.Insert( tempHd, 0 ) != KErrNone)
+                CHarvesterData* hd = iTempReadyPHArray[y];
+                if( currentPHArrayCount )
                     {
-                    HarvestCompleted( tempHd->ClientId(), tempHd->Uri(), KErrNoMemory );
-                    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                    delete tempHd;
-                    tempHd = NULL;
+                    // Leave the first item in the array as it is the priority item
+                    iPHArray.Insert( hd, 1 );
+                    }
+                else
+                    {
+                    iPHArray.Insert( hd, 0 );
                     }
                 }
             iTempReadyPHArray.Reset();
             CleanupStack::PopAndDestroy( &mdeObjectArray );
             return;		
 		    }
-	    // Check if disk is full
-	    // If disk is detected to be full, no items can be added to MDS db, thus abort the run, and start over 
-		// when disk space is available to make sure the arrays are valid.
-		else if( iDiskFull )
-		    {
-            WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - No disk space available!" );
-            for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
-                {
-                CHarvesterData* tempHd = iTempReadyPHArray[y];
-            
-                if(iPHArray.Insert( tempHd, 0 ) != KErrNone)
-                    {
-                    HarvestCompleted( tempHd->ClientId(), tempHd->Uri(), KErrNoMemory );
-                    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                    delete tempHd;
-                    tempHd = NULL;
-                    }
-                }
-            iTempReadyPHArray.Reset();
-            CleanupStack::PopAndDestroy( &mdeObjectArray );
-            User::Leave( KErrDiskFull );
-		    }
 		
 		if( objDefStr.Length() == 0 ||
 		    ( objDefStr == KInUse ) )
 			{
-#ifdef _DEBUG
-		    if( objDefStr.Length() == 0 )
-		        {
-		        WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - no objectDef failing harvesting" );
-		        }
-		    else
-		        {
-		        WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - in use, failing harvesting" );
-		        }
-		    WRITELOG1( "CHarvesterAO::HandlePlaceholdersL() - harvesting failed, uri: %S", &(hd->Uri()) );
-#endif
-		    // If object has not been created in the device so that monitors would have
-		    // picked up creation event, and the file is in use, subclose event will
-		    // not trigger the file to be harvester when closed, thus it needs to be moved 
-		    // to reharvesting queue
-		    if( objDefStr == KInUse &&
-		        !hd->TakeSnapshot() )
-		        {
-		        iPHArray.Remove( i );
-		        i--;
-		        endindex--;
-		        iReHarvester->AddItem( hd );
-		        continue;
-		        }
+		    WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - no objectDef or in use, failing harvesting" );
 			const TInt error( KErrUnknown );
             // notify observer, notification is needed even if file is not supported
             HarvestCompleted( hd->ClientId(), hd->Uri(), error );
@@ -1118,12 +1013,10 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 			continue;
 			}
 
+		CMdENamespaceDef& defNS = iMdESession->GetDefaultNamespaceDefL();
 		CMdEObjectDef& mdeObjectDef = defNS.GetObjectDefL( objDefStr );
 
-		HBufC* hdUri = hd->Uri().AllocL();
-		CleanupStack::PushL( hdUri );
-		CMdEObject* mdeObject = iMdESession->NewObjectL( mdeObjectDef, *hdUri );
-		CleanupStack::PopAndDestroy( hdUri );
+		CMdEObject* mdeObject = iMdESession->NewObjectL( mdeObjectDef, hd->Uri() );
 		CleanupStack::PushL( mdeObject );
 		
 		CPlaceholderData* phData = NULL;
@@ -1192,10 +1085,10 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	    // set placeholder
 	    mdeObject->SetPlaceholder( ETrue );
 	    
-	    if( !iPropDefs->iCreationDatePropertyDef )
-	        {
-            iPropDefs->SetByObjectDefL( defNS.GetObjectDefL( MdeConstants::Object::KBaseObject ) );
-	        }
+	    if( !iPropDefs )
+	    	{
+	    	iPropDefs = CHarvesterAoPropertyDefs::NewL( defNS.GetObjectDefL( MdeConstants::Object::KBaseObject ) );
+	    	}
 
 	    // set file size
     	mdeObject->AddUint32PropertyL( *iPropDefs->iSizePropertyDef, phData->FileSize() );
@@ -1218,7 +1111,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
             }
         else
             {
-            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KUndefined );
+            mdeObject->AddTextPropertyL( *iPropDefs->iItemTypePropertyDef, KUndefinedMime );
             }
 		
         if( hd->Origin() == MdeConstants::Object::ECamera )
@@ -1240,7 +1133,7 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	        }
 	    else
 	        {
-	        mdeObject->AddTextPropertyL( *iPropDefs->iTitlePropertyDef, KUndefined );
+	        mdeObject->AddTextPropertyL( *iPropDefs->iTitlePropertyDef, KNullDesC );
 	        }
 	    
     	CPlaceholderData* ph = NULL;
@@ -1284,16 +1177,19 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 	    
 	    CleanupStack::Pop( mdeObject );
 		
-	    if(iTempReadyPHArray.Append( hd ) != KErrNone)
-	        {
-	        HarvestCompleted( hd->ClientId(), hd->Uri(), KErrNoMemory );
-            delete hd;
-            hd = NULL;
-	        }
+	    iTempReadyPHArray.Append( hd );
 		iPHArray.Remove( i );
         i--;
         endindex--;
 		}
+	
+	const TInt tempArrayCount( iTempReadyPHArray.Count() );
+	for( TInt i( 0 ); i < tempArrayCount; i++ )
+	    {
+	    CHarvesterData* hd = iTempReadyPHArray[i];
+	    iReadyPHArray.Append( hd );
+	    }
+	iTempReadyPHArray.Reset();
 	
 	const TInt objectCount = mdeObjectArray.Count();  
 	
@@ -1301,51 +1197,13 @@ void CHarvesterAO::HandlePlaceholdersL( TBool aCheck )
 		{
 		// add object to mde
 		iMdEHarvesterSession->AutoLockL( mdeObjectArray );
-		TInt addError( KErrNone );
-		TRAPD( addFailure, addError = iMdESession->AddObjectsL( mdeObjectArray ) );
-		if( addFailure == KErrDiskFull )
-		    {
-            WRITELOG( "CHarvesterAO::HandlePlaceholdersL() - No disk space available!" );
-            for( TInt y( iTempReadyPHArray.Count() -1 ); y >=0; y-- )
-                {
-                CHarvesterData* tempHd = iTempReadyPHArray[y];
-        
-                if(iPHArray.Insert( tempHd, 0 ) != KErrNone)
-                    {
-                    HarvestCompleted( tempHd->ClientId(), tempHd->Uri(), KErrNoMemory );
-                    iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 );
-                    delete tempHd;
-                    tempHd = NULL;
-                    }
-                }
-            iTempReadyPHArray.Reset();
-            CleanupStack::PopAndDestroy( &mdeObjectArray );
-            User::Leave( KErrDiskFull );		
-		    }
-		else if( addFailure != KErrNone )
-		    {
-		    User::Leave( addFailure );      
-		    }
-		
+		const TInt addError( iMdESession->AddObjectsL( mdeObjectArray ) );
 		if( addError != KErrNone )
 		    {
 		    // If some error occures, retry
 		    iMdESession->AddObjectsL( mdeObjectArray );
 		    }
 
-	    const TInt tempArrayCount( iTempReadyPHArray.Count() );
-	    for( TInt i( 0 ); i < tempArrayCount; i++ )
-	        {
-	        CHarvesterData* tempHd = iTempReadyPHArray[i];
-            if(iReadyPHArray.Append( tempHd ) != KErrNone)
-                 {
-                 HarvestCompleted( tempHd->ClientId(), tempHd->Uri(), KErrNoMemory );
-                 delete tempHd;
-                 tempHd = NULL;
-                 }
-	        }
-	    iTempReadyPHArray.Reset();
-		
 	    iHarvesterEventManager->IncreaseItemCount( EHEObserverTypePlaceholder, 
 		        objectCount );
 		iHarvesterEventManager->SendEventL( EHEObserverTypePlaceholder, EHEStateStarted, 
@@ -1381,17 +1239,17 @@ void CHarvesterAO::CheckFileExtensionAndHarvestL( CHarvesterData* aHD )
     const TDesC& uri = aHD->Uri();
     TBool objectExisted = ETrue;
     
-    if( !mdeObject )
+    if( ! mdeObject )
     	{
     	objectExisted = EFalse;
     	WRITELOG1( "CHarvesterAO::CheckFileExtensionAndHarvestL() - no mdeobject. URI: %S", &uri );
 	    TBuf<KObjectDefStrSize> objDefStr;
-		iHarvesterPluginFactory->GetObjectDefL( aHD, objDefStr );
+		iHarvesterPluginFactory->GetObjectDefL( *aHD, objDefStr );
 
         // GetObjectDef can cause context switch, and if unmount happens when this execution is 
         // interrupted, the ph data can be invalid. Thus, abort whole run, and start over to make sure 
         // the data is valid.
-        if( !aHD )
+        if( iUnmountDetected )
             {
             return;
             }
@@ -1496,16 +1354,9 @@ void CHarvesterAO::CheckFileExtensionAndHarvestL( CHarvesterData* aHD )
     	{
     	iMdESession->RemoveObjectL( aHD->Uri() );
     	}
-    
-    // If context swich occures just right due to RemoveObjectL, check aHD for validity
-    if( !aHD )
-        {
-        return;
-        }
 	
 	TInt pluginErr = KErrNone;
     TRAPD( err, pluginErr = iHarvesterPluginFactory->HarvestL( aHD ));
-    
     if ( err != KErrNone )
     	{
     	WRITELOG1( "CHarvesterAO::CheckFileExtensionAndHarvestL() - plugin error: %d", err );
@@ -1535,6 +1386,8 @@ void CHarvesterAO::CheckFileExtensionAndHarvestL( CHarvesterData* aHD )
     
     WRITELOG1("CHarvesterAO::CheckFileExtensionAndHarvestL() - ends with error %d", pluginErr );
     OstTrace1( TRACE_NORMAL, DUP8_CHARVESTERAO_CHECKFILEEXTENSIONANDHARVESTL, "CHarvesterAO::CheckFileExtensionAndHarvestL) - ends with error %d", pluginErr );
+    
+    SetNextRequest( ERequestHarvest );
     }
 
 // ---------------------------------------------------------------------------
@@ -1593,25 +1446,18 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
 	        		WRITELOG( "CHarvesterAO::HarvestingCompleted() - Creating location object. " );
 	        		OstTrace0( TRACE_NORMAL, DUP6_CHARVESTERAO_HARVESTINGCOMPLETED, "CHarvesterAO::HarvestingCompleted - Creating location object." );
 	        		
-	        		TInt loError( KErrNone ); 
-	        		if( !iLocManipulatorConnected )
-	        		    {
-	        		    loError = iLocManipulator.Connect();
-	        		    if( loError == KErrNone )
-	        		        {
-	        		        iLocManipulatorConnected = ETrue;
-	        		        }
-	        		    }    		
+	        		RLocationObjectManipulator lo;
+	        		
+	        		const TInt loError = lo.Connect();     		
 	        		
 	        		if (loError == KErrNone)
 	        			{
-	        			TInt err = iLocManipulator.CreateLocationObject( *locData, aHD->MdeObject().Id() );
+	        			TInt err = lo.CreateLocationObject( *locData, aHD->MdeObject().Id() );
 	        			if( err != KErrNone )
 	        				{
 	        				WRITELOG( "CHarvesterAO::HarvestingCompleted() - Location object creation failed!!!" );
 	        				OstTrace0( TRACE_NORMAL, DUP7_CHARVESTERAO_HARVESTINGCOMPLETED, "CHarvesterAO::HarvestingCompleted - Location object creation failed!!!" );
-	        				iLocManipulator.Close();
-	        				iLocManipulatorConnected = EFalse;
+	        				
 	        				}
 	        			}
 	        		else
@@ -1619,6 +1465,8 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
 	        			WRITELOG( "CHarvesterAO::HarvestingCompleted() - LocationObjectManipulator connect failed!!!" );
 	        			OstTrace0( TRACE_NORMAL, DUP8_CHARVESTERAO_HARVESTINGCOMPLETED, "CHarvesterAO::HarvestingCompleted - LocationObjectManipulator connect failed!!" );	        			
 	        			}
+	        		
+	        		lo.Close();
 	        		}
 	        	
 	        	TRAP_IGNORE( iHarvesterEventManager->DecreaseItemCountL( EHEObserverTypeMMC, 1 ) );
@@ -1669,6 +1517,8 @@ void CHarvesterAO::HarvestingCompleted( CHarvesterData* aHD )
         OstTrace0( TRACE_NORMAL, DUP12_CHARVESTERAO_HARVESTINGCOMPLETED, "==============================ERROR done =========================" );
         
         }
+           
+    SetNextRequest( ERequestHarvest );
     }
 
 // ---------------------------------------------------------------------------
@@ -1815,48 +1665,25 @@ void CHarvesterAO::HandleSessionOpened( CMdESession& aSession, TInt aError )
         TRAP_IGNORE( BootPartialRestoreScanL() );
 #endif
         
-        // Store the internal mass memory media ID to DB, and update data if necessary
-        TInt drive( -1 );
-        TInt internalMassStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
-        if( internalMassStorageError == KErrNone )
+        if( !iMassMemoryIdChecked )
             {
-            TVolumeInfo internalMassStorageVolumeInfo;
-            internalMassStorageError = iFs.Volume( internalMassStorageVolumeInfo, drive );
-            if( internalMassStorageError == KErrNone )
+            TInt drive( -1 );
+            TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+            if( massStorageError == KErrNone )
                 {
-                const TUint32 massStorageMediaId( internalMassStorageVolumeInfo.iUniqueID );
-                if( massStorageMediaId != 0 )
+                TVolumeInfo massStorageVolumeInfo;
+                iFs.Volume( massStorageVolumeInfo, drive );
+                const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
+                massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+                if( massStorageError == KErrNone )
                     {
-                    TUint32 mmcMediaId( 0 );
-                    TInt mmcDrive( -1 );
-                    TInt mmcError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, mmcDrive ) );
-                    if( mmcError == KErrNone )
-                        {
-                        if( drive != mmcDrive )
-                            {
-                            TVolumeInfo mmcVolumeInfo;
-                            mmcError = iFs.Volume( mmcVolumeInfo, mmcDrive );
-                            if( mmcError == KErrNone )
-                                {
-                                mmcMediaId = mmcVolumeInfo.iUniqueID;
-                                }                        
-                            }
-                        else
-                            {
-                            mmcMediaId = massStorageMediaId;
-                            }
-                        }
-                
-                    // If removable storage is not found, assume internal mass storage was mounted
-                    if( mmcError )
-                        {
-                        iMdEHarvesterSession->CheckMassStorageMediaId( massStorageMediaId );                  
-                        }
-                    else if( massStorageMediaId != mmcMediaId )
+                    iFs.Volume( massStorageVolumeInfo, drive );
+                    // Update mass storage media id if the mass storage is not memory card
+                    if( massStorageVolumeInfo.iUniqueID != massStorageMediaId && massStorageMediaId != 0 )
                         {
                         iMdEHarvesterSession->CheckMassStorageMediaId( massStorageMediaId );
-                        }          
-                    }                    
+                        }
+                    }
                 }
             }
         }
@@ -1921,6 +1748,11 @@ TInt CHarvesterAO::PauseHarvester()
     iHarvesterPluginFactory->PauseHarvester( ETrue );
     iServerPaused = ETrue;
     
+    if( !iRamFull && !iDiskFull && !iUnmountDetected )
+        {
+        iManualPauseEnabled = ETrue;
+        }
+    
     // Everything is paused
     WRITELOG( "CHarvesterAO::PauseHarvester() - Moving paused state paused" );
     OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERAO_PAUSEHARVESTER, "CHarvesterAO::PauseHarvester - Moving paused state paused" );
@@ -1936,19 +1768,17 @@ void CHarvesterAO::ResumeHarvesterL()
     {
     WRITELOG( "CHarvesterAO::ResumeHarvesterL()" );
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_RESUMEHARVESTERL, "CHarvesterAO::ResumeHarvesterL" );
-
-    if( iRamFull || iDiskFull || iUnmountHandlingOngoing || iManualPauseEnabled )
-        {
-        return;
-        }
     
     iHarvesterPluginFactory->PauseHarvester( EFalse );
     iServerPaused = EFalse;
     
-    if( iNextRequest == ERequestIdle )
+    if( !iManualPauseEnabled &&
+        iNextRequest == ERequestIdle )
         {
         SetNextRequest( ERequestHarvest );
-        }  
+        }
+    
+    iManualPauseEnabled = EFalse;
     }
 
 // ---------------------------------------------------------------------------
@@ -1984,12 +1814,6 @@ void CHarvesterAO::RunL()
             iContainerPHArray.Compress();
             iPHArray.Compress();
             iTempReadyPHArray.Compress();
-            
-            if( iLocManipulatorConnected )
-                {
-                iLocManipulator.Close();
-                iLocManipulatorConnected = EFalse;            
-                }
             }
         break;
 
@@ -1999,7 +1823,7 @@ void CHarvesterAO::RunL()
             WRITELOG( "CHarvesterAO::RunL - ERequestHarvest" );
             OstTrace0( TRACE_NORMAL, DUP2_CHARVESTERAO_RUNL, "CHarvesterAO::RunL - ERequestHarvest" );
             
-            // harvest new items first
+            // harvest new items first...
             if ( iQueue->ItemsInQueue() > 0 )
                 {
                 WRITELOG( "CHarvesterAO::RunL - Items in queue - calling ReadItemFromQueueL()" );
@@ -2012,29 +1836,9 @@ void CHarvesterAO::RunL()
             else
                 {
                 WRITELOG( "CHarvesterAO::RunL - No items in main queue" );
-                // If interrupts occured, check the normal placeholder array for possible items to
-                // be handled before moving on to container or ready placeholders
-                if( iPHArray.Count() > 0 )
-                    {
-                    WRITELOG( "CHarvesterAO::RunL - Items found in placeholder array" );
-                    TRAPD( err, HandlePlaceholdersL( ETrue ) );
-
-                    // make sure that when HandlePlaceholdersL leaves unexpectedly, iPHArray is cleared
-                    if ( err != KErrNone )
-                        {
-                        if( err != KErrDiskFull )
-                            {
-                            iPHArray.ResetAndDestroy();
-                            iTempReadyPHArray.ResetAndDestroy();
-                            }
-                        User::Leave( err );
-                        }
-                    SetNextRequest( ERequestHarvest );
-                    break;
-                    }
                 // All registered fast harvested items or placeholders handled at this point     
                 // if container files to harvest, handle those next
-                else if( iContainerPHArray.Count() > 0 )
+                if( iContainerPHArray.Count() > 0 )
                 	{
                     WRITELOG( "CHarvesterAO::RunL - Items in iContainterPHArray - requesting ERequestContainerPlaceholder handling" );
                     iFastHarvestNeeded = EFalse;
@@ -2065,8 +1869,8 @@ void CHarvesterAO::RunL()
             		WRITELOG1("CHarvesterAO::RunL - items in ready pharray: %d", arrayCount );
             		OstTrace1( TRACE_NORMAL, DUP3_CHARVESTERAO_RUNL, "CHarvesterAO::RunL - items in ready pharray: %d", arrayCount );
 #endif   		
-            		TInt endIndex( KReadyPlaceholderQueueSize );
-            		if( arrayCount < KReadyPlaceholderQueueSize )
+            		TInt endIndex( KPlaceholderQueueSize );
+            		if( arrayCount < KPlaceholderQueueSize )
             		    {
             		    endIndex = arrayCount;
             		    }
@@ -2108,27 +1912,20 @@ void CHarvesterAO::RunL()
         	while( i < count )
         		{
         		CHarvesterData* hd = iContainerPHArray[0];
-        		if( iPHArray.Append( hd ) != KErrNone )
-        		    {
-        		    delete hd;
-        		    hd = NULL;
-        		    }
+        		iPHArray.Append( hd );
         		iContainerPHArray.Remove( 0 );
         		i++;
         		}
         	TRAPD( err, HandlePlaceholdersL( EFalse ) );
 
-            // make sure that when HandlePlaceholdersL leaves unexpectedly, iPHArray is cleared
-            if ( err != KErrNone )
-                {
-                if( err != KErrDiskFull )
-                    {
-                    iContainerPHArray.ResetAndDestroy();
-                    iPHArray.ResetAndDestroy();
-                    iTempReadyPHArray.ResetAndDestroy();
-                    }
-                User::Leave( err );
-                }
+	    	// make sure that when HandlePlaceholdersL leaves, iPHArray is cleared
+	    	if ( err != KErrNone )
+	    		{
+	    	    iContainerPHArray.ResetAndDestroy();
+	    		iPHArray.ResetAndDestroy();
+	    		iTempReadyPHArray.ResetAndDestroy();
+	    		User::Leave( err );
+	    		}
 	    	SetNextRequest( ERequestHarvest );
         	}
         break;
@@ -2139,7 +1936,6 @@ void CHarvesterAO::RunL()
             WRITELOG( "CHarvesterAO::RunL - ERequestPause" );
             OstTrace0( TRACE_NORMAL, DUP6_CHARVESTERAO_RUNL, "CHarvesterAO::RunL - ERequestPause" );
             User::LeaveIfError( PauseHarvester() );
-            iManualPauseEnabled = ETrue;
             iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStatePaused );
             if( iHarvesterStatusObserver )
             	{
@@ -2153,19 +1949,6 @@ void CHarvesterAO::RunL()
             {
             WRITELOG( "CHarvesterAO::RunL - ERequestResume" );
             OstTrace0( TRACE_NORMAL, DUP7_CHARVESTERAO_RUNL, "CHarvesterAO::RunL - ERequestResume" );
-            iManualPauseEnabled = EFalse;
-            // If for some reason, mds session is not (yet) ready, only inform that
-            // server state is no longer paused, but do not restart actual harvesting
-            // yet.
-            if( !iMdeSessionInitialized )
-                {
-                iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateResumed );
-                if( iHarvesterStatusObserver )
-                    {
-                    iHarvesterStatusObserver->ResumeReady( KErrNone );
-                    }
-                break;
-                }
             ResumeHarvesterL();
             iHarvesterEventManager->SendEventL( EHEObserverTypeOverall, EHEStateResumed );
             if( iHarvesterStatusObserver )
@@ -2202,7 +1985,7 @@ void CHarvesterAO::DoCancel()
 //
 TInt CHarvesterAO::RunError( TInt aError )
     {
-    WRITELOG1( "CHarvesterAO::RunError, error: %d", aError );
+    WRITELOG( "CHarvesterAO::RunError" );
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_RUNERROR, "CHarvesterAO::RunError" );
     
     switch( iNextRequest )
@@ -2211,21 +1994,6 @@ TInt CHarvesterAO::RunError( TInt aError )
             {
             WRITELOG( "CHarvesterAO::RunError - state ERequestHarvest" );
             OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERAO_RUNERROR, "CHarvesterAO::RunError - state ERequestHarvest" );
-            if( aError == KErrDiskFull || aError == KErrNoMemory )
-                {
-                SetNextRequest( ERequestIdle );
-                }
-            }
-        break;
-        
-        case ERequestContainerPlaceholder:
-            {
-            WRITELOG( "CHarvesterAO::RunError - state ERequestContainerPlaceholder" );
-            OstTrace0( TRACE_NORMAL, DUP5_CHARVESTERAO_RUNERROR, "CHarvesterAO::RunError - state ERequestContainerPlaceholder" );
-            if( aError == KErrDiskFull || aError == KErrNoMemory )
-                {
-                SetNextRequest( ERequestIdle );
-                }
             }
         break;
         
@@ -2342,14 +2110,14 @@ void CHarvesterAO::HandleDiskSpaceNotificationL( TDiskSpaceDirection aDiskSpaceD
     
     if( MMdSHarvesterDiskSpaceObserver::EMore == aDiskSpaceDirection )
         {
-        WRITELOG("CHarvesterAO::HandleDiskSpaceNotificationL() - disk space available");
-        OstTrace0( TRACE_NORMAL, DUP2_CHARVESTERAO_HANDLEDISKSPACENOTIFICATIONL, "CHarvesterAO::HandleDiskSpaceNotificationL - disk space available" );
+        WRITELOG("CHarvesterAO::HandleDiskSpaceNotificationL() - disk full");
+        OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERAO_HANDLEDISKSPACENOTIFICATIONL, "CHarvesterAO::HandleDiskSpaceNotificationL - disk full" );        
         iDiskFull = EFalse;
         }
     else
         {
-        WRITELOG("CHarvesterAO::HandleDiskSpaceNotificationL() - disk full");
-        OstTrace0( TRACE_NORMAL, DUP1_CHARVESTERAO_HANDLEDISKSPACENOTIFICATIONL, "CHarvesterAO::HandleDiskSpaceNotificationL - disk full" );        
+        WRITELOG("CHarvesterAO::HandleDiskSpaceNotificationL() - disk space available");
+        OstTrace0( TRACE_NORMAL, DUP2_CHARVESTERAO_HANDLEDISKSPACENOTIFICATIONL, "CHarvesterAO::HandleDiskSpaceNotificationL - disk space available" );
         iDiskFull = ETrue;
         if( iServerPaused )
             {
@@ -2363,7 +2131,7 @@ void CHarvesterAO::HandleDiskSpaceNotificationL( TDiskSpaceDirection aDiskSpaceD
         PauseMonitoring();   
         PauseHarvester();    
         }
-    else if( iServerPaused )
+    else if( !iRamFull && !iManualPauseEnabled && iServerPaused )
         {
         // resume monitoring
         ResumeMonitoring();
@@ -2556,6 +2324,7 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
         }
     else
         {
+        HarvestCompleted( hd->ClientId(), hd->Uri(), KErrUnknown );
         delete hd;
         hd = NULL;
         err = KErrUnknown;
@@ -2564,10 +2333,6 @@ void CHarvesterAO::HarvestFile( const RMessage2& aMessage )
     if (!aMessage.IsNull())
         {
         aMessage.Complete( err );
-        }
-    else if( err != KErrNone )
-        {
-        HarvestCompleted( aMessage.Identity(), uri->Des(), err );
         }
     
     albumIds.Close();
@@ -2758,6 +2523,7 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     	}
     else
         {
+        HarvestCompleted( hd->ClientId(), hd->Uri(), KErrUnknown );  
         delete hd;
         hd = NULL;
         err = KErrUnknown;
@@ -2766,10 +2532,6 @@ void CHarvesterAO::HarvestFileWithUID( const RMessage2& aMessage )
     if (!aMessage.IsNull())
         {
         aMessage.Complete( err );
-        }
-    else if( err != KErrNone )
-        {
-        HarvestCompleted( aMessage.Identity(), uri->Des(), err );
         }
     
     albumIds.Close();
@@ -2934,6 +2696,7 @@ TInt CHarvesterAO::UnregisterHarvestComplete( const CHarvesterServerSession& aSe
             	continue;
             	}
             
+            //if (aMessage.Identity() == msg.Identity())
             if( &req.iSession == &aSession )
             	{
             	err = KErrNone;
@@ -3187,6 +2950,25 @@ void CHarvesterAO::BootScanL( RPointerArray<TScanItem>& aScanItems,
 	{
 	WRITELOG("CHarvesterAO::BootScanL() - begin");
     OstTrace0( TRACE_NORMAL, CHARVESTERAO_BOOTSCANL, "CHarvesterAO::BootScanL - begin" );
+    	
+    TInt drive( -1 );
+    TInt massStorageError( DriveInfo::GetDefaultDrive( DriveInfo::EDefaultMassStorage, drive ) );
+    if( massStorageError == KErrNone )
+        {
+        TVolumeInfo massStorageVolumeInfo;
+        iFs.Volume( massStorageVolumeInfo, drive );
+        const TUint32 massStorageMediaId( massStorageVolumeInfo.iUniqueID );
+        massStorageError = DriveInfo::GetDefaultDrive( DriveInfo::EDefaultRemovableMassStorage, drive );
+        if( massStorageError == KErrNone )
+            {
+            iFs.Volume( massStorageVolumeInfo, drive );
+            // Update mass storage media id if the mass storage is not memory card
+            if( massStorageVolumeInfo.iUniqueID != massStorageMediaId && massStorageMediaId != 0 )
+                {
+                iMdEHarvesterSession->CheckMassStorageMediaId( massStorageMediaId );
+                }
+            }
+        }
 	
 	TVolumeInfo volumeInfo;
 	iFs.Volume( volumeInfo, EDriveC );
@@ -3268,11 +3050,9 @@ void CHarvesterAO::BootScanL( RPointerArray<TScanItem>& aScanItems,
 						WRITELOG("CHarvesterAO::BootScanL() - scanFolders.AppendL");
 						OstTrace0( TRACE_NORMAL, DUP2_CHARVESTERAO_BOOTSCANL, "CHarvesterAO::BootScanL - scanFolders.AppendL" );
 						TScanItem* item = new (ELeave) TScanItem();
-						CleanupStack::PushL( item );
 						item->iPath = name->AllocL();
 						item->iPreinstalled = MdeConstants::MediaObject::ENotPreinstalled;
-						CleanupStack::Pop( item );
-						aScanItems.AppendL( item ); // ownership is transferred
+						aScanItems.AppendL( item );
 						}
 					}
 				else
@@ -3332,12 +3112,7 @@ void CHarvesterAO::BootScanL( RPointerArray<TScanItem>& aScanItems,
 	                        hd->SetClientData( phData );
 
 	                        CleanupStack::Pop( phData );
-							
-	                        if(hdArray.Append( hd ) != KErrNone )
-	                            {
-                                delete hd;
-                                hd = NULL;
-	                            }
+	                        hdArray.Append( hd );
 						    }
 						CleanupStack::PopAndDestroy( &results );
 						CleanupStack::PopAndDestroy( &fileInfos );
@@ -3361,6 +3136,8 @@ void CHarvesterAO::BootScanL( RPointerArray<TScanItem>& aScanItems,
 	CleanupStack::PopAndDestroy( &hdArray ); 
 
 	iMdEHarvesterSession->RemoveFilesNotPresent( volumeInfo.iUniqueID, ETrue );
+	
+	iMassMemoryIdChecked = ETrue;
 	
 	WRITELOG("CHarvesterAO::BootScanL() - end");
 	OstTrace0( TRACE_NORMAL, DUP5_CHARVESTERAO_BOOTSCANL, "CHarvesterAO::BootScanL - end" );
@@ -3454,10 +3231,9 @@ void CHarvesterAO::MemoryLow()
 	PauseMonitoring();
 	PauseHarvester();
 	
-    iReadyPHArray.Compress();
-    iContainerPHArray.Compress();
-    iPHArray.Compress();
-    iTempReadyPHArray.Compress();
+	iPHArray.Compress();
+	iReadyPHArray.Compress();
+	iContainerPHArray.Compress();
 	}
 
 void CHarvesterAO::MemoryGood()
@@ -3467,7 +3243,7 @@ void CHarvesterAO::MemoryGood()
     
     iRamFull = EFalse;
     
-    if( iServerPaused )
+    if( !iDiskFull && !iManualPauseEnabled && iServerPaused )
         {
         // resume monitoring
         ResumeMonitoring();

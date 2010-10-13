@@ -47,7 +47,6 @@ CLocationRelationObserver::~CLocationRelationObserver()
 	    {
 	    iQuery->Cancel();
 	    delete iQuery;
-	    iQuery = NULL;
 	    }
 	}
 
@@ -209,7 +208,6 @@ void CLocationRelationObserver::HandleQueryCompleted( CMdEQuery& aQuery, TInt /*
 	            }
 	    	
 	    	delete relation;
-	    	relation = NULL;
 	    	}
 	    	)
     	}

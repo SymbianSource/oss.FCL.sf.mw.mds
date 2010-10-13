@@ -126,7 +126,7 @@ void CMdeObjectHandler::SetMetadataObjectL( CHarvesterData& aHD )
                 CMdERelation* relation =  
                		iMdeSession->NewRelationLC(
                 		albumRelationDef, albumId, objectId, 0 );
-                relationEventArray.AppendL( STATIC_CAST( CMdEInstanceItem*, relation ) );
+                relationEventArray.Append( STATIC_CAST( CMdEInstanceItem*, relation ) );
                 CleanupStack::Pop(); //relation
                 }
             }
@@ -140,7 +140,7 @@ void CMdeObjectHandler::SetMetadataObjectL( CHarvesterData& aHD )
             {
             CMdEEvent* event = iMdeSession->NewEventLC( 
             		*eventDef, objectId, time );
-            relationEventArray.AppendL( STATIC_CAST( CMdEInstanceItem*, event ) );
+            relationEventArray.Append( STATIC_CAST( CMdEInstanceItem*, event ) );
             CleanupStack::Pop(); // event
             }
         }

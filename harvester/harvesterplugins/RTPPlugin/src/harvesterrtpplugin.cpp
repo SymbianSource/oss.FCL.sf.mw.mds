@@ -35,24 +35,11 @@ _LIT( KRtpClipMimetype, "application/x-nokia-teh-rtp" );
 // Enough size to recognize file and read metaheader
 const TInt KFileBufferSize( KMaxMetaHeaderLength );
 
-CHarvesterRtpPluginPropertyDefs::CHarvesterRtpPluginPropertyDefs() : CBase(),
-    iCreationDatePropertyDef( NULL )
+CHarvesterRtpPluginPropertyDefs::CHarvesterRtpPluginPropertyDefs() : CBase()
 	{
 	}
 
-void CHarvesterRtpPluginPropertyDefs::ConstructL( CMdEObjectDef& aObjectDef )
-    {
-    SetByObjectDefL( aObjectDef );
-    }
-
-CHarvesterRtpPluginPropertyDefs* CHarvesterRtpPluginPropertyDefs::NewL()
-    {
-    CHarvesterRtpPluginPropertyDefs* self = 
-        new (ELeave) CHarvesterRtpPluginPropertyDefs();
-    return self;
-    }
-
-void CHarvesterRtpPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef )
+void CHarvesterRtpPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
 	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
 	
@@ -74,6 +61,16 @@ void CHarvesterRtpPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef
 	iRecordingFlagsPropertyDef = &videoDef.GetPropertyDefL( MdeConstants::Video::KRecordingFlagsProperty );
 	}
 
+CHarvesterRtpPluginPropertyDefs* CHarvesterRtpPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterRtpPluginPropertyDefs* self = 
+		new (ELeave) CHarvesterRtpPluginPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
+	}
+
 // ======== MEMBER FUNCTIONS ========
 
 // ---------------------------------------------------------------------------
@@ -92,7 +89,6 @@ void CHarvesterRtpPlugin::ConstructL()
     {
     WRITELOG( "CHarvesterRtpPlugin::ConstructL()" );
     SetPriority( KHarvesterPriorityHarvestingPlugin - 1 );
-    iPropDefs = CHarvesterRtpPluginPropertyDefs::NewL();
     }
 
 // ---------------------------------------------------------------------------
@@ -266,8 +262,12 @@ void CHarvesterRtpPlugin::HandleObjectPropertiesL(
     WRITELOG( "CHarvesterRtpPlugin::HandleObjectPropertiesL()" );
 
     CMdEObject& mdeObject = aHD.MdeObject();
-     
-    InitPropDefsL( mdeObject.Def() );
+    
+    if( !iPropDefs )
+		{
+		CMdEObjectDef& objectDef = mdeObject.Def();
+		iPropDefs = CHarvesterRtpPluginPropertyDefs::NewL( objectDef );
+		}
 
     TTimeIntervalSeconds timeOffset = User::UTCOffset();
     TTime localModifiedTime = aClipDetails.iModifiedDate + timeOffset;
@@ -340,13 +340,3 @@ void CHarvesterRtpPlugin::HandleObjectPropertiesL(
     CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, 
     		*iPropDefs->iRecordingFlagsPropertyDef, &flags, aIsAdd );
     }
-
-void CHarvesterRtpPlugin::InitPropDefsL( CMdEObjectDef& aObjectDef )
-    {
-    if( !iPropDefs->iCreationDatePropertyDef )
-        {
-        iPropDefs->SetByObjectDefL( aObjectDef );
-        }
-    }
-
-

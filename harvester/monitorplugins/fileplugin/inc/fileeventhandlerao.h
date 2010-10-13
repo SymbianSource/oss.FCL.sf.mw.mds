@@ -172,13 +172,11 @@ class CFileEventHandlerAO : public CActive, public MMoveTimerObserver
         void ReadCacheSizeFromCenrepL();
 
         /**
-        * Update MDS objects data if needed
+        * Set MdE object's title with aNewUrl
         */
        void SetTitleL( CMdEObject* aOldObject, const TDesC& aNewUrl );
        
        void SetModifiedTimeL( CMdEObject* aOldObject, const TDesC& aNewUrl );
-       
-       void CheckDefaultFolderL( CMdEObject* aOldObject );
         
     private:
         
@@ -239,16 +237,6 @@ class CFileEventHandlerAO : public CActive, public MMoveTimerObserver
         CMdEPropertyDef* iOriginPropertyDef;
         CMdEPropertyDef* iTitlePropertyDef;
         CMdEPropertyDef* iTimePropertyDef;
-        CMdEPropertyDef* iDefaultFolderPropertyDef;
-        
-        HBufC* iPhoneImagesPath;
-        HBufC* iMmcImagesPath;
-        
-        HBufC* iPhoneVideosPath;
-        HBufC* iMmcVideosPath;
-        
-        HBufC* iPhoneSoundsPath;
-        HBufC* iMmcSoundsPath;
     };
 
 #endif // __FILEEVENTHANDLERAO_H__

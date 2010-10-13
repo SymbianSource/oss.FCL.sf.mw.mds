@@ -39,8 +39,6 @@
 #define __CLOGGING__
 #endif
 
-// Added to remove compilation warnings.
-#define ARG_USED(a) (void)(a)
 
 
 // Then actual definitions depending on the 

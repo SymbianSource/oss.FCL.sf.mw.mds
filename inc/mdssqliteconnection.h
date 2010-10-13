@@ -237,15 +237,11 @@ class RMdSTransaction
 
         /**
         * cleanup method (from TBase)
-        * according to status does Rollback or nothing if commit was succesfull
+        * according to status does Commit/Rollback/nothing
         */
         inline void Close()
             {
-            // Internal error state is KErrNone if the transaction could be created successfully,
-            // and the state is resetted if the transaction is committed succesfully. Only if the
-            // transaction is started succesfully but not committed, it needs to be rolled back
-            // to close the ongoing transaction
-            if ( iErrorState == KErrNone )
+            if ( iErrorState != KErrNone )
                 {
                 TRAP( iErrorState, iConnection.TransactionRollbackL() );
                 }
@@ -259,6 +255,17 @@ class RMdSTransaction
         inline void CommitL()
             {
             iConnection.TransactionCommitL();
+            Reset();
+            }
+
+        /**
+        * Rolls back the transaction explicitly
+        * - possibility to receive leave
+        * eliminates actions on destructor.
+        */
+        inline void RollbackL()
+            {
+            iConnection.TransactionRollbackL();
             Reset();
             }
 

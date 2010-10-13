@@ -39,7 +39,7 @@ LIBRARY       ECOM.LIB
 
 #if defined(WINS)
     deffile ../bwincw/composerplugininterfacewinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
     deffile ../eabi/composerplugininterfacearm.def
 #endif
 nostrictdef

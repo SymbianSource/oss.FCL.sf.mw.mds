@@ -85,61 +85,58 @@ _LIT(KInUse, "InUse");
 const TInt KKiloBytes = 1024;
 const TReal32 KThousandReal = 1000.0;
 
-CHarvesterVideoPluginPropertyDefs::CHarvesterVideoPluginPropertyDefs() : CBase(),
-    iCreationDatePropertyDef( NULL )
+CHarvesterVideoPluginPropertyDefs::CHarvesterVideoPluginPropertyDefs() : CBase()
 	{
 	}
 
 void CHarvesterVideoPluginPropertyDefs::ConstructL(CMdEObjectDef& aObjectDef)
 	{
-    SetByObjectDefL( aObjectDef );
+	CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
+	
+	// Common property definitions
+	CMdEObjectDef& objectDef = nsDef.GetObjectDefL( Object::KBaseObject );
+	iCreationDatePropertyDef = &objectDef.GetPropertyDefL( Object::KCreationDateProperty );
+	iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
+	iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
+	iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
+	iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
+	iTitlePropertyDef = &objectDef.GetPropertyDefL( Object::KTitleProperty );
+	iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
+
+	CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
+	iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
+	iCaptureDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCaptureDateProperty );
+	iDurationPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDurationProperty );
+	iWidthPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KWidthProperty );
+	iHeightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KHeightProperty );
+	iBitratePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KBitrateProperty );
+	iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCopyrightProperty );
+	iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KAuthorProperty );
+	iGenrePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KGenreProperty );
+	iArtistPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KArtistProperty );
+	iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDescriptionProperty );
+    iDrmPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDRMProperty );
+	
+	iAudioFourCCDef = &mediaDef.GetPropertyDefL( MediaObject::KAudioFourCCProperty );
+
+	// Video property definitions
+	CMdEObjectDef& videoDef = nsDef.GetObjectDefL( Video::KVideoObject );
+	iFrameratePropertyDef = &videoDef.GetPropertyDefL( Video::KFramerateProperty );
+
+	// Audio property definitions
+	CMdEObjectDef& audioDef = nsDef.GetObjectDefL( Audio::KAudioObject );
+	iSamplingFrequencyPropertyDef = &audioDef.GetPropertyDefL( Audio::KSamplingFrequencyProperty );
 	}
 
-CHarvesterVideoPluginPropertyDefs* CHarvesterVideoPluginPropertyDefs::NewL()
-    {
-    CHarvesterVideoPluginPropertyDefs* self = 
-        new (ELeave) CHarvesterVideoPluginPropertyDefs();
-    return self;
-    }
-
-void CHarvesterVideoPluginPropertyDefs::SetByObjectDefL( CMdEObjectDef& aObjectDef )
-    {
-    CMdENamespaceDef& nsDef = aObjectDef.NamespaceDef();
-    
-    // Common property definitions
-    CMdEObjectDef& objectDef = nsDef.GetObjectDefL( Object::KBaseObject );
-    iCreationDatePropertyDef = &objectDef.GetPropertyDefL( Object::KCreationDateProperty );
-    iLastModifiedDatePropertyDef = &objectDef.GetPropertyDefL( Object::KLastModifiedDateProperty );
-    iSizePropertyDef = &objectDef.GetPropertyDefL( Object::KSizeProperty );
-    iTimeOffsetPropertyDef = &objectDef.GetPropertyDefL( Object::KTimeOffsetProperty );
-    iItemTypePropertyDef = &objectDef.GetPropertyDefL( Object::KItemTypeProperty );
-    iTitlePropertyDef = &objectDef.GetPropertyDefL( Object::KTitleProperty );
-    iDefaultFolderPropertyDef = &objectDef.GetPropertyDefL( Object::KInDefaultFolder );
-
-    CMdEObjectDef& mediaDef = nsDef.GetObjectDefL( MediaObject::KMediaObject );
-    iReleaseDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KReleaseDateProperty );
-    iCaptureDatePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCaptureDateProperty );
-    iDurationPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDurationProperty );
-    iWidthPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KWidthProperty );
-    iHeightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KHeightProperty );
-    iBitratePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KBitrateProperty );
-    iCopyrightPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KCopyrightProperty );
-    iAuthorPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KAuthorProperty );
-    iGenrePropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KGenreProperty );
-    iArtistPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KArtistProperty );
-    iDescriptionPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDescriptionProperty );
-    iDrmPropertyDef = &mediaDef.GetPropertyDefL( MediaObject::KDRMProperty );
-    
-    iAudioFourCCDef = &mediaDef.GetPropertyDefL( MediaObject::KAudioFourCCProperty );
-
-    // Video property definitions
-    CMdEObjectDef& videoDef = nsDef.GetObjectDefL( Video::KVideoObject );
-    iFrameratePropertyDef = &videoDef.GetPropertyDefL( Video::KFramerateProperty );
-
-    // Audio property definitions
-    CMdEObjectDef& audioDef = nsDef.GetObjectDefL( Audio::KAudioObject );
-    iSamplingFrequencyPropertyDef = &audioDef.GetPropertyDefL( Audio::KSamplingFrequencyProperty );
-    }
+CHarvesterVideoPluginPropertyDefs* CHarvesterVideoPluginPropertyDefs::NewL(CMdEObjectDef& aObjectDef)
+	{
+	CHarvesterVideoPluginPropertyDefs* self = 
+		new (ELeave) CHarvesterVideoPluginPropertyDefs();
+	CleanupStack::PushL( self );
+	self->ConstructL( aObjectDef );
+	CleanupStack::Pop( self );
+	return self;
+	}
 
 /**
 * Default constructor
@@ -168,14 +165,11 @@ CHarvesterVideoPlugin* CHarvesterVideoPlugin::NewL()
 CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	{
 	delete iPropDefs;
-	iPropDefs = NULL;
 	iMimeTypeMappings.Close();
     RMediaIdUtil::ReleaseInstance();
 
     delete iPhoneVideosPath;
-    iPhoneVideosPath = NULL;
     delete iMmcVideosPath;
-    iMmcVideosPath = NULL;
     
 	WRITELOG("CHarvesterVideoPlugin::CHarvesterVideoPlugin()");
 	}
@@ -186,8 +180,6 @@ CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 void CHarvesterVideoPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterVideoPlugin::ConstructL() - begin" );
-	
-	iPropDefs = CHarvesterVideoPluginPropertyDefs::NewL();
 	
 	TLinearOrder< THarvestingHandling > cmp( THarvestingHandling::CompareFunction );
 
@@ -339,7 +331,7 @@ void CHarvesterVideoPlugin::GetObjectType( const TDesC& aUri, TDes& aObjectType 
     if ( error != KErrNone )
         {
         WRITELOG1( "CHarvesterVideoPlugin::GetObjectType - File open error: %d", error );
-        if( error == KErrInUse || KErrLocked )
+        if( error == KErrInUse )
             {
 #ifdef _DEBUG
             TPtrC fileName( aUri.Mid(2) );
@@ -556,41 +548,22 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     
     if( !dataExtracted )
         {
-        // If file could be opened, use file handle to fetch base data, otherwise
-        // attempt to fetch the data from TEntry 
-        if( error == KErrNone )
-            {
-            User::LeaveIfError( file.Modified( aVHD.iModified ) );
-            User::LeaveIfError( file.Size( aVHD.iFileSize ) );            
-            }
-        else
-            {
-            TEntry entry;
-            const TInt errorcode = iFs.Entry( uri, entry );
+        TEntry entry;
+        const TInt errorcode = iFs.Entry( uri, entry );
         
-            if ( errorcode != KErrNone )
-                {
-                WRITELOG1( "CHarvesterVideoPlugin - Error getting entry: %d", errorcode );
-                CleanupStack::PopAndDestroy( &file );
-                User::Leave( errorcode );
-                }
-        
-            aVHD.iModified = entry.iModified;
-            aVHD.iFileSize = (TUint)entry.iSize;        
+        if ( errorcode != KErrNone )
+            {
+            WRITELOG1( "CHarvesterVideoPlugin - Error getting entry: %d", errorcode );
+            CleanupStack::PopAndDestroy( &file );
+            User::Leave( errorcode );
             }
+        
+        aVHD.iModified = entry.iModified;
+        aVHD.iFileSize = (TUint)entry.iSize;
         
         WRITELOG1( "CHarvesterVideoPlugin - File size: %d", aVHD.iFileSize );
         }
 
-    aVHD.iVideoObject = aMetadataObject.Def().Name().Compare( KVideo ) == 0;
-
-    if( error != KErrNone )
-        {
-        WRITELOG1( "CHarvesterVideoPlugin - File open error: %d", error );
-        CleanupStack::PopAndDestroy( &file );
-        User::Leave( KErrCompletion );
-        }
-    
     // now the minimum information has been harvested
     // from now on the harvested data should always be stored
 
@@ -601,6 +574,15 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     	CleanupStack::PopAndDestroy( &file );
     	User::Leave( KErrNotFound );
     	}
+
+    aVHD.iVideoObject = aMetadataObject.Def().Name().Compare( KVideo ) == 0;
+
+    if( error != KErrNone )
+        {
+        WRITELOG1( "CHarvesterVideoPlugin - File open error: %d", error );
+        CleanupStack::PopAndDestroy( &file );
+        User::Leave( KErrCompletion );
+        }
     
     if ( mapping->iHandler.iLibrary == TVideoMetadataHandling::EHexilMetadataHandling )
     	{
@@ -609,10 +591,10 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     	CleanupClosePushL( mimes );
 
         TPtrC ext;
-        const TBool exists = MdsUtils::GetExt( uri, ext );
+        MdsUtils::GetExt( uri, ext );
         
         // Check for possibly protected content
-        if( exists && ext.CompareF( KExtensionWmv ) == 0 )
+        if( ext.CompareF( KExtensionWmv ) == 0 )
             {
             ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
             ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
@@ -625,10 +607,6 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         CleanupStack::PushL( helixMetadata );
         
         TRAP( error, helixMetadata->OpenFileL( file ) );        
-
-        // No need for the file handle anymore so closing it
-        WRITELOG( "CHarvesterVideoPlugin - Parsing done, file handle can be closed" );   
-        file.Close();
         
         if ( error == KErrNone )
         	{
@@ -811,7 +789,6 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         	aVHD.iMimeBuf = mime.Alloc();
         	}
         
-        helixMetadata->ResetL();
         CleanupStack::PopAndDestroy( helixMetadata );
         
         // don't destory mime type pointers just clean array
@@ -982,12 +959,12 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             }
 #endif
         }
-    WRITELOG( "CHarvesterVideoPlugin - Closing file, if still open" );        
+    WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
     CleanupStack::PopAndDestroy( &file );        
 
 #ifdef _DEBUG
     dStop.UniversalTime();
-    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL end %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
+    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
 #endif  
     
     WRITELOG( "CHarvesterVideoPlugin - Start adding data to object" );
@@ -1005,8 +982,14 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
     WRITELOG("CHarvesterVideoPlugin::HandleObjectPropertiesL ");
 
     CMdEObject& mdeObject = aHD.MdeObject();
-    
-    InitPropDefsL( mdeObject.Def() );
+
+    if( !iPropDefs )
+    	{
+    	CMdEObjectDef& objectDef = mdeObject.Def();
+    	iPropDefs = CHarvesterVideoPluginPropertyDefs::NewL( objectDef );
+    	// Prefetch max text lengt for validity checking
+    	iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
+    	}
 
     TTimeIntervalSeconds timeOffsetSeconds = User::UTCOffset();
     TTime localModifiedDate = aVHD.iModified + timeOffsetSeconds;
@@ -1234,6 +1217,9 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	{
 	TBool possibleVideo = EFalse;
 
+	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
+	CleanupStack::PushL( helixMetadata );
+
     TFileName tempName;
     TUint32 mediaId( 0 );
     TInt blackListError( KErrNone );
@@ -1241,14 +1227,10 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
     blackListError = GetFileFullNameAndMediaId( aFile, tempName, mediaId );
     if( blackListError == KErrNone )
         {
-        blackListError = AddFileToBlackList( tempName, mediaId );
+        AddFileToBlackList( tempName, mediaId );
         }
 	
-    CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
-    CleanupStack::PushL( helixMetadata );
-    
 	TRAPD( err, helixMetadata->OpenFileL( aFile ) );
-	aFile.Close();
 
 	if( err == KErrNone )
 		{
@@ -1275,10 +1257,10 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	
 		const TInt mimeCount = mimes.Count();
 		
-		// Set to Video, regardless how badly file is corrupted
+		// at least one MIME type must be found
 		if( mimeCount == 0 )
 			{
-		    aType.Copy( KVideo );
+			User::Leave( KErrNotFound );
 			}
 	
 		for( TInt i = 0; i < mimeCount; i++ )
@@ -1331,14 +1313,13 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		{
 		aType.Copy( KVideo );
 		}
-
-	helixMetadata->ResetL();
-    CleanupStack::PopAndDestroy( helixMetadata );
 	
     if( blackListError == KErrNone )
         {
         RemoveFileFromBlackList( tempName, mediaId );
-        }  
+        }
+    
+    CleanupStack::PopAndDestroy( helixMetadata );
 	}
 
 TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, const TUint32& aMediaId )
@@ -1350,7 +1331,7 @@ TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, cons
     if( blackListError == KErrNone )
         {
         WRITELOG( "CHarvesterVideoPlugin::AddFileToBlackList - Adding URI to blacklist" );
-        blackListError = iBlacklist->AddFile( aFullName, aMediaId, modified );
+        iBlacklist->AddFile( aFullName, aMediaId, modified );
         }
 
     return blackListError;
@@ -1446,16 +1427,6 @@ void CHarvesterVideoPlugin::CheckForCodecSupport( HBufC* aMimeBuffer, CVideoHarv
         return;
         }
     return;
-    }
-
-void CHarvesterVideoPlugin::InitPropDefsL(CMdEObjectDef& aObjectDef)
-    {
-    if( !iPropDefs->iCreationDatePropertyDef )
-        {
-        iPropDefs->SetByObjectDefL( aObjectDef );
-        // Prefetch max text lengt for validity checking
-        iMaxTextLength = iPropDefs->iCopyrightPropertyDef->MaxTextLengthL();
-        }
     }
 
 // End of file

@@ -48,7 +48,6 @@ CMdSSqLiteConnection::~CMdSSqLiteConnection()
     CloseDb();
 
     delete iDbFileName;
-    iDbFileName = NULL;    
 
     iNotFinishFindQuery = NULL;
     }
@@ -544,11 +543,6 @@ void CMdSSqLiteConnection::TransactionBeginL()
     if (err != KErrNone)
     	{
     	_LIT( KMdsTransactionBegin, "Transaction begin error" );
-        if( !iNotFinishFindQuery )
-            {
-            iEnableTransaction = ETrue;
-            }
-        iTransactionOngoing = EFalse;
     	TraceAndLeaveL( KMdsTransactionBegin, err );
     	}
 	CleanupStack::PopAndDestroy( &emptyRow );
@@ -587,16 +581,16 @@ void CMdSSqLiteConnection::TransactionRollbackL()
     RRowData emptyRow;
     CleanupClosePushL( emptyRow );
     TRAPD( err, ExecuteL(KRollback, emptyRow) );
-    if (err != KErrNone)
-        {
-        _LIT( KMdsTransactionRollback, "Transaction rollback error" );
-        TraceAndLeaveL( KMdsTransactionRollback, err );
-        }    
     if( !iNotFinishFindQuery )
         {
         iEnableTransaction = ETrue;
         }
     iTransactionOngoing = EFalse;
+    if (err != KErrNone)
+    	{
+    	_LIT( KMdsTransactionRollback, "Transaction rollback error" );
+    	TraceAndLeaveL( KMdsTransactionRollback, err );
+    	}
 	CleanupStack::PopAndDestroy( &emptyRow );
     }
 

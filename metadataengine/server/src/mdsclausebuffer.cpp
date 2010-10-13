@@ -54,7 +54,6 @@ CMdsClauseBuffer::CMdsClauseBuffer()
 CMdsClauseBuffer::~CMdsClauseBuffer()
     {
     delete iBuffer;
-    iBuffer = NULL;
     }
 
 // ---------------------------------------------------------------------------

@@ -758,9 +758,7 @@ CCLFServerProxy::~CCLFServerProxy()
     TRAP_IGNORE( iMdESession.RemoveObjectPresentObserverL( *this ));
     iUpdateItemsHandlerArray.ResetAndDestroy();
     delete iUriArray;
-    iUriArray = NULL;
     delete iExtensionArray;
-    iExtensionArray = NULL;
     iFs.Close();
 
     iHC.RemoveHarvesterEventObserver( *this );

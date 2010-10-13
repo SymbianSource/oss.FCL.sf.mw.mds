@@ -225,7 +225,7 @@ public:
 									EPreferenceExtraSortAsc  | 
 									EPreferenceExtraSortDesc;
 
-		CMdsClauseBuffer* sortBuffer = CMdsClauseBuffer::NewLC( 12 ); // minimum reserved lenght for sort rules
+		CMdsClauseBuffer* sortBuffer = CMdsClauseBuffer::NewLC( 8 ); // estimated minimum lenght for sort rules
 
 		// check if there is some order rules
 		if( KSortFlags & aFlags )

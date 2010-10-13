@@ -255,8 +255,8 @@ void CCLFQueryAdapter::QueryMdEObjectsL( const TArray< TCLFItemId >& aItemIDArra
         }
 
     aStatus = KRequestPending;
-    iStatusArray.AppendL( &aStatus );
-    iQueryArray.AppendL( aQuery );
+    iStatusArray.Append( &aStatus );
+    iQueryArray.Append( aQuery );
 
     // Check that we can actually execute the query. We can if we have at least one query condition.
     if ( rootCondition.Count() > 0 )

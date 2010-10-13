@@ -43,7 +43,7 @@ LIBRARY       ECOM.LIB
 
 #if defined(WINS)
     deffile ../bwincw/monitorplugininterfacewinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
     deffile ../eabi/monitorplugininterfacearm.def
 #endif
 nostrictdef

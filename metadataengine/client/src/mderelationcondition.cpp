@@ -85,19 +85,14 @@ void CMdERelationCondition::ConstructL(const RArray<TItemId>* aRelationIds,
 CMdERelationCondition::~CMdERelationCondition()
     {
    	delete iLeftCondition;
-   	iLeftCondition = NULL;
    	delete iRightCondition;
-   	iRightCondition = NULL;
    	delete iParameterRange;
-   	iParameterRange = NULL;
 	delete iLastModifiedDateRange;
-	iLastModifiedDateRange = NULL;
 
 	if( iRelationIds )
 		{
 		iRelationIds->Close();
 		delete iRelationIds;
-		iRelationIds = NULL;
 		}
     }
 

@@ -31,7 +31,6 @@ EXPORT_C RLocationTrail::RLocationTrail() : iCurrentLocData( NULL )
 EXPORT_C RLocationTrail::~RLocationTrail()
 	{
 	delete iCurrentLocData;
-	iCurrentLocData = NULL;
 	}
 
 // --------------------------------------------------------------------------
@@ -149,7 +148,6 @@ EXPORT_C void RLocationTrail::CurrentLocation( TRequestStatus& aStatus,
     LOG( "RLocationTrail::CurrentLocation(), begin" );
     
     delete iCurrentLocData;
-    iCurrentLocData = NULL;
     iCurrentLocData = new TPckg<TLocationData>( aLocationData );
     
     if ( iHandle && iCurrentLocData )

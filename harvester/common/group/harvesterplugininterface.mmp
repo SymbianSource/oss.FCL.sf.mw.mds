@@ -46,7 +46,7 @@ LIBRARY	      mdeclient.lib
 
 #if defined(WINS)
     deffile ../bwincw/harvesterplugininterfacewinscw.def
-#elif defined(EABI)
+#elif defined(ARMCC)
     deffile ../eabi/harvesterplugininterfacearm.def
 #endif
 nostrictdef

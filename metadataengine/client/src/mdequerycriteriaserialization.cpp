@@ -86,7 +86,6 @@ CMdEQueryCriteriaSerialization::~CMdEQueryCriteriaSerialization()
 	if( iOwnSerializedBuffer )
 		{
 		delete iSerializedBuffer;
-		iSerializedBuffer = NULL;
 		}
 	}
 	

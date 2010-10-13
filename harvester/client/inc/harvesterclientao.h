@@ -61,8 +61,6 @@ NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
          */ 
         void Active();
         
-        void CancelRequest();
-        
     protected:
 		
         /**
@@ -113,8 +111,6 @@ NONSHARABLE_CLASS( CHarvesterClientAO ) : public CActive
          * Harvester server assigned file name
          */ 
         TFileName iURI;
-        
-        TBool iCancelled;
     };
 
 #endif // __CHARVESTERCLIENTAO_H__

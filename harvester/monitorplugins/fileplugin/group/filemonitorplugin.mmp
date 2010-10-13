@@ -59,7 +59,6 @@ LIBRARY       mdeclient.lib
 LIBRARY		  harvesterdata.lib
 LIBRARY       harvestercommon.lib 
 LIBRARY       centralrepository.lib
-LIBRARY       platformenv.lib 
 
 OPTION ARMCC -O3 -OTime
 

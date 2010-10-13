@@ -93,10 +93,8 @@ void CMdSManipulationEngine::ConstructL()
 CMdSManipulationEngine::~CMdSManipulationEngine()
     {
     delete iManipulate;
-    iManipulate = NULL;
     
     delete iGarbageCollector;
-    iGarbageCollector = NULL;
     }
 
 // ---------------------------------------------------------------------------
@@ -155,7 +153,7 @@ void CMdSManipulationEngine::AddL( CMdCSerializationBuffer& aBuffer,
         CleanupClosePushL(objStmt);
 		
         RMdSTransaction transaction( connection );
-        CleanupClosePushL (transaction );
+        CleanupClosePushL(transaction);
         const TInt beginError( transaction.Error() );
         if( beginError != KErrNone )
             {
@@ -852,11 +850,11 @@ void CMdSManipulationEngine::SetFilesToPresentL(TUint32 aMediaId, TUint32 aFileC
 
 #ifdef _DEBUG    	
     	const TInt64 time = fileInfo.iModifiedTime;
-        RDebug::Print( _L("CMdSManipulationEngine::SetFilesToPresentL: (%d) uri %S, iSize %u, iModified %Ld"),
+        RDebug::Print( _L("CMdSManipulationEngine::SetFilesToPresentL: (%d) iSize %u, iModified %Ld, uri %S"),
         		i,
-        		&uri,
         		fileInfo.iSize,
-        		time );
+        		time,
+        		&uri);
 #endif
 
     	TFilePresentStates placeHolder;
@@ -1074,19 +1072,13 @@ void CMdSManipulationEngine::CheckMassStorageMediaIdL( const TUint32 aMediaId )
     CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
     RMdSTransaction transaction( connection );
     CleanupClosePushL( transaction );
-    const TInt beginError( transaction.Error() );
-    if( beginError != KErrNone )
-        {
-        CleanupStack::PopAndDestroy( &transaction );
-        }
+    User::LeaveIfError( transaction.Error() );
     
     iManipulate->CheckMassStorageMediaIdL( aMediaId );
     
-    if( beginError == KErrNone )
-        {
-        transaction.CommitL();
-        CleanupStack::PopAndDestroy( &transaction );
-        }
+    transaction.CommitL();
+
+    CleanupStack::PopAndDestroy( &transaction );
     }
 
 void CMdSManipulationEngine::AddRelationDefL( TDefId aNamespaceId, const TDesC& aRelationDefName )

@@ -105,21 +105,14 @@ CCLFEngineImpl* CCLFEngineImpl::NewLC()
 CCLFEngineImpl::~CCLFEngineImpl()
     {
     delete iItemProvider;
-    iItemProvider = NULL;
     delete iUpdateStartEventHandler;
-    iUpdateStartEventHandler = NULL;
     delete iUpdateEndEventHandler;
-    iUpdateEndEventHandler = NULL;
     delete iDbItemContainer;
-    iDbItemContainer = NULL;
     delete iCLFServerProxy;
-    iCLFServerProxy = NULL;
     iChangedItemObserverArray.Close();
     iProcessObserverArray.Close();
     delete iQueryAdapter;
-    iQueryAdapter = NULL;
     delete iMdESession;
-    iMdESession = NULL;
     }
 
 // -----------------------------------------------------------------------------

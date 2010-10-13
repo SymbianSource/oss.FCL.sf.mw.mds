@@ -45,7 +45,6 @@ CMdEHarvesterSession::~CMdEHarvesterSession()
 	{
 	iHarvestingPrioritizationChunk.Close();
 	delete iHarvestingPrioritizationSerializationBuffer;
-	iHarvestingPrioritizationSerializationBuffer = NULL;
 	}
 
 void CMdEHarvesterSession::ConstructL()
@@ -113,20 +112,12 @@ EXPORT_C TBool CMdEHarvesterSession::SetFileToPresent(TUint32 aMediaId,
 		}
 
 	// Note: CopyLC doesn't push anything to cleanup stack
-	TRAPD(err, uri->Des().CopyLC( aUri ));
+	uri->Des().CopyLC( aUri );
 
-	if(err != KErrNone)
-	    {
-		delete uri;
-		uri = NULL;
-		return EFalse;
-	    }
-		
 	const TBool ret = iSession->EngineSession().DoSetFileToPresent( 
-	aMediaId, *uri, aFileInfo );
+			aMediaId, *uri, aFileInfo );
 	
 	delete uri;
-	uri = NULL;
 
 	return ret;
 	}
@@ -138,10 +129,8 @@ EXPORT_C void CMdEHarvesterSession::SetFilesToPresentL(TUint32 aMediaId,
 	WRITELOG( "CMdEHarvesterSession::SetFilesToPresentL -- Start" );
 	if( aUris.Count() != aFileInfos.Count() )
 		{
-#ifdef _DEBUG
 		WRITELOG2( "CMdEHarvesterSession::SetFilesToPresentL -- Leave (%d, %d)", 
 				aUris.Count(), aFileInfos.Count() );
-#endif
 		User::Leave( KErrArgument );
 		}
 

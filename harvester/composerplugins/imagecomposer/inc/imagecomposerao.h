@@ -267,8 +267,6 @@ class CImageComposerAO : public CActive, public MMdEQueryObserver
         CHarvesterExifUtil* iExifUtil;
         
         RFs iFs;
-        
-        TBool iFastModeEnabled;
     };
 
 #endif // __CIMAGECOMPOSERAO_H__

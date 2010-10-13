@@ -198,9 +198,7 @@ void CHarvesterCenRepUtil::GetPathsL( TUint32 aPartialKey, RPointerArray<HBufC>&
 	        continue;
 	        }
 		HBufC* pathBuf = path.AllocL();
-		CleanupStack::PushL( pathBuf );
-		aPaths.AppendL( pathBuf );
-		CleanupStack::Pop( pathBuf );
+		aPaths.Append( pathBuf );
 		}
 
 	CleanupStack::PopAndDestroy( &scanPathKeys );
@@ -216,17 +214,14 @@ void CHarvesterCenRepUtil::GetItemsL( TUint32 aPartialKey, RPointerArray<TScanIt
 	repo->FindL( aPartialKey, KSearchMask, scanPathKeys );
 
 	TBuf<KMaxFileName> path;
-	
 	for( TInt i = scanPathKeys.Count() - 1; i >=0; i-- )
 		{
 	    const TInt error( repo->Get( scanPathKeys[i], path ) );
-	    
 	    if( error != KErrNone )
 	        {
 	        continue;
 	        }
 		TUint32 preinstalled = MdeConstants::MediaObject::ENotPreinstalled;
-		
 		if( path[ path.Length() - 1 ] != TChar('\\') )
 			{
 			User::LeaveIfError( repo->GetMeta( scanPathKeys[i], preinstalled ) );
@@ -236,7 +231,7 @@ void CHarvesterCenRepUtil::GetItemsL( TUint32 aPartialKey, RPointerArray<TScanIt
 		item->iPath = path.AllocL();
 		item->iPreinstalled = preinstalled;
 		CleanupStack::Pop( item );
-		aItems.AppendL( item ); // ownership is transferred
+		aItems.Append( item ); // ownership is transferred
 		}
 
 	CleanupStack::PopAndDestroy( &scanPathKeys );
