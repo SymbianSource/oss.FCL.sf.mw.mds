@@ -88,6 +88,8 @@
 "\epoc32\data\z\resource\plugins\mmcmonitorplugin.rsc"-"c:\resource\plugins\mmcmonitorplugin.rsc"
 "\epoc32\RELEASE\armv5\UREL\mdsoomplugin.dll"-"c:\sys\bin\mdsoomplugin.dll"
 "\epoc32\data\z\resource\plugins\mdsoomplugin.rsc"-"c:\resource\plugins\mdsoomplugin.rsc"
+"\epoc32\RELEASE\armv5\UREL\mdsdrmplugin.dll"-"c:\sys\bin\mdsdrmplugin.dll"
+"\epoc32\data\z\resource\plugins\mdsdrmplugin.rsc"-"c:\resource\plugins\mdsdrmplugin.rsc"
 
 ; location manager
 "\EPOC32\RELEASE\ARMV5\UREL\LocationTrail.dll" -"c:\sys\bin\LocationTrail.dll"

@@ -35,6 +35,7 @@ _LIT( KMimeTypeMxmf,   "audio/vnd.nokia.mobile-xmf" );
 _LIT( KMimeTypeWav,    "audio/wav" );
 _LIT( KMimeTypeAu,     "audio/au" );
 _LIT( KMimeTypeAudioMatroska, "audio/x-matroska");
+_LIT( KMimeTypeAudioMp4,  "audio/mp4" );
 
 _LIT( KExtensionMp3,    "mp3" );
 _LIT( KExtensionAac,    "aac" );
@@ -49,6 +50,7 @@ _LIT( KExtensionWav,    "wav" );
 _LIT( KExtensionAu,     "au" );
 _LIT( KExtensionNrt,    "nrt" );
 _LIT( KExtensionMka,    "mka" );
+_LIT( KExtensionM4a,    "m4a" );
 
 // -----------------------------------------------------------------------------
 // CAudioMDParser::NewL
@@ -136,7 +138,6 @@ void CAudioMDParser::ConstructL( const TBool aAlbumArt )
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TAudioMetadataHandling>(
         	KExtensionWma(), KMimeTypeWma(), 
         	EMetaDataUtilityHandling ), cmp ) );
-
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TAudioMetadataHandling>(
     		KExtensionMid(), KMimeTypeMidi(), 
     		EFileSystemHandling ), cmp ) );
@@ -164,7 +165,9 @@ void CAudioMDParser::ConstructL( const TBool aAlbumArt )
     User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TAudioMetadataHandling>(
             KExtensionMka(), KMimeTypeAudioMatroska(), 
             EMetaDataUtilityHandling ), cmp ) );
-
+    User::LeaveIfError( iMimeTypeMappings.InsertInOrder( TMimeTypeMapping<TAudioMetadataHandling>(
+            KExtensionM4a(), KMimeTypeAudioMp4(), 
+            EMetaDataUtilityHandling ), cmp ) );
     }
 
 

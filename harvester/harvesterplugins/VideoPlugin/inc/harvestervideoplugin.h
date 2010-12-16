@@ -29,6 +29,7 @@ class CMdEObjectDef;
 class CMdEPropertyDef;
 class CMdEObject;
 class CHarvesterData;
+class CHarvesterVideoParser;
 
 class TVideoMetadataHandling
 	{
@@ -94,7 +95,7 @@ class CVideoHarvestData : public CBase
         
         TBool iDrmProtected;
 
-        CVideoHarvestData() : CBase()
+        CVideoHarvestData() : CBase(), iCodec( 0 ), iDrmProtected( EFalse )
         	{
         	}
 
@@ -230,12 +231,12 @@ class CHarvesterVideoPlugin : public CHarvesterPlugin
 	
 		const THarvestingHandling* FindHandler( const TDesC& aUri );
 		
-		void CheckForCodecSupport( HBufC* aMimeBuffer, CVideoHarvestData& aVHD );
-		
 	private:
 		RArray<THarvestingHandling> iMimeTypeMappings;
 		
 		CHarvesterVideoPluginPropertyDefs* iPropDefs;
+		
+		CHarvesterVideoParser* iVideoParser;
 		
 		TInt iMaxTextLength;
 		

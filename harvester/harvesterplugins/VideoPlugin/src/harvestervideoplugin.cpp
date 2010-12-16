@@ -29,6 +29,7 @@
 #include "harvesterblacklist.h"
 #include "mdeobjectwrapper.h"
 #include "mdscommoninternal.h"
+#include "harvestervideoparser.h"
 
 #include <mdenamespacedef.h>
 #include <mdeobjectdef.h>
@@ -75,15 +76,8 @@ _LIT( KExtensionAsf,     "asf" );
 _LIT(KVideo, "Video");
 _LIT(KAudio, "Audio");
 
-_LIT(KAudioAC3, "audio/AC3");
-_LIT(KAudioEAC3, "audio/EAC3");
-const TUint32 KMDSFourCCCodeAC3 = 0x33434120;       //{' ', 'A', 'C', '3'}
-const TUint32 KMDSFourCCCodeEAC3 = 0x33434145;      //{'E', 'A', 'C', '3'}
-
 _LIT(KInUse, "InUse");
 
-const TInt KKiloBytes = 1024;
-const TReal32 KThousandReal = 1000.0;
 
 CHarvesterVideoPluginPropertyDefs::CHarvesterVideoPluginPropertyDefs() : CBase()
 	{
@@ -168,6 +162,9 @@ CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 	iMimeTypeMappings.Close();
     RMediaIdUtil::ReleaseInstance();
 
+    delete iVideoParser;
+    iVideoParser = NULL;
+    
     delete iPhoneVideosPath;
     delete iMmcVideosPath;
     
@@ -180,6 +177,8 @@ CHarvesterVideoPlugin::~CHarvesterVideoPlugin()
 void CHarvesterVideoPlugin::ConstructL()
 	{
 	WRITELOG( "CHarvesterVideoPlugin::ConstructL() - begin" );
+	
+	iVideoParser = CHarvesterVideoParser::NewL();
 	
 	TLinearOrder< THarvestingHandling > cmp( THarvestingHandling::CompareFunction );
 
@@ -519,9 +518,9 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         User::Leave( KErrInUse );
         }
     else if( error == KErrNotFound ||
-                error == KErrPathNotFound ||
-                error == KErrDisMounted ||
-                error == KErrBadDescriptor )
+             error == KErrPathNotFound ||
+             error == KErrDisMounted ||
+             error == KErrBadDescriptor )
         {
         WRITELOG1( "CHarvesterVideoPlugin - File open error: %d", error );
         CleanupStack::PopAndDestroy( &file );
@@ -548,32 +547,31 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
     
     if( !dataExtracted )
         {
-        TEntry entry;
-        const TInt errorcode = iFs.Entry( uri, entry );
-        
-        if ( errorcode != KErrNone )
+        // If file could be opened, use file handle to fetch base data, otherwise
+        // attempt to fetch the data from TEntry 
+        if( error == KErrNone )
             {
-            WRITELOG1( "CHarvesterVideoPlugin - Error getting entry: %d", errorcode );
-            CleanupStack::PopAndDestroy( &file );
-            User::Leave( errorcode );
+            User::LeaveIfError( file.Modified( aVHD.iModified ) );
+            User::LeaveIfError( file.Size( aVHD.iFileSize ) );            
             }
+        else
+            {
+            TEntry entry;
+            const TInt errorcode = iFs.Entry( uri, entry );
         
-        aVHD.iModified = entry.iModified;
-        aVHD.iFileSize = (TUint)entry.iSize;
+            if ( errorcode != KErrNone )
+                {
+                WRITELOG1( "CHarvesterVideoPlugin - Error getting entry: %d", errorcode );
+                CleanupStack::PopAndDestroy( &file );
+                User::Leave( errorcode );
+                }
+        
+            aVHD.iModified = entry.iModified;
+            aVHD.iFileSize = (TUint)entry.iSize;        
+            }
         
         WRITELOG1( "CHarvesterVideoPlugin - File size: %d", aVHD.iFileSize );
         }
-
-    // now the minimum information has been harvested
-    // from now on the harvested data should always be stored
-
-    const THarvestingHandling* mapping = FindHandler( uri );
-    
-    if( !mapping )
-    	{
-    	CleanupStack::PopAndDestroy( &file );
-    	User::Leave( KErrNotFound );
-    	}
 
     aVHD.iVideoObject = aMetadataObject.Def().Name().Compare( KVideo ) == 0;
 
@@ -584,17 +582,24 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
         User::Leave( KErrCompletion );
         }
     
+    // now the minimum information has been harvested
+    // from now on the harvested data should always be stored
+
+    const THarvestingHandling* mapping = FindHandler( uri );
+    
+    if( !mapping )
+    	{
+    	CleanupStack::PopAndDestroy( &file );
+    	User::Leave( KErrNotFound );
+    	}
+    
     if ( mapping->iHandler.iLibrary == TVideoMetadataHandling::EHexilMetadataHandling )
     	{
-    	// doesn't own pointers to MIME types
-    	RPointerArray<HBufC> mimes;
-    	CleanupClosePushL( mimes );
-
         TPtrC ext;
-        MdsUtils::GetExt( uri, ext );
+        const TBool exists = MdsUtils::GetExt( uri, ext );
         
         // Check for possibly protected content
-        if( ext.CompareF( KExtensionWmv ) == 0 )
+        if( exists && ext.CompareF( KExtensionWmv ) == 0 )
             {
             ContentAccess::CContent* content = ContentAccess::CContent::NewLC( uri );
             ContentAccess::CData* data = content->OpenContentLC( ContentAccess::EPeek );
@@ -603,196 +608,28 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             CleanupStack::PopAndDestroy( 2 ); // content, data
             }
     	
-    	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
-        CleanupStack::PushL( helixMetadata );
+        TRAP( error, iVideoParser->ParseVideoMetadataL( file, aVHD ) );
         
-        TRAP( error, helixMetadata->OpenFileL( file ) );        
-        
-        if ( error == KErrNone )
-        	{
-        	HBufC *buf = NULL;
-        	HXMetaDataKeys::EHXMetaDataId metaid;        	
-        	TUint metacount = 0;
-        	helixMetadata->GetMetaDataCount( metacount );
-        	TLex lex;
-        	for ( TUint i = 0; i < metacount; i++ )
-        		{        		
-        		helixMetadata->GetMetaDataAt( i, metaid, buf );
-        		switch (metaid)
-        			{
-                    case HXMetaDataKeys::EHXTitle:
-                        {
-                        aVHD.iTitle = buf->Alloc();
-                        break;
-                        }
-        			case HXMetaDataKeys::EHXVideoBitRate:
-	        			{
-        				WRITELOG( "CHarvesterVideoPlugin - found videobitrate" );
-	        			if( aVHD.iVideoObject )
-	        				{
-	        				lex.Assign( *buf );
-	        				if( KErrNone == lex.Val( aVHD.iVideoBitrate ) )
-	        					{
-	        					aVHD.iVideoBitrate /= KKiloBytes;
-	        					}
-	        				}
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXAudioBitRate:
-	        			{
-	        			WRITELOG( "CHarvesterVideoPlugin - found audiobitrate" );
-	        			lex.Assign( *buf );
-	        			if( KErrNone == lex.Val( aVHD.iAudioBitrate ) )
-	        				{
-	        				aVHD.iAudioBitrate /= KKiloBytes;
-	        				}
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXClipBitRate:
-        				{
-        				WRITELOG( "CHarvesterVideoPlugin - found clipbitrate" );
-	        			lex.Assign( *buf );
-	        			if( KErrNone == lex.Val( aVHD.iClipBitrate ) )
-							{
-							aVHD.iClipBitrate /= KKiloBytes;
-							}
-        				break;
-        				}
-        			case HXMetaDataKeys::EHXDuration:
-	        			{
-	        			WRITELOG( "CHarvesterVideoPlugin - found duration" );
-	        			lex.Assign(*buf);
-	        			if( KErrNone == lex.Val( aVHD.iDuration ) )
-							{
-							aVHD.iDuration /= KThousandReal;
-							}
-						break;
-	        			}
-        			case HXMetaDataKeys::EHXFramesPerSecond:
-	        			{
-	        			WRITELOG( "CHarvesterVideoPlugin - found framerate" );
-	        			lex.Assign( *buf );
-	        			lex.Val( aVHD.iFrameRate );
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXCopyright:
-	        			{
-	        			aVHD.iCopyright = buf->Alloc();
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXAuthor:
-	        			{
-	        			aVHD.iAuthor = buf->Alloc();
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXGenre:
-	        			{
-	        			aVHD.iGenre = buf->Alloc();
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXPerformer:
-	        			{
-	        			aVHD.iPerformer = buf->Alloc();
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXDescription:
-	        			{
-	        			aVHD.iDescription = buf->Alloc();
-	        			break;
-	        			}
-        			case HXMetaDataKeys::EHXMimeType:
-	        			{
-	        			mimes.AppendL( buf );
-	        			if( aVHD.iCodec == 0 )
-	        			    {
-	        			    CheckForCodecSupport( buf, aVHD );
-	        			    }
-	        			break;
-	        			}
-                    case HXMetaDataKeys::EHXFrameSize:
-                        {
-                        const TChar separator = 'x';    // as in e.g."177x144"
-                        const TInt separatorLocation = buf->Locate( separator );
-                        TLex input( buf->Left( separatorLocation ) );
-
-                        input.Val( aVHD.iFrameWidth );
-                        input = buf->Right(buf->Length() - separatorLocation - 1);
-                        input.Val( aVHD.iFrameHeight );
-	        			break;
-	        			}
-        			default:
-        				break;
-        			}
-        		}
-        	}
-
-        const TInt mimeCount = mimes.Count();
-        
-        TPtrC mime( NULL, 0 );
-
         // if metadata didn't contain MIME, get it from extension mapping
-        if( mimeCount == 0 )
-        	{
-        	if( aVHD.iVideoObject )
-        		{
-        		mime.Set( mapping->iHandler.iVideoMime.Ptr(),
-        				mapping->iHandler.iVideoMime.Length() );
-        		}
-        	else
-        		{
-        		mime.Set( mapping->iHandler.iAudioMime.Ptr(),
-        				mapping->iHandler.iAudioMime.Length() );
-        		}
-        	}
-        // otherwise search from MIME type array
-        else
-        	{
-	        for( TInt i = 0; i < mimeCount; i++ )
-	        	{
-	        	HBufC* mimeTmp = mimes[i];
-	        	
-	        	if( !mimeTmp )
-	        		{
-	        		continue;
-	        		}
-	        	
-	        	mime.Set( mimeTmp->Des().Ptr(), mimeTmp->Des().Length() );
-
-	        	// MIME contains substring "application/vnd.rn-realmedia".
-	        	// That case MIME matches also with 
-	        	// string "application/vnd.rn-realmedia-vbr".
-	        	if( MdsUtils::Find( mime, KMimeTypeRm() ) != KErrNotFound )
-	        		{
-	        		break;
-	        		}
-	        	// Match MIME type, for video object with "video" substring
-	        	else if( aVHD.iVideoObject )
-	        		{
-	        		if( MdsUtils::Find( mime, KVideo() ) != KErrNotFound )
-		        		{
-		        		break;
-		        		}
-	        		}
-	        	// Match MIME type for audio object with "audio" substring
-	        	else if( MdsUtils::Find( mime, KAudio() ) != KErrNotFound )
-	        		{
-	        	    if( !aVHD.iVideoObject )
-	        	        {
-	        	        break;
-	        	        }
-	        		}
-	        	}
-	        }
-        
-        if( mime.Ptr() && ( mime.Length() > 0 ) )
-        	{
-        	aVHD.iMimeBuf = mime.Alloc();
-        	}
-        
-        CleanupStack::PopAndDestroy( helixMetadata );
-        
-        // don't destory mime type pointers just clean array
-        CleanupStack::PopAndDestroy( &mimes );
+        if( !aVHD.iMimeBuf )
+            {
+            TPtrC mime( NULL, 0 );
+            if( aVHD.iVideoObject )
+                {
+                mime.Set( mapping->iHandler.iVideoMime.Ptr(),
+                        mapping->iHandler.iVideoMime.Length() );
+                }
+            else
+                {
+                mime.Set( mapping->iHandler.iAudioMime.Ptr(),
+                        mapping->iHandler.iAudioMime.Length() );
+                }
+            
+            if( mime.Ptr() && ( mime.Length() > 0 ) )
+                {
+                aVHD.iMimeBuf = mime.Alloc();
+                }
+            }
         
         // If parsing failed, check for possible protected content
         if( error == KErrNotSupported || 
@@ -959,12 +796,12 @@ void CHarvesterVideoPlugin::GatherDataL( CMdEObject& aMetadataObject,
             }
 #endif
         }
-    WRITELOG( "CHarvesterVideoPlugin - Closing file" );        
+    WRITELOG( "CHarvesterVideoPlugin - Closing file, if still open" );        
     CleanupStack::PopAndDestroy( &file );        
 
 #ifdef _DEBUG
     dStop.UniversalTime();
-    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL start %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
+    WRITELOG1( "CHarvesterVideoPlugin::GatherDataL end %d us", (TInt)dStop.MicroSecondsFrom(dStart).Int64() );
 #endif  
     
     WRITELOG( "CHarvesterVideoPlugin - Start adding data to object" );
@@ -1038,7 +875,10 @@ void CHarvesterVideoPlugin::HandleObjectPropertiesL(
 	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iReleaseDatePropertyDef, &localModifiedDate, aIsAdd );
 
 	// Capture date
-	CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCaptureDatePropertyDef, &localModifiedDate, aIsAdd );
+	if( aVHD.iVideoObject )
+	    {
+	    CMdeObjectWrapper::HandleObjectPropertyL(mdeObject, *iPropDefs->iCaptureDatePropertyDef, &localModifiedDate, aIsAdd );
+	    }
 
 	// Time offset
 	TInt16 timeOffsetMinutes = timeOffsetSeconds.Int() / 60;
@@ -1217,9 +1057,6 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	{
 	TBool possibleVideo = EFalse;
 
-	CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
-	CleanupStack::PushL( helixMetadata );
-
     TFileName tempName;
     TUint32 mediaId( 0 );
     TInt blackListError( KErrNone );
@@ -1227,10 +1064,14 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
     blackListError = GetFileFullNameAndMediaId( aFile, tempName, mediaId );
     if( blackListError == KErrNone )
         {
-        AddFileToBlackList( tempName, mediaId );
+        blackListError = AddFileToBlackList( tempName, mediaId );
         }
 	
+    CHXMetaDataUtility* helixMetadata = CHXMetaDataUtility::NewL();
+    CleanupStack::PushL( helixMetadata );
+    
 	TRAPD( err, helixMetadata->OpenFileL( aFile ) );
+	aFile.Close();
 
 	if( err == KErrNone )
 		{
@@ -1257,10 +1098,10 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 	
 		const TInt mimeCount = mimes.Count();
 		
-		// at least one MIME type must be found
+		// Set to Video, regardless how badly file is corrupted
 		if( mimeCount == 0 )
 			{
-			User::Leave( KErrNotFound );
+		    aType.Copy( KVideo );
 			}
 	
 		for( TInt i = 0; i < mimeCount; i++ )
@@ -1313,13 +1154,14 @@ void CHarvesterVideoPlugin::GetRmTypeL( RFile64& aFile, TDes& aType )
 		{
 		aType.Copy( KVideo );
 		}
+
+	helixMetadata->ResetL();
+    CleanupStack::PopAndDestroy( helixMetadata );
 	
     if( blackListError == KErrNone )
         {
         RemoveFileFromBlackList( tempName, mediaId );
-        }
-    
-    CleanupStack::PopAndDestroy( helixMetadata );
+        }  
 	}
 
 TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, const TUint32& aMediaId )
@@ -1331,7 +1173,7 @@ TInt CHarvesterVideoPlugin::AddFileToBlackList( const TFileName& aFullName, cons
     if( blackListError == KErrNone )
         {
         WRITELOG( "CHarvesterVideoPlugin::AddFileToBlackList - Adding URI to blacklist" );
-        iBlacklist->AddFile( aFullName, aMediaId, modified );
+        blackListError = iBlacklist->AddFile( aFullName, aMediaId, modified );
         }
 
     return blackListError;
@@ -1404,30 +1246,6 @@ const THarvestingHandling* CHarvesterVideoPlugin::FindHandler( const TDesC& aUri
 	
 	return mapping;
 	}
-
-void CHarvesterVideoPlugin::CheckForCodecSupport( HBufC* aMimeBuffer, CVideoHarvestData& aVHD )
-    {
-    if( !aMimeBuffer )
-        {
-        return;
-        }
-    
-    TPtrC mime( NULL, 0 );
-    mime.Set( aMimeBuffer->Des().Ptr(), aMimeBuffer->Des().Length() );
-    
-    if( MdsUtils::Find( mime, KAudioAC3() ) != KErrNotFound )
-        {
-        aVHD.iCodec = KMDSFourCCCodeAC3;
-        return;
-        }
-    
-    if( MdsUtils::Find( mime, KAudioEAC3() ) != KErrNotFound )
-        {
-        aVHD.iCodec = KMDSFourCCCodeEAC3;
-        return;
-        }
-    return;
-    }
 
 // End of file
 

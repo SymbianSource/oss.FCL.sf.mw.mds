@@ -14,39 +14,33 @@
 * Description:
 *
 */
-// 2001116A.RSS
+// 200345E0.rss
 
 #include "registryinfov2.rh"
 
-// Declares info for one test implementation
 RESOURCE REGISTRY_INFO theInfo
-	{
+{
     // resource_format_version must always be set as follows
     resource_format_version = RESOURCE_FORMAT_VERSION_2;
-    
-	// UID for the DLL
-	dll_uid = 0x2001116A;
-	// Declare array of interface info
-	interfaces = 
-		{
-		INTERFACE_INFO
-			{
-			// UID of interface that is implemented
-			interface_uid = 0x200009F8;
-			implementations = 
-				{
-				// Info for CHarvesterVideoPlugin
-				IMPLEMENTATION_INFO
-					{
-					implementation_uid = 0x2001116B;  // dll_uid + 1
+	
+    dll_uid = 0x200345E0;
+    interfaces =
+    {
+    INTERFACE_INFO
+        {
+        interface_uid = 0x20007181;
+        implementations =
+                {
+                IMPLEMENTATION_INFO
+                    {
+                    implementation_uid = 0x200345E0;
 					version_no = 1;
-					display_name = "Harvester audio plugin";
-					default_data = "Audio";
-					opaque_data = "mp3 aac amr awb mid midi mxmf rng spmid wav au wma nrt mka m4a";
+					display_name = "MdS DRM plugin";
+					default_data = "";
+					opaque_data = "";
 					rom_only = 0;
-					}
-				};
-			}
-		};
-	}
-
+                    }
+                };
+        }
+    };
+}

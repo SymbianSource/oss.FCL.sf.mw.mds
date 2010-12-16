@@ -1225,6 +1225,7 @@ const CMdsPropertyDef& CMdSSqlObjectManipulate::ReadPropertyL(
 				break;
 				}
 			case EPropertyUint32:
+			case EPropertyMask:
 				{
 				const TUint32 uInt32Value = property.iValue.iUint32;
 				if ( !propertyDef->CheckMinMaxValue( uInt32Value ) )
@@ -2267,8 +2268,8 @@ void CMdSSqlObjectManipulate::RemoveObjectsByUriL(
 		TPtrC16 uri = aBuffer.ReceivePtr16L();
         objectId = SearchObjectByUriL( uri, flags );
         if ( objectId != KNoId && 
-             objectId != KSystemFavouritesAlbumId && 
-             objectId != KSystemCapturedAlbumId )
+             uri != KSystemFavouritesAlbumUri && 
+             uri != KSystemCapturedAlbumUri )
 			{
 			// unlock object, so update is no possible anymore
 			if ( iLockList.IsLocked( *iNamespaceDef, objectId ) )

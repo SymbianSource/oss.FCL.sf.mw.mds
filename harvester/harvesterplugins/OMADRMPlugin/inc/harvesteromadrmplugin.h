@@ -29,6 +29,8 @@
 // FORWARD DECLARATION
 class CFileData;
 class CHarvestData;
+class CHarvesterVideoParser;
+class CVideoHarvestData;
 
 /**
 * A data transfer class for harvested drm metadata.
@@ -47,6 +49,8 @@ class CDRMHarvestData : public CBase
         /** Destructor */
         virtual ~CDRMHarvestData()
             {
+            delete iContentID;
+            iContentID = NULL;
             }
 
     private:
@@ -66,6 +70,8 @@ class CDRMHarvestData : public CBase
         TInt64 iFileSize;
         TTime iModified;
         TBool iDrmProtected;
+        TUint16 iRightsStatus;
+        HBufC* iContentID;
     };
 
 /**
@@ -84,6 +90,8 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 	
 		// Media property definitions
 		CMdEPropertyDef* iDrmPropertyDef;
+		CMdEPropertyDef* iContentIDPropertyDef;
+		CMdEPropertyDef* iRightsStatusPropertyDef;
 		CMdEPropertyDef* iDescriptionPropertyDef;
 		CMdEPropertyDef* iAuthorPropertyDef;
 		CMdEPropertyDef* iGenrePropertyDef;
@@ -94,6 +102,17 @@ class CHarvesterOmaDrmPluginPropertyDefs : public CBase
 		// Image property definitions
 		CMdEPropertyDef* iFrameCountPropertyDef;
 		CMdEPropertyDef* iBitsPerSamplePropertyDef;
+		
+		// Video specific property definitons
+		CMdEPropertyDef* iReleaseDatePropertyDef;
+		CMdEPropertyDef* iCaptureDatePropertyDef;
+		CMdEPropertyDef* iDurationPropertyDef;
+		CMdEPropertyDef* iFrameratePropertyDef;
+		CMdEPropertyDef* iBitratePropertyDef;
+		CMdEPropertyDef* iCopyrightPropertyDef;
+		CMdEPropertyDef* iArtistPropertyDef;
+		CMdEPropertyDef* iAudioFourCCDef;
+		
 	private:
 		CHarvesterOmaDrmPluginPropertyDefs();
 	
@@ -143,12 +162,9 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
         * @param aHarvestData
         */
         TInt GatherDataL( CMdEObject& aMetadataObject, CDRMHarvestData& aDRMharvestData, 
-			CFileData& aFileData, CHarvestData& aHarvestData );
-	
-		
-		
-			/**
-			
+			CFileData& aFileData, CHarvestData& aHarvestData, CVideoHarvestData& aVHD );
+        
+	    /**
 		* C++ constructor - not exported;
 		* implicitly called from NewL()
 		*
@@ -164,7 +180,7 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
          * @param aHarvestData
          */
         void HandleObjectPropertiesL( CHarvestData& aHarvestData, CDRMHarvestData& aDRMharvestData, CFileData& aFileData, 
-			CHarvesterData& aHarvesterData, TBool aIsAdd );
+			CHarvesterData& aHarvesterData, CVideoHarvestData& aVHD, TBool aIsAdd );
 		
 				// Default constructor
 		CHarvesterOMADRMPlugin();
@@ -180,18 +196,12 @@ class CHarvesterOMADRMPlugin : public CHarvesterPlugin
         RFs iFs;
         
 	private:
-	     /**
-         *  image decoder
-         */        
         
-
-		
-      
-
-
 		CHarvesterOmaDrmPluginPropertyDefs* iPropDefs;
 		
 		TInt iMaxTextLength;
+		
+		CHarvesterVideoParser* iVideoParser;
 		
         HBufC* iPhoneImagesPath;
         HBufC* iMmcImagesPath;

@@ -77,6 +77,7 @@
 //    EPropertyTime     = 10,  min/max = Time format: YYYYMMDDhhmmss (for instance 20050629163021)
 //    EPropertyText     = 11,  min/max = numeric values, indicating minimum and maximum length of string 
 //                                       (minimum and maximum values must be between 1 and 65535)
+//    EPropertyMask     = 12,  min/max = numeric values
 //
 // RELATION DEF:
 // ----------------
@@ -93,7 +94,7 @@
 //
 //
 
-version 3.0
+version 3.1
 
 
 namespace http://sw.nokia.com/MdE 0
@@ -146,6 +147,7 @@ property   Type                           0    0        4    min   max
 
 
 object http://sw.nokia.com/MdE Tag Object 0
+property   TagType                        0    0        12   min   max
 
 
 object http://sw.nokia.com/MdE MediaObject Object 0
@@ -175,6 +177,8 @@ property   Comment                        0    0        11   min   max
 property   Genre                          0    0        11   min   max 
 property   Track                          0    0        4    min   max
 property   AudioFourCC                    0    0        6    min   max
+property   RightsStatus                   0    0        4    min   max
+property   ContentID                      0    0        11   min   max
 
 
 object http://sw.nokia.com/MdE Video MediaObject 0

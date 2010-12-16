@@ -60,6 +60,7 @@ ECOM_PLUGIN(MMCMonitorPlugin.dll,MMCMonitorPlugin.rsc)
 ECOM_PLUGIN(FileMonitorPlugin.dll,FileMonitorPlugin.rsc)
 ECOM_PLUGIN(MessageMonitorPlugin.dll,MessageMonitorPlugin.rsc)
 ECOM_PLUGIN(mdsoomplugin.dll,mdsoomplugin.rsc)
+ECOM_PLUGIN(mdsdrmplugin.dll,mdsdrmplugin.rsc)
 
 file=ABI_DIR\BUILD_DIR\ContextPluginInterface.dll		SHARED_LIB_DIR\ContextPluginInterface.dll
 file=ABI_DIR\BUILD_DIR\ContextEngine.dll		        SHARED_LIB_DIR\ContextEngine.dll

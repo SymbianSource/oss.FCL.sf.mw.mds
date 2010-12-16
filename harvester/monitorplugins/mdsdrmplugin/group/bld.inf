@@ -15,13 +15,6 @@
 *
 */
 
-#include "../monitorplugininterface/group/bld.inf"
-#include "../fileplugin/group/bld.inf"
-#include "../mdsfileserverplugin/group/bld.inf"
-#include "../messageplugin/group/bld.inf"
-#include "../mmcplugin/group/bld.inf"
-#include "../mdsoomplugin/group/bld.inf"
-#include "../mdsdrmplugin/group/bld.inf"
 
 PRJ_PLATFORMS
     DEFAULT
@@ -29,6 +22,7 @@ PRJ_PLATFORMS
 PRJ_EXPORTS
 
 PRJ_MMPFILES
+mdsdrmplugin.mmp
 
 PRJ_TESTMMPFILES
 

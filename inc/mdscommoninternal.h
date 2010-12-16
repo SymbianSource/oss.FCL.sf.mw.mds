@@ -40,10 +40,14 @@ const TInt KSchemaFileMajorVersion = 3;
 const TDefId KDefaultNamespaceDefId = 1;
 
 const TDefId KBaseObjectDefId = 1;
+const TDefId KAlbumObjectDefId = 6;
 
 const TUint32 KBaseObjectBasicValueColumnOffset = 8;
 
 const TItemId KSystemFavouritesAlbumId = 1;
+
+_LIT( KSystemFavouritesAlbumUri, "defaultalbum_favourites" );
+_LIT( KSystemCapturedAlbumUri, "defaultalbum_captured" );
 
 const TInt KMaxUintValueLength   = 10;
 const TInt KMaxUint64ValueLength = 20;
@@ -64,7 +68,7 @@ const TInt KMmcEntryBufferSize = 100;
 // The server version. A version must be specified when
 // creating a session with the server.
 const TUint KMdSServMajorVersionNumber=2;
-const TUint KMdSServMinorVersionNumber=5;
+const TUint KMdSServMinorVersionNumber=6;
 const TUint KMdSServBuildVersionNumber=0;
 
 const TUint32 KNokiaVendorId = 52487775;

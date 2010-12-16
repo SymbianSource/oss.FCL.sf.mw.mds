@@ -120,7 +120,8 @@ void CMdsPropertyDef::AddMinMaxValueL( const TInt32& aMinValue, const TInt32& aM
  */
 void CMdsPropertyDef::AddMinMaxValueL( const TUint32& aMinValue, const TUint32& aMaxValue )
 	{
-	if( iType == EPropertyUint32 )
+	if( iType == EPropertyUint32 ||
+	    iType == EPropertyMask )
 		{
 		iMinValue.iUint32 = aMinValue;
 		iMaxValue.iUint32 = aMaxValue;
@@ -191,7 +192,7 @@ const TDesC& CMdsPropertyDef::GetSqlTypeName() const
         	{
         	return KMdsSqlTypeInt;
         	}
-        case EPropertyUint32: case EPropertyInt64: case EPropertyTime:
+        case EPropertyUint32: case EPropertyInt64: case EPropertyTime: case EPropertyMask:
         	{
         	return KMdsSqlTypeBigInt;
         	}
@@ -222,6 +223,7 @@ TColumnDataType CMdsPropertyDef::GetSqlType() const
 		case EPropertyUint8:
         case EPropertyUint16:
         case EPropertyUint32: 
+        case EPropertyMask:
         	return EColumnUint32;
         case EPropertyInt64:
         	return EColumnInt64;
@@ -262,6 +264,7 @@ void CMdsPropertyDef::StoreToDBL( TDefId aObjectDefId )
     		break;
     		}
     	case EPropertyUint32:
+    	case EPropertyMask:
     		{
     		rowData.AppendL( TColumn( (TInt64)iMinValue.iUint32 ) );
     		rowData.AppendL( TColumn( (TInt64)iMaxValue.iUint32 ) );
@@ -312,6 +315,7 @@ TBool CMdsPropertyDef::operator==( const CMdsPropertyDef& aPropertyDef ) const
         	         iMaxValue.iInt32 == aPropertyDef.iMaxValue.iInt32 ) ;
         	}
         case EPropertyUint32:
+        case EPropertyMask:
         	{
         	return ( iMinValue.iUint32 == aPropertyDef.iMinValue.iUint32 &&
         	         iMaxValue.iUint32 == aPropertyDef.iMaxValue.iUint32 ) ;

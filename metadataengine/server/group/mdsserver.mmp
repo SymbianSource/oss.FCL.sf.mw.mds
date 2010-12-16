@@ -79,6 +79,7 @@ SOURCE            mdsgetimeiao.cpp
 SOURCE            mdsquerycriteriadeserialization.cpp
 SOURCE            mdebackuprestorewatcher.cpp
 SOURCE            mdsshutdownobserver.cpp
+SOURCE            mdsdatabaseupdater.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 

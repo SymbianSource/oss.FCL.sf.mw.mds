@@ -40,6 +40,7 @@ SYSTEMINCLUDE     /epoc32/include/connect
 USERINCLUDE       ../../../inc
 USERINCLUDE       ../inc
 USERINCLUDE       ../../monitorplugins/inc
+USERINCLUDE       ../../harvesterplugins/VideoPlugin/inc
 USERINCLUDE       ../traces
 
 SOURCEPATH        ../src
@@ -52,6 +53,7 @@ SOURCE            harvestereventmanager.cpp
 SOURCE            propertywatcher.cpp
 SOURCE  		  listener.cpp
 SOURCE            harvestermediaidutil.cpp
+SOURCE            harvestervideoparser.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 
@@ -66,6 +68,8 @@ LIBRARY           charconv.lib
 LIBRARY           tzclient.lib
 LIBRARY           centralrepository.lib 
 LIBRARY           blacklistclient.lib
+
+STATICLIBRARY       hxmetadatautil.lib
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

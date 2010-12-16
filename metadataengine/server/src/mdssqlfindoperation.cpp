@@ -1141,6 +1141,7 @@ TMdCOffset CMdSSqlFindOperation::AddObjectToContainerL( RRowData& aRow, TMdCOffs
     				}
     				break;
     			case EPropertyUint32:
+    			case EPropertyMask:
     				{
 					TUint32 value;
 					column.Get( value );
@@ -1288,6 +1289,7 @@ TMdCOffset CMdSSqlFindOperation::AddObjectToContainerL( RRowData& aRow, TMdCOffs
 					}
 					break;
 				case EPropertyUint32:
+				case EPropertyMask:
 					{
 					TUint32 value;
 					column.Get( value );

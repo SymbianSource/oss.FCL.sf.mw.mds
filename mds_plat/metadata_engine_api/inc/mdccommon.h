@@ -52,6 +52,7 @@ enum TPropertyType
     EPropertyReal64 = 9,
     EPropertyTime   = 10,
     EPropertyText   = 11,
+    EPropertyMask   = 12
     };
 
 /**

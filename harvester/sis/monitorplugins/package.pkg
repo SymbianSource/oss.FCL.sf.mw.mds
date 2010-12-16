@@ -40,3 +40,6 @@
 
 "\epoc32\RELEASE\armv5\UREL\mdsoomplugin.dll"-"c:\sys\bin\mdsoomplugin.dll"
 "\epoc32\data\z\resource\plugins\mdsoomplugin.rsc"-"c:\resource\plugins\mdsoomplugin.rsc"
+
+"\epoc32\RELEASE\armv5\UREL\mdsdrmplugin.dll"-"c:\sys\bin\mdsdrmplugin.dll"
+"\epoc32\data\z\resource\plugins\mdsdrmplugin.rsc"-"c:\resource\plugins\mdsdrmplugin.rsc"

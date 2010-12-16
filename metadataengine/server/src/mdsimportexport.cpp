@@ -47,6 +47,7 @@
 #include "mdssqldbmaintenance.h"
 #include "mdspreferences.h"
 #include "mdscommoninternal.h"
+#include "mdsdatabaseupdater.h"
 
 const TInt KMdsMaxUriLenght = KMaxFileName;
 const TChar KMdsLineFeed = '\n';
@@ -118,6 +119,7 @@ CMdsImportExport::CMdsImportExport() : iLastDriveNumber ( -1 )
 CMdsImportExport::~CMdsImportExport()
 	{
    	delete iConverter;
+   	iConverter = NULL;
 
 #ifdef _DEBUG
    	if( iLogEnabled )
@@ -129,8 +131,10 @@ CMdsImportExport::~CMdsImportExport()
     iFs.Close();
 
    	delete iBuffer;
+   	iBuffer = NULL;
 
    	delete iSchema;
+   	iSchema = NULL;
 	}
 
 /**
@@ -577,6 +581,7 @@ void CMdsImportExport::ImportSchemaPropertyDefL( TLex8& aParser )
     		break;
     		}
     	case EPropertyUint32:
+    	case EPropertyMask:
     		{
     		TUint32  minVal32,
     		         maxVal32;
@@ -877,11 +882,23 @@ TBool CMdsImportExport::ImportCheckVersionInfoL()
 	// DB version
     MMdsPreferences::GetL( KMdsDBVersionName, MMdsPreferences::EPreferenceBothGet,
     						  majorVersion, &minorVersion );
-	if ( majorVersion != KMdSServMajorVersionNumber || (TInt64)minorVersion != KMdSServMinorVersionNumber )
+	if ( majorVersion != KMdSServMajorVersionNumber )
 		{
 		return EFalse;
 		}
 
+    if ( (TInt64)minorVersion < KMdSServMinorVersionNumber )
+        {
+        CMdSDatabaseUpdater* updater = CMdSDatabaseUpdater::NewL();
+        TBool success( updater->UpdateDatabaseL( (TInt64)minorVersion ) );
+        delete updater;
+        updater = NULL;
+        if( !success )
+            {
+            return EFalse;
+            }
+        }	
+	
 	// schema version
     MMdsPreferences::GetL( KMdsSchemaVersionName, MMdsPreferences::EPreferenceBothGet,
     						  majorVersion, &minorVersion );
@@ -1390,6 +1407,7 @@ TMdCOffset CMdsImportExport::ImportMetadataFilePropertyL( TLex8& aParser, TMdCOf
     		break;
     		}
     	case EPropertyUint32:
+    	case EPropertyMask:
     		{
     		TUint32 value;
 		    User::LeaveIfError( ImportUInt32( value, aParser ) );

@@ -207,6 +207,12 @@ void CMdSMaintenanceEngine::InstallL( CMdSManipulationEngine& aManipulate, CMdsS
 			DeleteDatabase();
 			User::Leave( err );
         	}
+        
+        if( !iMaintenance->CheckForCorruptionL() )
+            {
+            DeleteDatabase();
+            User::Leave( KErrCorrupt );
+            }
         }
     __LOG1( ELogAlways, "CMdSMaintenanceEngine::InstallL complete: %d", 0 );
     }

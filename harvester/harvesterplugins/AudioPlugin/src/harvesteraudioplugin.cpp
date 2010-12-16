@@ -516,14 +516,15 @@ void CHarvesterAudioPlugin::GetMusicPropertiesL( CHarvesterData* aHD,
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
         		*iPropDefs->iCopyrightPropertyDef, &copyright, aIsAdd );
         }
-    
-    if ( date.Length() > 0
-        && date.Length() < iPropDefs->iDatePropertyDef->MaxTextLengthL() )
+  
+    /* Not used at the moment
+    if( date.Length() > 0 )
         {
         TTime releaseDate( date );
         CMdeObjectWrapper::HandleObjectPropertyL( mdeObject, 
                 *iPropDefs->iDatePropertyDef, &releaseDate, aIsAdd );
-        }
+        }   
+    */
 
     if( iHarvestAlbumArt && iTNM && jpeg.Length() > 0 )
         {

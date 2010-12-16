@@ -491,3 +491,56 @@ EXPORT_C void CHarvesterPluginFactory::PauseHarvester( TBool aPaused )
         }
     }
 
+EXPORT_C void CHarvesterPluginFactory::GetObjectDefL( CHarvesterData* aHD, TDes& aObjectDef )
+    {
+    TPtrC extPtr;
+    if( MdsUtils::GetExt( aHD->Uri(), extPtr ) )
+        {
+        RPointerArray<CHarvesterPluginInfo> supportedPlugins;
+        CleanupClosePushL( supportedPlugins );
+        GetSupportedPluginsL( supportedPlugins, extPtr );
+        
+        const TInt sCount = supportedPlugins.Count();
+        if( sCount == 1 )
+            {
+            CHarvesterPluginInfo* info = supportedPlugins[0];
+            if( info->iObjectTypes.Count() == 1 )
+                {
+                aObjectDef.Copy( *(info->iObjectTypes[0]) );
+                aHD->SetHarvesterPluginInfo( info );
+                CleanupStack::PopAndDestroy( &supportedPlugins );
+                return;
+                }
+            }
+        for( TInt i = sCount - 1; i >=0; i-- )
+            {
+            CHarvesterPluginInfo* info = supportedPlugins[i];
+            if ( !(info->iPlugin) )
+                {
+                info->iPlugin = CHarvesterPlugin::NewL( info->iPluginUid );
+                info->iPlugin->SetQueue( info->iQueue );
+                info->iPlugin->SetHarvesterPluginFactory( *this );  
+                info->iPlugin->SetBlacklist( *iBlacklist );
+                }
+            info->iPlugin->GetObjectType( aHD->Uri(), aObjectDef );
+            // It is possible for unmount to occure while we are waiting
+            // for GetObjectType to return, thus check aHD for validity
+            if( aHD && aObjectDef.Length() > 0 )
+                {
+                aHD->SetHarvesterPluginInfo( info );
+                break;
+                }
+            else if( !aHD )
+                {
+                break;
+                }
+            }
+        CleanupStack::PopAndDestroy( &supportedPlugins );
+        }
+    else
+        {
+        aObjectDef.Zero();
+        }
+    }
+
+

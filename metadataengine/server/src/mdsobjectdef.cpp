@@ -88,7 +88,8 @@ void CMdsObjectDef::AddPropertyL( const TDesC& aName, TPropertyType aType,
 		{									
 		case EPropertyUint32:
 		case EPropertyText:
-		case EPropertyBool:		
+		case EPropertyBool:	
+		case EPropertyMask:
 			{									
 			newProp->AddMinMaxValueL(aMinAdd.iUint32,aMaxAdd.iUint32);
 			break;
@@ -329,6 +330,7 @@ void CMdsObjectDef::AddPropertyL( const TDefId aId, TPropertyType aType, TUint32
         	break;
         	}
         case EPropertyUint32:
+        case EPropertyMask:
         	{
         	TUint32 minValue = 0;
         	TUint32 maxValue = 0;

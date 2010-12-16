@@ -113,6 +113,8 @@ namespace MdeConstants
 
         _LIT( KOrderedProperty, "Ordered" );
         _LIT( KTypeProperty, "Type" );
+        
+        // Depricated
         _LIT( KPropertiesProperty, "Properties" );
         _LIT( KSlideshowWallpaperProperty, "SlideshowWallpaper" );
 
@@ -130,6 +132,8 @@ namespace MdeConstants
         {
         _LIT( KTagObject, "Tag" );
         _LIT( KTagItemType, "application/vnd.nokia.mde.tag" );
+        
+        _LIT( KTagType, "TagType" );
         }
 
     namespace MediaObject
@@ -162,12 +166,20 @@ namespace MdeConstants
         _LIT( KGenreProperty, "Genre" );
         _LIT( KTrackProperty, "Track" );
         _LIT( KAudioFourCCProperty, "AudioFourCC" );
+        _LIT( KRightsStatus, "RightsStatus" );
+        _LIT( KContentID, "ContentID" );
         
         enum TPreinstalledFlag
         	{
         	ENotPreinstalled = 0,
         	EPreinstalled    = 1
         	};
+        
+        enum TDrmRightsStatus
+            {
+            ENoRights       = 0,
+            ERightsReceived = 1
+            };
         }
 
     namespace Video // derived from MediaObject

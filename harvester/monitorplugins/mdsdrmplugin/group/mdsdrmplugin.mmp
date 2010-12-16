@@ -19,43 +19,39 @@
 #include <platform_paths.hrh>
 #include <data_caging_paths.hrh>
 
-VERSION       10.0
-TARGET        harvesteromadrmplugin.dll
-TARGETTYPE    PLUGIN
-UID           0x10009D8D 0x20010973
+VERSION        10.0
+TARGETTYPE PLUGIN
+TARGET mdsdrmplugin.dll
+UID 0x10009D8D 0x200345E0
 
 CAPABILITY 	  CAP_ECOM_PLUGIN
 VENDORID      VID_DEFAULT
 
-start RESOURCE ../data/20010973.rss
-target harvesteromadrmplugin.rsc
+start RESOURCE ../data/200345E0.rss
+TARGET       mdsdrmplugin.rsc
 end
 
 SYSTEMINCLUDE /epoc32/include/ecom
-SYSTEMINCLUDE /epoc32/include/libc
-SYSTEMINCLUDE /epoc32/include/connect
 
+USERINCLUDE   ../../../../inc
 USERINCLUDE   ../inc
 USERINCLUDE   ../../../common/inc
-USERINCLUDE   ../../../../inc
-USERINCLUDE   ../../VideoPlugin/inc
 
 SOURCEPATH    ../src
-SOURCE        harvesteromadrmplugin.cpp
+SOURCE        mdsdrmplugin.cpp
+SOURCe        mdsdrmmonitorao.cpp
 SOURCE        proxy.cpp
 
 MW_LAYER_SYSTEMINCLUDE
 
 LIBRARY       euser.lib
-LIBRARY       efsrv.lib
-LIBRARY       imageconversion.lib
+LIBRARY       ECom.lib
 LIBRARY       caf.lib
-LIBRARY	      cafutils.lib
-LIBRARY       harvesterplugininterface.lib
+LIBRARY       DrmServerInterfaces.lib
 LIBRARY       mdeclient.lib
+LIBRARY       monitorplugininterface.lib
 LIBRARY	      harvesterdata.lib
-LIBRARY	      harvestercommon.lib
-LIBRARY       platformenv.lib 
+LIBRARY       mdccommon.lib
 
 PAGED
 BYTEPAIRCOMPRESSTARGET

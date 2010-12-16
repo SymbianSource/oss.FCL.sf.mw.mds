@@ -188,7 +188,6 @@ TBool CMdSSqlDbMaintenance::ValidateL(  )
             }
           }
     CleanupStack::PopAndDestroy( &col2propQuery );
-    emptyRowData.Reset();
      
     CleanupStack::PopAndDestroy( &emptyRowData );
     
@@ -225,5 +224,59 @@ void CMdSSqlDbMaintenance::CreateDatabaseL()
     						  majorVersion, minorVersion );
 
 	CleanupStack::PopAndDestroy( &emptyRowData );
+    }
+
+TBool CMdSSqlDbMaintenance::CheckForCorruptionL()
+    {
+    // Check the MDS default namespace main table for validity
+    // This table should always contain at least 1 default system folder object
+    _LIT( KValidateData, "SELECT ObjectDefId FROM Object%u LIMIT 2;" );
+ 
+    RBuf commonClauseOne;
+    User::LeaveIfError( commonClauseOne.Create( KValidateData.iTypeLength + KMaxUintValueLength ) );
+    CleanupClosePushL( commonClauseOne ); 
+    commonClauseOne.Format( KValidateData, KDefaultNamespaceDefId );    
+    
+    RRowData emptyRowData;
+    CleanupClosePushL( emptyRowData );
+        
+    RMdsStatement validationQuery;
+    CleanupClosePushL( validationQuery );
+    
+    CMdSSqLiteConnection& connection = MMdSDbConnectionPool::GetDefaultDBL();
+    
+    TInt test( KErrNone );
+    TUint32 count( 0 );
+    TRAP( test, connection.ExecuteQueryL( commonClauseOne, validationQuery, emptyRowData ) );
+    if( test == KErrNone )
+        {
+        RRowData result;
+        CleanupClosePushL( result );
+        TUint32 objectDefId( 0 );
+        result.AppendL( TColumn( objectDefId ) );
+        while ( connection.NextRowL( validationQuery, result ) )
+            {
+            result.Column( 0 ).Get( objectDefId );      
+            if( objectDefId != KAlbumObjectDefId )
+                {
+                test = KErrCorrupt;
+                }
+            result.Column( 0 ).Free();
+            count++;
+            }
+        CleanupStack::PopAndDestroy( &result );     
+        }
+    if( test == KErrNone && count < 2 )
+        {
+        test = KErrCorrupt;
+        }
+    
+    CleanupStack::PopAndDestroy( &validationQuery );
+     
+    CleanupStack::PopAndDestroy( &emptyRowData );
+    
+    CleanupStack::PopAndDestroy( &commonClauseOne );
+    
+    return ( test == KErrNone );
     }
 
